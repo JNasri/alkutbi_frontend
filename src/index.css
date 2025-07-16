@@ -1,0 +1,43 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --font-en: "Nunito Sans", serif;
+  --font-ar: "Tajawal", sans-serif;
+}
+
+/* Default font (you can adjust this later dynamically) */
+body {
+  font-family: var(--font-en);
+}
+
+/* Optional: RTL styles */
+html[lang="ar"] body {
+  font-family: var(--font-ar);
+}
+
+/* Light mode overrides */
+:root {
+  --surface-a: #f9fafb; /* Background */
+  --surface-b: #ffffff;
+  --surface-c: #e5e7eb; /* borders, etc */
+  --text-color: #1f2937; /* gray-800 */
+  --primary-color: #2563eb; /* blue-600 */
+  --primary-color-text: #ffffff;
+}
+
+/* Dark mode overrides */
+.dark {
+  --surface-a: #111827; /* bg-gray-900 */
+  --surface-b: #1f2937; /* bg-gray-800 */
+  --surface-c: #374151; /* border-gray-700 */
+  --text-color: #d1d5db; /* text-gray-300 */
+  --primary-color: #3b82f6; /* blue-500 */
+  --primary-color-text: #ffffff;
+}
+
+/* Hover effect for page numbers */
+.custom-table .p-paginator-page:hover {
+  @apply bg-gray-100 dark:bg-gray-700 rounded-4xl text-black dark:text-gray-100;
+}
