@@ -94,5 +94,7 @@
   "placeholder": "placeholder",
   "total_outgoings": "Total Outgoings",
   "last_outgoing_date": "Last Added Date",
-  "last_added_outgoing": "Last Added Identifier"
+  "last_added_outgoing": "Last Added Identifier",
+  "print_sticker": "Print Sticker",
+  "sticker": "Sticker"
 }

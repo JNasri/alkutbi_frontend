@@ -58,6 +58,7 @@ const IncomingsList = () => {
       { field: "attachment", header: t("attachment") },
       { field: "createdAt", header: t("createdAt") },
       { field: "updatedAt", header: t("updatedAt") },
+      { field: "sticker", header: t("sticker") },
       { field: "edit", header: t("edit") },
     ];
 
@@ -77,6 +78,19 @@ const IncomingsList = () => {
         </a>
       ) : (
         "—"
+      ),
+      sticker: (
+        <a
+          href={`/sticker?identifier=${encodeURIComponent(
+            item.identifier
+          )}&date=${encodeURIComponent(item.date)}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-blue-600 dark:text-blue-400 hover:underline"
+          title={t("print_sticker")}
+        >
+          {t("print_sticker")}
+        </a>
       ),
       edit: (
         <Link

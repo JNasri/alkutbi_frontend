@@ -21,6 +21,8 @@ import AddIncomingForm from "./features/Incomings/AddIncomingForm";
 import AddOutgoingForm from "./features/Outgoings/AddOutgoingForm";
 // not found
 import NotFound from "./pages/NotFound";
+// sticker
+import Sticker from "./components/Sticker";
 //
 // // PrimeReact core styles
 // import "primereact/resources/themes/lara-light-indigo/theme.css"; // or sakai theme if you get it
@@ -45,6 +47,7 @@ function App() {
           <Route element={<PresistLogin />}>
             {/* /dashboard */}
             <Route element={<PreFetch />}>
+              <Route path="/sticker" element={<Sticker />} />
               <Route path="dashboard" element={<DashLayout />}>
                 {/* / */}
                 <Route index element={<Home />} />

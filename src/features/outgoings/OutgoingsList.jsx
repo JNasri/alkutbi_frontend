@@ -1,12 +1,16 @@
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useGetOutgoingsQuery } from "./outgoingsApiSlice";
 import DataTableWrapper from "../../components/DataTableWrapper";
 import LoadingSpinner from "../../components/LoadingSpinner";
 import { Link } from "react-router-dom";
 import { Plus } from "lucide-react";
+import Sticker from "../../components/Sticker";
 
 const OutgoingsList = () => {
   const { t } = useTranslation();
+
+  const [activeSticker, setActiveSticker] = useState(null);
 
   const {
     data: outgoings,
@@ -50,6 +54,7 @@ const OutgoingsList = () => {
       { field: "attachment", header: t("attachment") },
       { field: "createdAt", header: t("createdAt") },
       { field: "updatedAt", header: t("updatedAt") },
+      { field: "sticker", header: t("sticker") },
       { field: "edit", header: t("edit") },
     ];
 
@@ -63,12 +68,23 @@ const OutgoingsList = () => {
           target="_blank"
           rel="noopener noreferrer"
           className="text-blue-600 dark:text-blue-400 hover:underline"
-          title="Open Attachment"
         >
           {t("view_attachment")}
         </a>
       ) : (
         "—"
+      ),
+      sticker: (
+        <a
+          href={`/sticker?identifier=${encodeURIComponent(
+            item.identifier
+          )}&date=${encodeURIComponent(item.date)}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-blue-600 dark:text-blue-400 hover:underline"
+        >
+          {t("print_sticker")}
+        </a>
       ),
       edit: (
         <Link

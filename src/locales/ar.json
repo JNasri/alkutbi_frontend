@@ -28,7 +28,7 @@
   "users_list": "قائمة المستخدمين",
   "incomings": "الواردات",
   "outgoings": "الصادرات",
-  "special_papers": "الوقائع الخاصة",
+  "special_papers": "الإتصالات الإدارية",
   "roles": "الأدوار",
   "email": "الإيميل",
   "en_name": "الاسم بالإنجليزية",
@@ -96,5 +96,7 @@
   "placeholder": "نص توضيحي",
   "total_outgoings": "إجمالي الصادرات",
   "last_outgoing_date": "تاريخ آخر صادر",
-  "last_added_outgoing": "معرف آخر صادر"
+  "last_added_outgoing": "معرف آخر صادر",
+  "print_sticker": "طباعة ملصق",
+  "sticker": "ملصق"
 }

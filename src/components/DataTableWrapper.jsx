@@ -5,6 +5,7 @@ import { Column } from "primereact/column";
 import { InputText } from "primereact/inputtext";
 import { Button } from "primereact/button";
 import LoadingSpinner from "./LoadingSpinner"; // Assuming you have a LoadingSpinner component
+import i18n from "../../i18n";
 
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
@@ -68,7 +69,12 @@ const DataTableWrapper = ({ data, columns, title }) => {
 
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 w-full sm:w-auto">
             <span className="relative w-full sm:w-72">
-              <i className="pi pi-search absolute top-1/2 left-3 transform -translate-y-1/2 text-gray-400" />
+              <i
+                className={`pi pi-search absolute top-1/2 transform -translate-y-1/2 text-gray-400 ${
+                  i18n.language === "ar" ? "left-3" : "right-3"
+                }`}
+              />
+
               <InputText
                 value={globalFilter}
                 onChange={(e) => setGlobalFilter(e.target.value)}
