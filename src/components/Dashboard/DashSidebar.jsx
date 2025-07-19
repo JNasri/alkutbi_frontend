@@ -29,7 +29,7 @@ const DashSidebar = () => {
     <div
       className={`flex ${
         isArabic ? "border-l" : "border-r"
-      }  border-b border-gray-200 bg-gray-100dark:bg-gray-800 dark:border-gray-700 shadow-md`}
+      }   border-gray-200 bg-gray-100dark:bg-gray-800 dark:border-gray-700 shadow-md`}
     >
       <div
         className={`h-screen shadow transition-all duration-300 ${
@@ -54,7 +54,7 @@ const DashSidebar = () => {
             className="flex items-center gap-4 p-4 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 transition"
           >
             <Home size={20} />
-            {isOpen && <span className="text-sm">{t("dashboard")}</span>}
+            {isOpen && <span className="text-sm">{t("home")}</span>}
           </Link>
 
           {/* Users */}
@@ -109,12 +109,6 @@ const DashSidebar = () => {
                 </Link>
               </div>
             )}
-          </div>
-
-          {/* Settings */}
-          <div className="flex items-center gap-4 p-4 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 transition">
-            <Settings size={20} />
-            {isOpen && <span className="text-sm">{t("settings")}</span>}
           </div>
         </nav>
       </div>

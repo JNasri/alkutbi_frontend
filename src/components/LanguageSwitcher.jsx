@@ -4,6 +4,7 @@ import { FaGlobe } from "react-icons/fa"; // Import the globe icon
 
 const LanguageSwitcher = () => {
   const { i18n } = useTranslation();
+  const { t } = useTranslation();
 
   // Effect to change the document direction and font-family whenever the language changes
   useEffect(() => {
@@ -24,13 +25,20 @@ const LanguageSwitcher = () => {
   };
 
   return (
-    <button
-      className="relative flex items-center justify-center text-gray-500 transition-colors bg-gray-100 border border-gray-500  rounded-full hover:text-dark-900 h-11 w-11 hover:bg-gray-100 hover:text-gray-700 dark:border-white dark:bg-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white cursor-pointer"
-      onClick={toggleLanguage}
-      aria-label="Toggle language" // Added for accessibility
-    >
-      <FaGlobe className="h-5 w-5" /> {/* Use the FaGlobe icon */}
-    </button>
+    <div className="relative group">
+      <button
+        className="flex items-center justify-center text-gray-500 transition-colors bg-gray-100 border border-gray-500 rounded-full hover:text-dark-900 h-11 w-11 hover:bg-gray-100 hover:text-gray-700 dark:border-white dark:bg-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white cursor-pointer"
+        onClick={toggleLanguage}
+        aria-label="Toggle language"
+      >
+        <FaGlobe className="h-5 w-5" />
+      </button>
+
+      {/* Tooltip positioned below the button */}
+      <div className="absolute left-1/2 top-full mt-2 -translate-x-1/2 whitespace-nowrap px-3 py-1.5 text-sm text-gray-800 bg-gray-300 dark:bg-gray-200 dark:text-gray-800 rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none z-10 shadow-md font-medium">
+        {t("toggle_language")}
+      </div>
+    </div>
   );
 };
 

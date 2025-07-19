@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 
 const ThemeToggleButton = () => {
+  const { t } = useTranslation();
   // 1. State to manage the current theme: 'light' or 'dark'
   // Initialize from localStorage or default to 'light'
   const [theme, setTheme] = useState(() => {
@@ -36,111 +38,117 @@ const ThemeToggleButton = () => {
   };
 
   return (
-    <button
-      className="relative flex items-center justify-center text-gray-500 transition-colors bg-gray-100 border border-gray-500 rounded-full hover:text-dark-900 h-11 w-11 hover:bg-gray-100 hover:text-gray-700 dark:border-white dark:bg-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white cursor-pointer"
-      onClick={toggleTheme}
-      aria-label={`Switch to ${theme === "light" ? "dark" : "light"} mode`} // Improved accessibility
-    >
-      {/* Sun icon for light mode (visible when theme is light) */}
-      {theme === "light" ? (
-        <svg
-          className="h-5 w-5"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.5"
-          viewBox="0 0 24 24"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <circle
-            cx="12"
-            cy="12"
-            r="4"
+    <div className="relative group">
+      <button
+        className="relative flex items-center justify-center text-gray-500 transition-colors bg-gray-100 border border-gray-500 rounded-full hover:text-dark-900 h-11 w-11 hover:bg-gray-100 hover:text-gray-700 dark:border-white dark:bg-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white cursor-pointer"
+        onClick={toggleTheme}
+        aria-label={`Switch to ${theme === "light" ? "dark" : "light"} mode`} // Improved accessibility
+      >
+        {/* Sun icon for light mode (visible when theme is light) */}
+        {theme === "light" ? (
+          <svg
+            className="h-5 w-5"
+            fill="none"
             stroke="currentColor"
             strokeWidth="1.5"
-          />
-          <line
-            x1="12"
-            y1="2"
-            x2="12"
-            y2="6"
+            viewBox="0 0 24 24"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <circle
+              cx="12"
+              cy="12"
+              r="4"
+              stroke="currentColor"
+              strokeWidth="1.5"
+            />
+            <line
+              x1="12"
+              y1="2"
+              x2="12"
+              y2="6"
+              stroke="currentColor"
+              strokeWidth="1.5"
+            />
+            <line
+              x1="12"
+              y1="18"
+              x2="12"
+              y2="22"
+              stroke="currentColor"
+              strokeWidth="1.5"
+            />
+            <line
+              x1="2"
+              y1="12"
+              x2="6"
+              y2="12"
+              stroke="currentColor"
+              strokeWidth="1.5"
+            />
+            <line
+              x1="18"
+              y1="12"
+              x2="22"
+              y2="12"
+              stroke="currentColor"
+              strokeWidth="1.5"
+            />
+            <line
+              x1="4.22"
+              y1="4.22"
+              x2="7.05"
+              y2="7.05"
+              stroke="currentColor"
+              strokeWidth="1.5"
+            />
+            <line
+              x1="16.95"
+              y1="16.95"
+              x2="19.78"
+              y2="19.78"
+              stroke="currentColor"
+              strokeWidth="1.5"
+            />
+            <line
+              x1="4.22"
+              y1="19.78"
+              x2="7.05"
+              y2="16.95"
+              stroke="currentColor"
+              strokeWidth="1.5"
+            />
+            <line
+              x1="16.95"
+              y1="7.05"
+              x2="19.78"
+              y2="4.22"
+              stroke="currentColor"
+              strokeWidth="1.5"
+            />
+          </svg>
+        ) : (
+          // Moon icon for dark mode (visible when theme is dark)
+          <svg
+            className="h-5 w-5"
+            fill="none"
             stroke="currentColor"
-            strokeWidth="1.5"
-          />
-          <line
-            x1="12"
-            y1="18"
-            x2="12"
-            y2="22"
-            stroke="currentColor"
-            strokeWidth="1.5"
-          />
-          <line
-            x1="2"
-            y1="12"
-            x2="6"
-            y2="12"
-            stroke="currentColor"
-            strokeWidth="1.5"
-          />
-          <line
-            x1="18"
-            y1="12"
-            x2="22"
-            y2="12"
-            stroke="currentColor"
-            strokeWidth="1.5"
-          />
-          <line
-            x1="4.22"
-            y1="4.22"
-            x2="7.05"
-            y2="7.05"
-            stroke="currentColor"
-            strokeWidth="1.5"
-          />
-          <line
-            x1="16.95"
-            y1="16.95"
-            x2="19.78"
-            y2="19.78"
-            stroke="currentColor"
-            strokeWidth="1.5"
-          />
-          <line
-            x1="4.22"
-            y1="19.78"
-            x2="7.05"
-            y2="16.95"
-            stroke="currentColor"
-            strokeWidth="1.5"
-          />
-          <line
-            x1="16.95"
-            y1="7.05"
-            x2="19.78"
-            y2="4.22"
-            stroke="currentColor"
-            strokeWidth="1.5"
-          />
-        </svg>
-      ) : (
-        // Moon icon for dark mode (visible when theme is dark)
-        <svg
-          className="h-5 w-5"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth="2"
-            d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"
-          ></path>
-        </svg>
-      )}
-    </button>
+            viewBox="0 0 24 24"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"
+            ></path>
+          </svg>
+        )}
+      </button>
+      {/* Tooltip positioned below the button */}
+      <div className="absolute left-1/2 top-full mt-2 -translate-x-1/2 whitespace-nowrap px-3 py-1.5 text-sm text-gray-800 bg-gray-300 dark:bg-gray-200 dark:text-gray-800 rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none z-10 shadow-md font-medium">
+        {t("toggle_theme")}
+      </div>
+    </div>
   );
 };
 
