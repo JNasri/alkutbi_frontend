@@ -11,11 +11,19 @@ import {
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
+import useAuth from "../../hooks/useAuth";
 
 const DashSidebar = () => {
   const [isOpen, setIsOpen] = useState(true);
   const [isSpecialOpen, setIsSpecialOpen] = useState(false);
   const { t, i18n } = useTranslation();
+  const {
+    isAdmin,
+    isOperationManager,
+    isOperationEmployee,
+    isSpecialPapersManager,
+    isSpecialPapersEmployee,
+  } = useAuth();
 
   const isArabic = i18n.language === "ar";
 
@@ -58,14 +66,15 @@ const DashSidebar = () => {
           </Link>
 
           {/* Users */}
-          <Link
-            to="/dashboard/users"
-            className="flex items-center gap-4 p-4 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 transition"
-          >
-            <Users size={20} />
-            {isOpen && <span className="text-sm">{t("users")}</span>}
-          </Link>
-
+          {isAdmin && (
+            <Link
+              to="/dashboard/users"
+              className="flex items-center gap-4 p-4 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 transition"
+            >
+              <Users size={20} />
+              {isOpen && <span className="text-sm">{t("users")}</span>}
+            </Link>
+          )}
           {/* Special Papers */}
           <div>
             <div

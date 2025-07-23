@@ -23,6 +23,10 @@ import AddOutgoingForm from "./features/Outgoings/AddOutgoingForm";
 import NotFound from "./pages/NotFound";
 // sticker
 import Sticker from "./components/Sticker";
+// require auth
+import RequireAuth from "./features/auth/RequireAuth";
+import { ROLES } from "./config/roles";
+
 //
 // // PrimeReact core styles
 // import "primereact/resources/themes/lara-light-indigo/theme.css"; // or sakai theme if you get it
@@ -32,47 +36,85 @@ import Sticker from "./components/Sticker";
 // // PrimeFlex utility classes
 // import "primeflex/primeflex.css";
 
+// array of special papers [admin,special_papers_manager,special_papers_employee]
+const addSpecialPapersRoles = [
+  ROLES.Admin,
+  ROLES.Special_Papers_Manager,
+  ROLES.Special_Papers_Employee,
+];
+const editSpecialPapersRoles = [ROLES.Admin, ROLES.Special_Papers_Manager];
+
 function App() {
   return (
     <div>
       <Toaster position="top-center" reverseOrder={false} />
       <Routes>
-        {/* PUBLIC */}
-        {/* welcome page + login */}
         <Route path="/" element={<Layout />}>
+          {/* PUBLIC */}
+          {/* welcome page + login */}
           <Route index element={<Welcome />} />
           <Route path="login" element={<Login />} />
 
           {/* PRIVATE */}
           <Route element={<PresistLogin />}>
-            {/* /dashboard */}
-            <Route element={<PreFetch />}>
-              <Route path="/sticker" element={<Sticker />} />
-              <Route path="dashboard" element={<DashLayout />}>
-                {/* / */}
-                <Route index element={<Home />} />
-                {/* /users */}
-                <Route path="users">
-                  <Route index element={<UsersList />} />
-                  <Route path="edit/:id" element={<EditUserForm />} />
-                  <Route path="add" element={<AddUserForm />} />
-                </Route>
-                {/* /incomings */}
-                <Route path="incomings">
-                  <Route index element={<IncomingsList />} />
-                  <Route path="add" element={<AddIncomingForm />} />
-                  <Route path="edit/:id" element={<EditIncomingForm />} />
-                </Route>
-                {/* /outgoings */}
-                <Route path="outgoings">
-                  <Route index element={<OutgoingsList />} />
-                  <Route path="add" element={<AddOutgoingForm />} />
-                  <Route path="edit/:id" element={<EditOutgoingForm />} />
+            <Route
+              element={<RequireAuth allowedRoles={[...Object.values(ROLES)]} />}
+            >
+              {/* /dashboard */}
+              <Route element={<PreFetch />}>
+                <Route path="/sticker" element={<Sticker />} />
+                <Route path="dashboard" element={<DashLayout />}>
+                  {/* / */}
+                  <Route index element={<Home />} />
+                  {/* /users */}
+                  <Route element={<RequireAuth allowedRoles={[ROLES.Admin]} />}>
+                    <Route path="users">
+                      <Route index element={<UsersList />} />
+                      <Route path="edit/:id" element={<EditUserForm />} />
+                      <Route path="add" element={<AddUserForm />} />
+                    </Route>
+                  </Route>
+                  {/* /incomings */}
+                  <Route path="incomings">
+                    <Route index element={<IncomingsList />} />
+                    <Route
+                      element={
+                        <RequireAuth allowedRoles={addSpecialPapersRoles} />
+                      }
+                    >
+                      <Route path="add" element={<AddIncomingForm />} />
+                    </Route>
+                    <Route
+                      element={
+                        <RequireAuth allowedRoles={editSpecialPapersRoles} />
+                      }
+                    >
+                      <Route path="edit/:id" element={<EditIncomingForm />} />
+                    </Route>
+                  </Route>
+                  {/* /outgoings */}
+                  <Route path="outgoings">
+                    <Route index element={<OutgoingsList />} />
+                    <Route
+                      element={
+                        <RequireAuth allowedRoles={addSpecialPapersRoles} />
+                      }
+                    >
+                      <Route path="add" element={<AddOutgoingForm />} />
+                    </Route>
+                    <Route
+                      element={
+                        <RequireAuth allowedRoles={editSpecialPapersRoles} />
+                      }
+                    >
+                      <Route path="edit/:id" element={<EditOutgoingForm />} />
+                    </Route>
+                  </Route>
                 </Route>
               </Route>
             </Route>
+            <Route path="*" element={<NotFound />} />
           </Route>
-          <Route path="*" element={<NotFound />} />
         </Route>
       </Routes>
     </div>

@@ -62,11 +62,11 @@ const AddIncomingForm = () => {
   }, [isSuccess, navigate, t]);
 
   const onSaveIncomingClicked = async (e) => {
+    e.preventDefault();
     if (!attachment) {
       toast.error(t("attachment_required"));
       return;
     }
-    e.preventDefault();
     const formData = new FormData();
     formData.append("to", toField);
     formData.append("from", fromField);

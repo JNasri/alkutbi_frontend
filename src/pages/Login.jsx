@@ -66,7 +66,7 @@ const Login = () => {
         <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-br from-blue-900/20 to-purple-900/20 z-10"></div>
           <img
-            src="https://images.pexels.com/photos/416405/pexels-photo-416405.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2"
+            src="alkutbi_bg.jpg"
             alt="Modern business office"
             className="w-full h-full object-cover"
           />
@@ -75,14 +75,14 @@ const Login = () => {
         {/* Content Section */}
         <div className="w-full lg:w-1/2 flex items-center justify-center relative">
           {/* Background Pattern */}
-          <div className="absolute inset-0 bg-gradient-to-r from-green-100 to-yellow-200"></div>
+          <div className="absolute inset-0 bg-gray-200 dark:bg-gray-800"></div>
 
+          <LanguageSwitcher />
           <div className="relative z-10 max-w-lg w-full mx-8">
             {/* Login Card */}
-            <div className="bg-gray-100/90 backdrop-blur-sm rounded-2xl shadow-2xl p-8 border border-white/20">
+            <div className="bg-gray-200 dark:bg-gray-700 backdrop-blur-sm rounded-2xl shadow-2xl p-8">
               {/* Logo */}
               <div className="text-center my-8">
-                <LanguageSwitcher />
                 <div className="mb-6 flex justify-center">
                   <div className="p-3 rounded-xl shadow-lg">
                     <img
@@ -92,10 +92,12 @@ const Login = () => {
                     />
                   </div>
                 </div>
-                <h2 className="text-3xl font-bold text-gray-900 mb-2">
+                <h2 className="text-3xl font-bold text-gray-900 mb-2 dark:text-white">
                   {t("login_welcome")}
                 </h2>
-                <p className="text-gray-600">{t("login_info")}</p>
+                <p className="text-gray-600 dark:text-gray-200">
+                  {t("login_info")}
+                </p>
                 <p
                   ref={errRef}
                   className=" text-red-500 font-extrabold"
@@ -111,7 +113,7 @@ const Login = () => {
                 <div>
                   <label
                     htmlFor="username"
-                    className="block text-sm font-medium pb-1"
+                    className="block text-sm font-medium pb-1 dark:text-white"
                   >
                     {t("username")}
                   </label>
@@ -124,14 +126,14 @@ const Login = () => {
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     autoComplete="off"
-                    className="mt-1 w-full px-4 py-2 bg-gray-100 border border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500 text-black"
+                    className="mt-1 w-full px-4 py-2 bg-gray-100 dark:bg-gray-700 dark:text-white border rounded-md focus:outline-none focus:ring-2 text-black"
                   />
                 </div>
                 {/* password */}
                 <div>
                   <label
                     htmlFor="password"
-                    className="block text-sm font-medium pb-1"
+                    className="block text-sm font-medium pb-1 dark:text-white"
                   >
                     {t("password")}
                   </label>
@@ -143,7 +145,7 @@ const Login = () => {
                       onChange={(e) => setPassword(e.target.value)}
                       value={password}
                       placeholder="••••••••"
-                      className="w-full px-4 py-2 pr-10 bg-gray-100 border border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500 text-black"
+                      className="w-full px-4 py-2 pr-10 dark:bg-gray-700 dark:text-white bg-gray-100 border rounded-md focus:outline-none focus:ring-2 text-black"
                     />
                     <div
                       onClick={togglePassword}
@@ -156,16 +158,12 @@ const Login = () => {
 
                 <button
                   type="submit"
-                  className="py-2 px-6 rounded-full text-2xl font-semibold transition duration-300 ease-in-out transform hover:scale-105 hover:shadow-lg inline-block border w-full cursor-pointer"
+                  className="py-2 px-6 rounded-full text-2xl font-semibold transition duration-300 ease-in-out transform hover:scale-105 hover:shadow-lg inline-block border w-full cursor-pointer dark:text-white"
                 >
                   {t("login")}
                 </button>
               </form>
             </div>
-
-            {/* Decorative Elements */}
-            <div className="absolute -top-6 -right-6 w-24 h-24 bg-gradient-to-br from-yellow-200 to-orange-300 rounded-full opacity-20 blur-xl"></div>
-            <div className="absolute -bottom-8 -left-8 w-32 h-32 bg-gradient-to-br from-green-200 to-yellow-300 rounded-full opacity-20 blur-xl"></div>
           </div>
         </div>
       </div>

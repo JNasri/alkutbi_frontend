@@ -20,7 +20,7 @@ const DashHeader = () => {
   };
 
   // Dynamically choose name
-  const userName = currentLang === "ar" ? user?.ar_name : user?.en_name;
+  const userName = currentLang === "ar" ? user.ar_name : user.en_name;
 
   return (
     <header className="flex items-center justify-between h-20 border-b border-gray-200 bg-gray-100 dark:bg-gray-800 dark:border-gray-700 shadow-sm">
