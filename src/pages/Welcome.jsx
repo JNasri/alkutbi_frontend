@@ -25,6 +25,13 @@ const Welcome = () => {
           {/* Main Content */}
           <LanguageSwitcher />
           <div className="relative z-10 max-w-md w-full mx-8 text-center">
+            {/* Main Heading */}
+            <h1 className="text-4xl md:text-4xl lg:text-5xl font-bold text-gray-900 dark:text-white mb-6 leading-tight">
+              {t("welcome")} <br />
+              <span className="bg-gradient-to-r from-green-800 to-yellow-500 bg-clip-text text-transparent">
+                {t("alkutbi")}
+              </span>
+            </h1>
             {/* Logo/Icon */}
             <div className="mb-8 flex justify-center">
               <div className="p-4 rounded-2xl shadow-2xl">
@@ -35,14 +42,6 @@ const Welcome = () => {
                 />
               </div>
             </div>
-
-            {/* Main Heading */}
-            <h1 className="text-4xl md:text-4xl lg:text-5xl font-bold text-gray-900 dark:text-white mb-6 leading-tight">
-              {t("welcome")} <br />
-              <span className="bg-gradient-to-r from-green-800 to-yellow-500 bg-clip-text text-transparent">
-                {t("alkutbi")}
-              </span>
-            </h1>
 
             {/* Additional Info */}
             <p className="text-md text-black font-bold my-5 dark:text-white">

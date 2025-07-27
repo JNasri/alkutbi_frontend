@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import {
   useUpdateUserMutation,
   useDeleteUserMutation,
-  selectUserById,
+  useGetUserQuery,
 } from "./usersApiSlice";
 import { useNavigate, useParams } from "react-router-dom";
 import { ROLES } from "../../config/roles";
@@ -11,29 +11,39 @@ import { useSelector } from "react-redux";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import i18n from "../../../i18n.js";
 import toast from "react-hot-toast";
+import LoadingSpinner from "../../components/LoadingSpinner";
 
 const USERNAME_REGEX = /^[A-z][A-z0-9-_]{3,20}$/;
 const PASSWORD_REGEX = /^[A-z0-9!@#$%^&*]{4,16}$/;
 
 const EditUserForm = () => {
+  const { id } = useParams();
   // Inside EditUserForm component
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const handleDeleteClick = () => setShowDeleteModal(true);
   const handleCancelDelete = () => setShowDeleteModal(false);
   const handleConfirmDelete = async () => {
-    await deleteUser({ id: user.id });
+    await deleteUser({ id });
     setShowDeleteModal(false);
   };
 
-  const { id } = useParams();
-  const user = useSelector((state) => selectUserById(state, id));
+  const {
+    data: user,
+    isLoading: isFetching,
+    isError: fetchError,
+  } = useGetUserQuery(id);
 
-  const [updateUser, { isLoading, isSuccess, isError, error }] =
+  const [updateUser, { isLoading: isUpdating, isSuccess, isError, error }] =
     useUpdateUserMutation();
   const [
     deleteUser,
-    { isSuccess: isDelSuccess, isError: isDelError, error: delerror },
+    {
+      isSuccess: isDelSuccess,
+      isError: isDelError,
+      error: delerror,
+      isLoading: isDeleting,
+    },
   ] = useDeleteUserMutation();
 
   const navigate = useNavigate();
@@ -102,12 +112,11 @@ const EditUserForm = () => {
     );
     setRoles(values);
   };
-  const onActiveChanged = () => setActive((prev) => !prev);
 
   const onSaveUserClicked = async (e) => {
     e.preventDefault();
     const updatedUser = {
-      id: user.id,
+      id,
       en_name,
       ar_name,
       username,
@@ -119,10 +128,6 @@ const EditUserForm = () => {
     await updateUser(updatedUser);
   };
 
-  const onDeleteUserClicked = async () => {
-    await deleteUser({ id: user.id });
-  };
-
   const options = Object.values(ROLES).map((role) => (
     <option key={role} value={role}>
       {role}
@@ -130,10 +135,8 @@ const EditUserForm = () => {
   ));
 
   const canSave = password
-    ? [en_name, ar_name, username, validUsername, validPassword].every(
-        Boolean
-      ) && !isLoading
-    : [en_name, ar_name, username, validUsername].every(Boolean) && !isLoading;
+    ? [en_name, ar_name, username, validUsername, validPassword].every(Boolean)
+    : [en_name, ar_name, username, validUsername].every(Boolean);
 
   const errClass = isError ? "errmsg" : "offscreen";
   const validUsernameClass = !validUsername ? "border-red-500" : "";
@@ -142,12 +145,13 @@ const EditUserForm = () => {
 
   const errContent = (error?.data?.message || delerror?.data?.message) ?? "";
 
-  if (!user) {
-    return <p className="p-4">Loading user data...</p>;
-  }
+  if (!user) return <LoadingSpinner />;
+  if (isFetching) return <LoadingSpinner />;
+  if (fetchError) return <p className="p-4">{t("error_loading_user")}</p>;
 
   return (
     <>
+      {(isUpdating || isDeleting) && <LoadingSpinner />}
       <div className="mb-2 p-1">
         <p className={errClass}>{errContent}</p>
         <div className="flex items-center gap-4 mb-4 p-1">

@@ -101,5 +101,6 @@
   "home_description": "Al Kutbi Group has been known for years in actively participating in serving visitors to Makkah and Al-Madinah. Al Kutbi name was known in the past since Mr. Muhammad Makki Al Kutbi started working to serve a group of pilgrims, until the company was founded by Eng. Abdul Razzaq Badie Muhammad Makki Al Kutbi then the business increased to reserve a distinguished position among Umrah companies.",
   "home_description_2": "At Al Kutbi Group, we seek to be among the pioneers of positive change in the Kingdom of Saudi Arabia and its continuous development in the field of serving pilgrims and Umrah performers. We look forward to having an effective and influential role in raising the level of services provided to the visitors of the Holy Mosque.",
   "home_description_3": "We aim to improve the service of the largest possible number of pilgrims coming to perform Umrah rituals for and to be the most reliable company in facing the challenges of pilgrims by providing them comfort and ensuring that they enter and exit the country easily and smoothly, in addition to providing the best ground services during their presence in the Kingdom.",
-  "no_access": "You do not have permission to access this page"
+  "no_access": "You do not have permission to access this page",
+  "error_loading_user": "Error loading user data"
 }
