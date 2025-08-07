@@ -19,6 +19,8 @@ import EditOutgoingForm from "./features/Outgoings/EditOutgoingForm";
 import AddUserForm from "./features/users/AddUserForm";
 import AddIncomingForm from "./features/Incomings/AddIncomingForm";
 import AddOutgoingForm from "./features/Outgoings/AddOutgoingForm";
+// logs
+import LogsList from "./features/logger/LogsList";
 // not found
 import NotFound from "./pages/NotFound";
 // sticker
@@ -108,6 +110,12 @@ function App() {
                       }
                     >
                       <Route path="edit/:id" element={<EditOutgoingForm />} />
+                    </Route>
+                  </Route>
+                  {/* /logs */}
+                  <Route element={<RequireAuth allowedRoles={[ROLES.Admin]} />}>
+                    <Route path="logs">
+                      <Route index element={<LogsList />} />
                     </Route>
                   </Route>
                 </Route>

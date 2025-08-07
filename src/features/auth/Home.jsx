@@ -9,7 +9,7 @@ const Home = () => {
     <section>
       <div className="text-4xl mb-2 p-1">{t("home")}</div>
       <div className="text-2xl mb-2 p-1">
-        {t("username")} : {username}
+        {t("welcome_user")} {username}
         <br />
         {t("roles")} : {status}
       </div>

@@ -3,7 +3,7 @@ import {
   Home,
   Users,
   FileText,
-  Settings,
+  Scroll,
   ChevronLeft,
   ChevronRight,
   ChevronDown,
@@ -119,6 +119,16 @@ const DashSidebar = () => {
               </div>
             )}
           </div>
+          {/* Logs */}
+          {isAdmin && (
+            <Link
+              to="/dashboard/logs"
+              className="flex items-center gap-4 p-4 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 transition"
+            >
+              <Scroll size={20} />
+              {isOpen && <span className="text-sm">{t("logs")}</span>}
+            </Link>
+          )}
         </nav>
       </div>
     </div>
