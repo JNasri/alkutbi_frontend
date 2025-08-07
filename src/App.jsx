@@ -9,7 +9,7 @@ import PreFetch from "./features/auth/PreFetch";
 import { Toaster } from "react-hot-toast";
 // lists
 import UsersList from "./features/users/UsersList";
-import OutgoingsList from "./features/Outgoings/OutgoingsList";
+import OutgoingsList from "./features/outgoings/OutgoingsList";
 import IncomingsList from "./features/Incomings/IncomingsList";
 // edits
 import EditUserForm from "./features/users/EditUserForm";
