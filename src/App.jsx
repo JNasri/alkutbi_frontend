@@ -10,15 +10,15 @@ import { Toaster } from "react-hot-toast";
 // lists
 import UsersList from "./features/users/UsersList";
 import OutgoingsList from "./features/outgoings/OutgoingsList";
-import IncomingsList from "./features/Incomings/IncomingsList";
+import IncomingsList from "./features/incomings/IncomingsList";
 // edits
 import EditUserForm from "./features/users/EditUserForm";
-import EditIncomingForm from "./features/Incomings/EditIncomingForm";
-import EditOutgoingForm from "./features/Outgoings/EditOutgoingForm";
+import EditIncomingForm from "./features/incomings/EditIncomingForm";
+import EditOutgoingForm from "./features/outgoings/EditOutgoingForm";
 // adds
 import AddUserForm from "./features/users/AddUserForm";
-import AddIncomingForm from "./features/Incomings/AddIncomingForm";
-import AddOutgoingForm from "./features/Outgoings/AddOutgoingForm";
+import AddIncomingForm from "./features/incomings/AddIncomingForm";
+import AddOutgoingForm from "./features/outgoings/AddOutgoingForm";
 // logs
 import LogsList from "./features/logger/LogsList";
 // not found
