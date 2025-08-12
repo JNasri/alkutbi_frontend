@@ -1,8 +1,8 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import { setCredentials } from "../../features/auth/authSlice";
 const baseQuery = fetchBaseQuery({
-  baseUrl: "https://fayvaskm3j.ap-south-1.awsapprunner.com",
   // baseUrl: "http://localhost:3000",
+  baseUrl: "https://fayvaskm3j.ap-south-1.awsapprunner.com",
   credentials: "include",
   prepareHeaders: (headers, { getState }) => {
     const token = getState().auth.token;
