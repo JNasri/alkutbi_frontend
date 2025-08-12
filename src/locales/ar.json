@@ -55,8 +55,8 @@
   "add_user": "إضافة مستخدم",
   "add_incoming": "إضافة وارد",
   "add_outgoing": "إضافة صادر",
-  "edit_incoming": "تعديل وارد",
-  "edit_outgoing": "تعديل صادر",
+  "edit_incoming": "تعديل الوارد رقم",
+  "edit_outgoing": "تعديل الصادر رقم",
   "remove_incoming": "إزالة وارد",
   "remove_outgoing": "إزالة صادر",
   "English Name": "الاسم بالإنجليزية",
@@ -107,5 +107,9 @@
   "error_loading_user": "حدث خطأ أثناء التحميل",
   "logs": "السجلات",
   "logs_list": "قائمة السجلات",
-  "welcome_user": "مرحبًا بك،"
+  "welcome_user": "مرحبًا بك،",
+  "paperType": "النوع",
+  "internal": "معاملة داخلية",
+  "external": "معاملة خارجية",
+  "borderNumber": "رقم الحدود"
 }

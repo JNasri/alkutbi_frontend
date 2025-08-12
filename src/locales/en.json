@@ -105,5 +105,9 @@
   "error_loading_user": "Error loading user data",
   "logs": "Logs",
   "logs_list": "Logs List",
-  "welcome_user": "Welcome Home,"
+  "welcome_user": "Welcome Home,",
+  "paperType": "Type",
+  "internal": "Internal",
+  "external": "External",
+  "borderNumber": "Border Number"
 }

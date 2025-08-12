@@ -18,7 +18,7 @@ const Sticker = () => {
         fontWeight: "bold",
         direction: "rtl",
         backgroundColor: "#fff",
-        border: "2px solid #000",
+        border: "1px solid #000",
         margin: "1cm auto",
         display: "flex",
         alignItems: "center",

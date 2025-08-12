@@ -106,6 +106,8 @@ const DataTableWrapper = ({ data, columns, title }) => {
             value={data}
             paginator
             rows={10}
+            tableStyle={{ tableLayout: "fixed" }} // 👈 Ensure table layout is fixed
+            scrollable
             currentPageReportTemplate="Showing {first} to {last} of {totalRecords}"
             stripedRows
             showGridlines
@@ -137,9 +139,13 @@ const DataTableWrapper = ({ data, columns, title }) => {
                 field={col.field}
                 header={() => <span>{col.header}</span>}
                 sortable={col.sortable ?? true}
-                style={{ padding: "0.7rem" }}
-                headerClassName="bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-white text-sm font-bold"
-                bodyClassName="bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-100 rtl:text-right ltr:text-left"
+                style={{
+                   width: i === columns.length - 1 ? "80px" : "150px", // Last column width is smaller
+                   padding: "0.7rem"
+                 }}
+                headerClassName="bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-white text-sm font-bold mb-5"
+                bodyClassName="w-1 text-sm dark:bg-gray-900 text-gray-800 dark:text-gray-100 rtl:text-right ltr:text-left w-50"
+                frozen={i === columns.length - 1}
               />
             ))}
           </DataTable>

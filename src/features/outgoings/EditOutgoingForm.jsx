@@ -36,11 +36,14 @@ const EditOutgoingForm = () => {
     },
   ] = useDeleteOutgoingMutation();
 
+  const [identifier, setIdentifier] = useState("");
   const [toField, setToField] = useState("");
   const [fromField, setFromField] = useState("");
   const [date, setDate] = useState("");
   const [purpose, setPurpose] = useState("");
   const [passportNumber, setPassportNumber] = useState("");
+  const [outgoingType, setOutgoingType] = useState("external");
+  const [borderNumber, setBorderNumber] = useState("");
   const [attachment, setAttachment] = useState(null);
   const [existingAttachmentUrl, setExistingAttachmentUrl] = useState("");
 
@@ -58,11 +61,14 @@ const EditOutgoingForm = () => {
 
   useEffect(() => {
     if (outgoing) {
+      setIdentifier(outgoing.identifier)
       setToField(outgoing.to || "");
       setFromField(outgoing.from || "");
       setDate(outgoing.date ? outgoing.date.slice(0, 10) : "");
       setPurpose(outgoing.purpose || "");
       setPassportNumber(outgoing.passportNumber || "");
+      setOutgoingType(outgoing.outgoingType || "external");
+      setBorderNumber(outgoing.borderNumber || "");
       setExistingAttachmentUrl(outgoing.attachment || "");
       setAttachment(null);
     }
@@ -124,11 +130,14 @@ const EditOutgoingForm = () => {
       return toast.error(t("file_too_large", { size: "10MB" }));
     }
     const formData = new FormData();
+    formData.append("identifier", identifier);
     formData.append("id", id);
     formData.append("to", toField);
     formData.append("from", fromField);
     formData.append("date", date);
     formData.append("purpose", purpose);
+    formData.append("outgoingType", outgoingType);
+    formData.append("borderNumber", borderNumber);
     formData.append("passportNumber", passportNumber);
     if (attachment) formData.append("attachment", attachment);
     if (!attachment && !existingAttachmentUrl) {
@@ -159,15 +168,39 @@ const EditOutgoingForm = () => {
             <ArrowLeft size={20} />
           )}
         </button>
-        <h1 className="text-4xl text-gray-800 dark:text-white">
+        {/* <h1 className="text-4xl text-gray-800 dark:text-white">
           {t("edit_outgoing")} : {outgoing.identifier}
-        </h1>
+        </h1> */}
+        <label htmlFor="identifier" className="text-4xl text-gray-800 dark:text-white">
+          {t("edit_outgoing")}
+         </label>
+         <input
+           type="text"
+          id="identifier"
+          value={identifier}
+          onChange={(e) => setIdentifier(e.target.value)}
+          className="text-xl sm:text-3xl font-bold bg-transparent border-b border-gray-400 dark:border-gray-500 focus:outline-none focus:border-black dark:focus:border-white text-gray-900 dark:text-white"
+        />
       </div>
 
       <div className="bg-white dark:bg-gray-700 border-gray-500 rounded-3xl shadow p-6 space-y-6">
         <form onSubmit={onSaveClicked}>
           <div className="grid grid-cols-6 gap-6">
-            {["from", "to", "date", "purpose", "passportNumber"].map(
+            {/* Type */}
+              <div className="col-span-6 sm:col-span-3">
+                <label className="text-sm font-medium text-gray-900 dark:text-white block mb-2" htmlFor="outgoingType">{t("paperType")}</label>
+                <select
+                  id="outgoingType"
+                  className="cursor-pointer shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg block w-full p-2.5 dark:bg-gray-800 dark:text-white"
+                  value={outgoingType}
+                  onChange={(e) => setOutgoingType(e.target.value)}
+                  required
+                >
+                  <option value="internal">{t("internal")}</option>
+                  <option value="external">{t("external")}</option>
+                </select>
+              </div>
+            {["from", "to", "date", "purpose", "passportNumber", "borderNumber"].map(
               (field) => (
                 <div key={field} className="col-span-6 sm:col-span-3">
                   <label className="text-sm font-medium dark:text-white block mb-2">
@@ -186,6 +219,8 @@ const EditOutgoingForm = () => {
                         ? date
                         : field === "purpose"
                         ? purpose
+                        : field === "borderNumber"
+                        ? borderNumber
                         : passportNumber
                     }
                     onChange={(e) => {
@@ -194,6 +229,7 @@ const EditOutgoingForm = () => {
                       else if (field === "to") setToField(v);
                       else if (field === "date") setDate(v);
                       else if (field === "purpose") setPurpose(v);
+                      else if (field === "borderNumber") setBorderNumber(v);
                       else setPassportNumber(v);
                     }}
                     className="shadow-sm bg-gray-50 dark:bg-gray-800 dark:text-white border border-gray-300 text-gray-900 sm:text-sm rounded-lg block w-full p-2.5"

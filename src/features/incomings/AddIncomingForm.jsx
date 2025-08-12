@@ -46,6 +46,8 @@ const AddIncomingForm = () => {
   const [date, setDate] = useState("");
   const [purpose, setPurpose] = useState("");
   const [passportNumber, setPassportNumber] = useState("");
+  const [incomingType, setIncomingType] = useState("external");
+  const [borderNumber, setBorderNumber] = useState("");
   const [attachment, setAttachment] = useState("");
 
   useEffect(() => {
@@ -55,6 +57,8 @@ const AddIncomingForm = () => {
       setDate("");
       setPurpose("");
       setPassportNumber("");
+      setIncomingType("internal");
+      setBorderNumber("");
       setAttachment("");
       toast.success(t("incoming_added_successfully"));
       navigate("/dashboard/incomings");
@@ -73,6 +77,8 @@ const AddIncomingForm = () => {
     formData.append("date", date);
     formData.append("purpose", purpose);
     formData.append("passportNumber", passportNumber);
+    formData.append("incomingType", incomingType);
+    formData.append("borderNumber", borderNumber);
     formData.append("attachment", attachment); // ✅ Must be a File object
 
     try {
@@ -135,6 +141,20 @@ const AddIncomingForm = () => {
         <div className="p-6 space-y-6">
           <form onSubmit={onSaveIncomingClicked}>
             <div className="grid grid-cols-6 gap-6">
+              {/* Type */}
+              <div className="col-span-6 sm:col-span-3">
+                <label className="text-sm font-medium text-gray-900 dark:text-white block mb-2" htmlFor="incomingType">{t("paperType")}</label>
+                <select
+                  id="incomingType"
+                  className="cursor-pointer shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg block w-full p-2.5 dark:bg-gray-800 dark:text-white"
+                  value={incomingType}
+                  onChange={(e) => setIncomingType(e.target.value)}
+                  required
+                >
+                  <option value="internal">{t("internal")}</option>
+                  <option value="external">{t("external")}</option>
+                </select>
+              </div>
               {/* From */}
               <div className="col-span-6 sm:col-span-3">
                 <label className="text-sm font-medium text-gray-900 dark:text-white block mb-2">
@@ -149,7 +169,6 @@ const AddIncomingForm = () => {
                   className="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg block w-full p-2.5 dark:bg-gray-800 dark:text-white"
                 />
               </div>
-
               {/* To */}
               <div className="col-span-6 sm:col-span-3">
                 <label className="text-sm font-medium text-gray-900 dark:text-white block mb-2">
@@ -209,7 +228,20 @@ const AddIncomingForm = () => {
                   className="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg block w-full p-2.5 dark:bg-gray-800 dark:text-white"
                 />
               </div>
-
+              {/* Border Number */}
+              <div className="col-span-6 sm:col-span-3">
+                <label className="text-sm font-medium text-gray-900 dark:text-white block mb-2">
+                  {t("borderNumber")}
+                </label>
+                <input
+                  type="text"
+                  id="borderNumber"
+                  name="borderNumber"
+                  value={borderNumber}
+                  onChange={(e) => setBorderNumber(e.target.value)}
+                  className="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg block w-full p-2.5 dark:bg-gray-800 dark:text-white"
+                />
+              </div>
               {/* Attachment */}
               <div className="col-span-6 sm:col-span-3">
                 <label className="text-sm font-medium text-gray-900 dark:text-white mb-2">

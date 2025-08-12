@@ -19,7 +19,7 @@ const Home = () => {
           className="w-full lg:w-1/2 rounded-lg shadow-md object-cover"
         />
         <div className="w-full lg:w-1/2 px-2">
-          <p className="text-gray-700 dark:text-gray-300 text-3xl leading-15">
+          <p className="text-gray-700 dark:text-gray-300 text-xl">
             {t("home_description")}
             <br />
             <br />

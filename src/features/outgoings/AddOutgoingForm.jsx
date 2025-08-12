@@ -45,6 +45,8 @@ const AddOutgoingForm = () => {
   const [date, setDate] = useState("");
   const [purpose, setPurpose] = useState("");
   const [passportNumber, setPassportNumber] = useState("");
+  const [outgoingType, setoutgoingType] = useState("external");
+  const [borderNumber, setBorderNumber] = useState("");
   const [attachment, setAttachment] = useState("");
 
   useEffect(() => {
@@ -54,6 +56,8 @@ const AddOutgoingForm = () => {
       setDate("");
       setPurpose("");
       setPassportNumber("");
+      setoutgoingType("");
+      setBorderNumber("");
       setAttachment("");
       toast.success(t("outgoing_added_successfully"));
       navigate("/dashboard/outgoings");
@@ -74,6 +78,8 @@ const AddOutgoingForm = () => {
     formData.append("date", date);
     formData.append("purpose", purpose);
     formData.append("passportNumber", passportNumber);
+    formData.append("outgoingType", outgoingType);
+    formData.append("borderNumber", borderNumber);
     formData.append("attachment", attachment);
 
     try {
@@ -114,6 +120,20 @@ const AddOutgoingForm = () => {
         <div className="p-6 space-y-6">
           <form onSubmit={onSaveOutgoingClicked}>
             <div className="grid grid-cols-6 gap-6">
+              {/* Type */}
+              <div className="col-span-6 sm:col-span-3">
+                <label className="text-sm font-medium text-gray-900 dark:text-white block mb-2" htmlFor="outgoingType">{t("paperType")}</label>
+                <select
+                  id="outgoingType"
+                  className="cursor-pointer shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg block w-full p-2.5 dark:bg-gray-800 dark:text-white"
+                  value={outgoingType}
+                  onChange={(e) => setoutgoingType(e.target.value)}
+                  required
+                >
+                  <option value="internal">{t("internal")}</option>
+                  <option value="external">{t("external")}</option>
+                </select>
+              </div>
               {/* From */}
               <div className="col-span-6 sm:col-span-3">
                 <label className="text-sm font-medium text-gray-900 dark:text-white block mb-2">
@@ -188,7 +208,20 @@ const AddOutgoingForm = () => {
                   className="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg block w-full p-2.5 dark:bg-gray-800 dark:text-white"
                 />
               </div>
-
+              {/* Border Number */}
+              <div className="col-span-6 sm:col-span-3">
+                <label className="text-sm font-medium text-gray-900 dark:text-white block mb-2">
+                  {t("borderNumber")}
+                </label>
+                <input
+                  type="text"
+                  id="borderNumber"
+                  name="borderNumber"
+                  value={borderNumber}
+                  onChange={(e) => setBorderNumber(e.target.value)}
+                  className="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg block w-full p-2.5 dark:bg-gray-800 dark:text-white"
+                />
+              </div>
               {/* Attachment */}
               <div className="col-span-6 sm:col-span-3">
                 <label className="text-sm font-medium text-gray-900 dark:text-white mb-2">

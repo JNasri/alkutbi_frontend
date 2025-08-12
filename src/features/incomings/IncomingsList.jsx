@@ -50,11 +50,13 @@ const IncomingsList = () => {
 
     const columns = [
       { field: "identifier", header: t("identifier") },
+      { field: "incomingType", header: t("paperType") },
       { field: "to", header: t("to") },
       { field: "from", header: t("from") },
       { field: "date", header: t("date") },
       { field: "purpose", header: t("purpose") },
       { field: "passportNumber", header: t("passportNumber") },
+      { field: "borderNumber", header: t("borderNumber") },
       { field: "attachment", header: t("attachment") },
       { field: "createdAt", header: t("createdAt") },
       { field: "updatedAt", header: t("updatedAt") },
@@ -64,6 +66,7 @@ const IncomingsList = () => {
 
     const transformedData = sortedList.map((item) => ({
       ...item,
+      incomingType: t(item.incomingType), // 👈 Translate here
       createdAt: new Date(item.createdAt).toLocaleDateString(),
       updatedAt: new Date(item.updatedAt).toLocaleDateString(),
       attachment: item.attachment ? (
