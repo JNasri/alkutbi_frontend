@@ -7,16 +7,6 @@ const Welcome = () => {
 
   return (
     <div className="min-h-screen flex flex-col lg:flex-row">
-      {/* Image Section - Hidden on mobile */}
-      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-900/20 to-purple-900/20 z-10"></div>
-        <img
-          src="alkutbi_bg.jpg"
-          alt="Modern business office"
-          className="w-full h-full object-cover"
-        />
-        <div className="absolute inset-0 bg-black/10 z-20"></div>
-      </div>
 
       {/* Content Section */}
       <div className="w-full lg:w-1/2 flex flex-col items-center justify-center relative bg-gray-200 dark:bg-gray-800">
@@ -61,6 +51,16 @@ const Welcome = () => {
             </Link>
           </div>
         </div>
+      </div>
+      {/* Image Section - Hidden on mobile */}
+      <div className=" lg:flex lg:w-1/2 relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-900/20 to-purple-900/20 z-10"></div>
+        <img
+          src="alkutbi_bg.jpg"
+          alt="Modern business office"
+          className="w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-black/10 z-20"></div>
       </div>
     </div>
   );

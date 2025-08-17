@@ -11,14 +11,17 @@ import { Toaster } from "react-hot-toast";
 import UsersList from "./features/users/UsersList";
 import OutgoingsList from "./features/outgoings/OutgoingsList";
 import IncomingsList from "./features/incomings/IncomingsList";
+import DeathcasesList from "./features/deathCases/deathCasesList";
 // edits
 import EditUserForm from "./features/users/EditUserForm";
 import EditIncomingForm from "./features/incomings/EditIncomingForm";
 import EditOutgoingForm from "./features/outgoings/EditOutgoingForm";
+import EditDeathcaseForm from "./features/deathCases/EditDeathCaseForm";
 // adds
 import AddUserForm from "./features/users/AddUserForm";
 import AddIncomingForm from "./features/incomings/AddIncomingForm";
 import AddOutgoingForm from "./features/outgoings/AddOutgoingForm";
+import AddDeathcaseForm from "./features/deathCases/AddDeathCaseForm";
 // logs
 import LogsList from "./features/logger/LogsList";
 // not found
@@ -110,6 +113,24 @@ function App() {
                       }
                     >
                       <Route path="edit/:id" element={<EditOutgoingForm />} />
+                    </Route>
+                  </Route>
+                  {/* /deathcases */}
+                  <Route path="deathcases">
+                    <Route index element={<DeathcasesList />} />
+                    <Route
+                      element={
+                        <RequireAuth allowedRoles={addSpecialPapersRoles} />
+                      }
+                    >
+                      <Route path="add" element={<AddDeathcaseForm />} />
+                    </Route>
+                    <Route
+                      element={
+                        <RequireAuth allowedRoles={editSpecialPapersRoles} />
+                      }
+                    >
+                      <Route path="edit/:id" element={<EditDeathcaseForm />} />
                     </Route>
                   </Route>
                   {/* /logs */}

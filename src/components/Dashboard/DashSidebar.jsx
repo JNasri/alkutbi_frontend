@@ -8,7 +8,10 @@ import {
   ChevronRight,
   ChevronDown,
   Folder,
-} from "lucide-react";
+  Skull,
+  ShieldAlert,
+  Footprints,
+} from "lucide-react"; // ✅ added icons
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import useAuth from "../../hooks/useAuth";
@@ -16,6 +19,7 @@ import useAuth from "../../hooks/useAuth";
 const DashSidebar = () => {
   const [isOpen, setIsOpen] = useState(true);
   const [isSpecialOpen, setIsSpecialOpen] = useState(false);
+  const [isCasesOpen, setIsCasesOpen] = useState(false); // ✅ new state
   const { t, i18n } = useTranslation();
   const {
     isAdmin,
@@ -30,17 +34,19 @@ const DashSidebar = () => {
   const toggleSidebar = () => {
     setIsOpen(!isOpen);
     setIsSpecialOpen(false);
+    setIsCasesOpen(false);
   };
   const toggleSpecial = () => setIsSpecialOpen(!isSpecialOpen);
+  const toggleCases = () => setIsCasesOpen(!isCasesOpen); // ✅
 
   return (
     <div
       className={`flex ${
         isArabic ? "border-l" : "border-r"
-      }   border-gray-200 bg-gray-100dark:bg-gray-800 dark:border-gray-700 shadow-md`}
+      }   border-gray-200 bg-gray-100 dark:bg-gray-800 dark:border-gray-700 shadow-md`}
     >
       <div
-        className={`h-screen shadow transition-all duration-300 ${
+        className={`h-full shadow transition-all duration-300 ${
           isOpen ? "w-60" : "w-14"
         }`}
       >
@@ -75,6 +81,7 @@ const DashSidebar = () => {
               {isOpen && <span className="text-sm">{t("users")}</span>}
             </Link>
           )}
+
           {/* Special Papers */}
           <div>
             <div
@@ -97,7 +104,6 @@ const DashSidebar = () => {
                 ))}
             </div>
 
-            {/* Nested items (with RTL margin swap) */}
             {isSpecialOpen && (
               <div className={`${isArabic ? "mr-2" : "ml-2"}`}>
                 <Link to="/dashboard/incomings">
@@ -119,6 +125,53 @@ const DashSidebar = () => {
               </div>
             )}
           </div>
+
+          {/* Special Cases */}
+          <div>
+            <div
+              className="flex items-center justify-between p-4 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 transition"
+              onClick={toggleCases}
+            >
+              <div className="flex items-center gap-4">
+                <ShieldAlert size={20} />
+                {isOpen && (
+                  <span className="text-sm">{t("special_cases")}</span>
+                )}
+              </div>
+              {isOpen &&
+                (isCasesOpen ? (
+                  <ChevronDown size={16} className="text-gray-500" />
+                ) : isArabic ? (
+                  <ChevronLeft size={16} className="text-gray-500" />
+                ) : (
+                  <ChevronRight size={16} className="text-gray-500" />
+                ))}
+            </div>
+
+            {isCasesOpen && (
+              <div className={`${isArabic ? "mr-2" : "ml-2"}`}>
+                <Link to="/dashboard/deathcases">
+                  <div className="flex items-center gap-6 p-2 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 transition">
+                    <Skull size={18} />
+                    {isOpen && <span className="text-sm">{t("death_cases")}</span>}
+                  </div>
+                </Link>
+                <Link to="/dashboard/prisoncases">
+                  <div className="flex items-center gap-6 p-2 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 transition">
+                    <ShieldAlert size={18} />
+                    {isOpen && <span className="text-sm">{t("prison_cases")}</span>}
+                  </div>
+                </Link>
+                <Link to="/dashboard/escapecases">
+                  <div className="flex items-center gap-6 p-2 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 transition">
+                    <Footprints size={18} />
+                    {isOpen && <span className="text-sm">{t("escape_cases")}</span>}
+                  </div>
+                </Link>
+              </div>
+            )}
+          </div>
+
           {/* Logs */}
           {isAdmin && (
             <Link

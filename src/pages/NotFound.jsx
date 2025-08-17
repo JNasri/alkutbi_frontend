@@ -9,9 +9,10 @@ const NotFound = () => {
 
   return (
     <div className="min-h-screen py-8 items-center text-center justify-center bg-gray-200">
+      <h1 className="text-4xl font-bold text-red-600">ياملقوف</h1>
       <h1 className="text-4xl font-bold text-red-600">404 - Page Not Found</h1>
       <p className="text-lg text-gray-700">
-        Sorry, the page you are looking for does not exist.
+        Sorry, the page you are looking for does not exist. 
       </p>
       <button
         onClick={handleGoBack}
