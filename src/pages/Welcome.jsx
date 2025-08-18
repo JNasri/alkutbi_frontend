@@ -1,60 +1,48 @@
 import { Link } from "react-router-dom";
-import LanguageSwitcher from "../components/LanguageSwitcher";
+import PageLangSwitch from "../components/PageLangSwitch";
 import { useTranslation } from "react-i18next";
 
 const Welcome = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const isRTL = i18n.dir() === "rtl"; // Detect if language is RTL (like Arabic)
 
   return (
     <div className="min-h-screen flex flex-col lg:flex-row">
-
       {/* Content Section */}
-      <div className="w-full lg:w-1/2 flex flex-col items-center justify-center relative bg-gray-200 dark:bg-gray-800">
-        {/* Language Switcher */}
-        <div className="absolute top-6 z-20">
-          <LanguageSwitcher />
+      <div className="w-full h-screen lg:h-auto lg:w-1/2 flex flex-col items-center justify-center bg-yellow-50">
+        {/* Language Switcher positioned based on language direction */}
+        <div className={`absolute top-6 z-20 ${isRTL ? "right-6" : "left-6"}`}>
+          <PageLangSwitch />
         </div>
 
         {/* Main Content */}
         <div className="relative z-10 max-w-md w-full mx-8 text-center py-10">
           {/* Main Heading */}
-          <h1 className="text-4xl md:text-4xl lg:text-5xl font-bold text-gray-900 dark:text-white mb-6 leading-tight">
+          <h1 className="text-4xl md:text-4xl lg:text-5xl font-bold text-gray-900  mb-6 leading-tight">
             {t("welcome")} <br />
-            <span className="bg-gradient-to-r from-green-800 to-yellow-500 bg-clip-text text-transparent">
+            <span className="text-6xl bg-gradient-to-r from-green-600 to-yellow-400 bg-clip-text text-transparent">
               {t("alkutbi")}
             </span>
           </h1>
-
-          {/* Logo/Icon */}
-          <div className="mb-8 flex justify-center">
-            <div className="p-4 rounded-2xl shadow-2xl bg-white dark:bg-gray-900">
-              <img
-                src="LOGO_ONLY.png"
-                alt="ALKUTBI LOGO"
-                className="w-32 h-32 object-cover"
-              />
-            </div>
-          </div>
-
           {/* Additional Info */}
-          <p className="text-md text-black font-bold my-5 dark:text-white">
-            {t("welcome_info")}
-          </p>
-
+          <p className="text-md font-bold my-5">{t("welcome_info")}</p>
           {/* Login Button */}
-          <div className="space-y-4">
-            <Link
-              to="/login"
-              className="dark:text-white py-2 px-6 rounded-full text-2xl font-semibold transition duration-300 ease-in-out transform hover:scale-105 hover:shadow-lg inline-block border"
-            >
-              {t("login")}
-            </Link>
+          <div className="flex flex-col items-center space-y-4">
+            <div>
+              <Link
+                to="/login"
+                className="relative inline-flex items-center justify-center p-0.5 mb-2 me-2 overflow-hidden text-xl font-bold text-gray-900 rounded-lg group bg-gradient-to-br from-green-600 to-yellow-300 group-hover:from-red-200 group-hover:via-red-300 group-hover:to-yellow-200"
+              >
+                <span className="relative px-5 py-2.5 transition-all ease-in duration-75 bg-white rounded-md group-hover:bg-transparent group-hover:dark:bg-transparent">
+                  {t("login")}
+                </span>
+              </Link>
+            </div>
           </div>
         </div>
       </div>
       {/* Image Section - Hidden on mobile */}
-      <div className=" lg:flex lg:w-1/2 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-900/20 to-purple-900/20 z-10"></div>
+      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
         <img
           src="alkutbi_bg.jpg"
           alt="Modern business office"

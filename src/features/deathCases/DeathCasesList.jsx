@@ -62,6 +62,7 @@ const DeathcasesList = () => {
       { field: "comment", header: t("comment") },
       { field: "createdAt", header: t("createdAt") },
       { field: "updatedAt", header: t("updatedAt") },
+      { field: "status", header: t("status") },
       { field: "edit", header: t("edit") },
     ];
 
@@ -101,10 +102,11 @@ const DeathcasesList = () => {
         createdAt: new Date(d.createdAt).toLocaleDateString(),
         updatedAt: new Date(d.updatedAt).toLocaleDateString(),
         attachments: attachmentItems.length ? attachmentItems : "—",
+        status: t(d.status),
         edit: (
           <div className="flex flex-col items-center text-center space-y-4">
-          <div
-            className={`flex items-center justify-center p-2 rounded-full text-white text-xs font-medium
+            <div
+              className={`flex items-center justify-center  p-2 rounded-full text-white text-xs font-bold
               ${
                 d.status === "new"
                   ? "bg-blue-300"
@@ -115,18 +117,17 @@ const DeathcasesList = () => {
                   : "bg-gray-300"
               }
             `}
-          >
-            {t(d.status)}
+            >
+              {t(d.status)}
+            </div>
+            <Link
+              to={`/dashboard/deathcases/edit/${d.id}`}
+              className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 text-sm"
+            >
+              {t("edit")}
+            </Link>
           </div>
-          <Link
-            to={`/dashboard/deathcases/edit/${d.id}`}
-            className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 text-sm"
-          >
-            {t("edit")}
-          </Link>
-        </div>
-
-              ),
+        ),
       };
     });
 

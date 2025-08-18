@@ -2,7 +2,7 @@ import { useTranslation } from "react-i18next";
 import { useEffect } from "react";
 import { Languages } from "lucide-react";
 
-const LanguageSwitcher = () => {
+const PageLangSwitch = () => {
   const { i18n } = useTranslation();
   const { t } = useTranslation();
 
@@ -25,21 +25,16 @@ const LanguageSwitcher = () => {
   };
 
   return (
-    <div className="relative group">
-      <button
-        className="flex items-center justify-center text-gray-500 transition-colors bg-gray-100 border border-gray-500 rounded-full hover:text-dark-900 h-11 w-11 hover:bg-gray-100 hover:text-gray-700 dark:border-white dark:bg-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white cursor-pointer"
-        onClick={toggleLanguage}
-        aria-label="Toggle language"
-      >
-        <Languages className="h-5 w-5" />
-      </button>
-
-      {/* Tooltip positioned below the button */}
-      <div className="absolute left-1/2 top-full mt-2 -translate-x-1/2 whitespace-nowrap px-3 py-1.5 text-sm text-gray-800 bg-gray-300 dark:bg-gray-200 dark:text-gray-800 rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none z-10 shadow-md font-medium">
+    <button
+      className="relative inline-flex p-0.5 mb-2 me-2 overflow-hidden text-sm font-medium text-gray-900 rounded-lg group bg-gradient-to-br from-green-600 to-yellow-300 group-hover:from-red-200 group-hover:via-red-300 group-hover:to-yellow-200   cursor-pointer"
+      onClick={toggleLanguage}
+      aria-label="Toggle language"
+    >
+      <span className="relative px-5 py-2.5 transition-all ease-in duration-75 bg-white rounded-md group-hover:bg-transparent group-hover:dark:bg-transparent">
         {t("toggle_language")}
-      </div>
-    </div>
+      </span>
+    </button>
   );
 };
 
-export default LanguageSwitcher;
+export default PageLangSwitch;

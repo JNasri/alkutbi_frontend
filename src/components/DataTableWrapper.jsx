@@ -97,20 +97,20 @@ const DataTableWrapper = ({ data, columns, title }) => {
           </div>
         </div>
 
-        <hr className="my-4 border-gray-200 dark:border-gray-700" />
+        <hr className="my-4 border-gray-300 dark:border-gray-700" />
 
         {/* DataTable */}
         <div className="custom-datatable-wrapper rounded-lg overflow-hidden">
           <DataTable
             ref={dt}
             value={data}
+            rowClassName={() => "border-b border-gray-300 dark:border-gray-700"}
             paginator
             rows={10}
             tableStyle={{ tableLayout: "fixed" }} // 👈 Ensure table layout is fixed
             scrollable
             currentPageReportTemplate="Showing {first} to {last} of {totalRecords}"
             stripedRows
-            showGridlines
             sortMode="multiple"
             removableSort
             globalFilter={globalFilter}
@@ -140,14 +140,12 @@ const DataTableWrapper = ({ data, columns, title }) => {
                 header={col.header}
                 sortable={col.sortable ?? true}
                 style={{
-                  width: "150px",
+                  width: "10rem",
                   padding: "0.5rem",
-                  borderBottom: "1px solid",
-                  // textAlign: "center"
                 }}
                 alignHeader="center"
                 headerClassName="text-center bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-white text-sm font-bold"
-                bodyClassName="text-sm dark:bg-gray-900 text-gray-800 dark:text-gray-100 text-center"
+                bodyClassName="text-sm dark:bg-gray-900 text-gray-800 dark:text-gray-100 text-center font-medium"
                 frozen={i === columns.length - 1}
               />
             ))}
