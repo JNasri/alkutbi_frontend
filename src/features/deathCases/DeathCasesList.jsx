@@ -59,6 +59,7 @@ const DeathcasesList = () => {
       { field: "cityOfDeath", header: t("cityOfDeath") },
       { field: "hospital", header: t("hospital") },
       { field: "attachments", header: t("attachments") },
+      { field: "comment", header: t("comment") },
       { field: "createdAt", header: t("createdAt") },
       { field: "updatedAt", header: t("updatedAt") },
       { field: "edit", header: t("edit") },
@@ -96,6 +97,7 @@ const DeathcasesList = () => {
 
       return {
         ...d,
+        sex: d.sex === "M" ? t("Male") : t("Female"),
         createdAt: new Date(d.createdAt).toLocaleDateString(),
         updatedAt: new Date(d.updatedAt).toLocaleDateString(),
         attachments: attachmentItems.length ? attachmentItems : "—",

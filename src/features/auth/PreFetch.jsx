@@ -3,6 +3,7 @@ import { vouchersApiSlice } from "../vouchers/vouchersApiSlice";
 import { usersApiSlice } from "../users/usersApiSlice";
 import { incomingsApiSlice } from "../incomings/incomingsApiSlice";
 import { outgoingsApiSlice } from "../outgoings/outgoingsApiSlice";
+import { deathcasesApiSlice } from "../deathcases/deathcasesApiSlice";
 import { useEffect } from "react";
 import { Outlet } from "react-router-dom";
 
@@ -23,6 +24,11 @@ const PreFetch = () => {
     );
     store.dispatch(
       outgoingsApiSlice.util.prefetch("getOutgoings", "outgoingsList", {
+        force: true,
+      })
+    );
+    store.dispatch(
+      deathcasesApiSlice.util.prefetch("getDeathcases", "deathcasesList", {
         force: true,
       })
     );
