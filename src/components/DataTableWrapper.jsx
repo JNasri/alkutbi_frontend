@@ -137,14 +137,17 @@ const DataTableWrapper = ({ data, columns, title }) => {
               <Column
                 key={i}
                 field={col.field}
-                header={() => <span>{col.header}</span>}
+                header={col.header}
                 sortable={col.sortable ?? true}
                 style={{
-                   width: i === columns.length - 1 ? "80px" : "150px", // Last column width is smaller
-                   padding: "0.7rem"
-                 }}
-                headerClassName="bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-white text-sm font-bold mb-5"
-                bodyClassName="w-1 text-sm dark:bg-gray-900 text-gray-800 dark:text-gray-100 rtl:text-right ltr:text-left w-50"
+                  width: "150px",
+                  padding: "0.5rem",
+                  borderBottom: "1px solid",
+                  // textAlign: "center"
+                }}
+                alignHeader="center"
+                headerClassName="text-center bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-white text-sm font-bold"
+                bodyClassName="text-sm dark:bg-gray-900 text-gray-800 dark:text-gray-100 text-center"
                 frozen={i === columns.length - 1}
               />
             ))}

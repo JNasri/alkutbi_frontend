@@ -102,13 +102,31 @@ const DeathcasesList = () => {
         updatedAt: new Date(d.updatedAt).toLocaleDateString(),
         attachments: attachmentItems.length ? attachmentItems : "—",
         edit: (
+          <div className="flex flex-col items-center text-center space-y-4">
+          <div
+            className={`flex items-center justify-center p-2 rounded-full text-white text-xs font-medium
+              ${
+                d.status === "new"
+                  ? "bg-blue-300"
+                  : d.status === "in_progress"
+                  ? "bg-orange-400"
+                  : d.status === "complete"
+                  ? "bg-green-500"
+                  : "bg-gray-300"
+              }
+            `}
+          >
+            {t(d.status)}
+          </div>
           <Link
             to={`/dashboard/deathcases/edit/${d.id}`}
-            className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+            className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 text-sm"
           >
             {t("edit")}
           </Link>
-        ),
+        </div>
+
+              ),
       };
     });
 

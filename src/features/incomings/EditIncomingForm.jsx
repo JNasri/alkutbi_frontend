@@ -44,6 +44,7 @@ const EditIncomingForm = () => {
   const [passportNumber, setPassportNumber] = useState("");
   const [incomingType, setIncomingType] = useState("external");
   const [borderNumber, setBorderNumber] = useState("");
+  const [letterNumber, setLetterNumber] = useState("");
   const [attachment, setAttachment] = useState(null);
   const [existingAttachmentUrl, setExistingAttachmentUrl] = useState("");
 
@@ -70,6 +71,7 @@ const EditIncomingForm = () => {
       setPassportNumber(incoming.passportNumber || "");
       setIncomingType(incoming.incomingType || "external");
       setBorderNumber(incoming.borderNumber || "");
+      setLetterNumber(incoming.letterNumber || "");
       setExistingAttachmentUrl(incoming.attachment || "");
       setAttachment(null);
     }
@@ -142,6 +144,7 @@ const EditIncomingForm = () => {
     formData.append("purpose", purpose);
     formData.append("incomingType", incomingType);
     formData.append("borderNumber", borderNumber);
+    formData.append("letterNumber", letterNumber);
     formData.append("passportNumber", passportNumber);
 
     if (attachment) formData.append("attachment", attachment);
@@ -204,7 +207,7 @@ const EditIncomingForm = () => {
                   <option value="external">{t("external")}</option>
                 </select>
               </div>
-            {["from", "to", "date", "purpose", "passportNumber", "borderNumber"].map(
+            {["from", "to", "letterNumber", "date", "purpose", "passportNumber", "borderNumber"].map(
               (field) => (
                 <div key={field} className="col-span-6 sm:col-span-3">
                   <label className="text-sm font-medium dark:text-white block mb-2">
@@ -219,6 +222,8 @@ const EditIncomingForm = () => {
                         ? fromField
                         : field === "to"
                         ? toField
+                        : field === "letterNumber"
+                        ? letterNumber
                         : field === "date"
                         ? date
                         : field === "purpose"
@@ -231,6 +236,7 @@ const EditIncomingForm = () => {
                       const v = e.target.value;
                       if (field === "from") setFromField(v);
                       else if (field === "to") setToField(v);
+                      else if (field === "letterNumber") setLetterNumber(v);
                       else if (field === "date") setDate(v);
                       else if (field === "purpose") setPurpose(v);
                       else if (field === "borderNumber") setBorderNumber(v);

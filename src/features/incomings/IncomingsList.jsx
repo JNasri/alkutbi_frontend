@@ -51,8 +51,9 @@ const IncomingsList = () => {
     const columns = [
       { field: "identifier", header: t("identifier") },
       { field: "incomingType", header: t("paperType") },
-      { field: "to", header: t("to") },
       { field: "from", header: t("from") },
+      { field: "to", header: t("to") },
+      { field: "letterNumber", header: t("letterNumber") },
       { field: "date", header: t("date") },
       { field: "purpose", header: t("purpose") },
       { field: "passportNumber", header: t("passportNumber") },

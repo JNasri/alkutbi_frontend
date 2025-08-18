@@ -48,6 +48,7 @@ const AddIncomingForm = () => {
   const [passportNumber, setPassportNumber] = useState("");
   const [incomingType, setIncomingType] = useState("external");
   const [borderNumber, setBorderNumber] = useState("");
+  const [letterNumber, setLetterNumber] = useState("");
   const [attachment, setAttachment] = useState("");
 
   useEffect(() => {
@@ -59,6 +60,7 @@ const AddIncomingForm = () => {
       setPassportNumber("");
       setIncomingType("internal");
       setBorderNumber("");
+      setLetterNumber("");
       setAttachment("");
       toast.success(t("incoming_added_successfully"));
       navigate("/dashboard/incomings");
@@ -79,6 +81,7 @@ const AddIncomingForm = () => {
     formData.append("passportNumber", passportNumber);
     formData.append("incomingType", incomingType);
     formData.append("borderNumber", borderNumber);
+    formData.append("letterNumber", letterNumber);
     formData.append("attachment", attachment); // ✅ Must be a File object
 
     try {
@@ -183,7 +186,20 @@ const AddIncomingForm = () => {
                   className="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg block w-full p-2.5 dark:bg-gray-800 dark:text-white"
                 />
               </div>
-
+              {/* letterNumber */}
+              <div className="col-span-6 sm:col-span-3">
+                <label className="text-sm font-medium text-gray-900 dark:text-white block mb-2">
+                  {t("letterNumber")}
+                </label>
+                <input
+                  type="text"
+                  id="letterNumber"
+                  name="letterNumber"
+                  value={letterNumber}
+                  onChange={(e) => setLetterNumber(e.target.value)}
+                  className="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg block w-full p-2.5 dark:bg-gray-800 dark:text-white"
+                />
+              </div>
               {/* Date */}
               <div className="col-span-6 sm:col-span-3">
                 <label className="text-sm font-medium text-gray-900 dark:text-white block mb-2">
@@ -243,7 +259,7 @@ const AddIncomingForm = () => {
                 />
               </div>
               {/* Attachment */}
-              <div className="col-span-6 sm:col-span-3">
+              <div className="col-span-6 sm:col-span-6">
                 <label className="text-sm font-medium text-gray-900 dark:text-white mb-2">
                   {t("attachment")}
                   {fileSizeError && (

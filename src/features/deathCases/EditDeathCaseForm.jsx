@@ -71,6 +71,7 @@ const EditDeathcaseForm = () => {
   const [cityOfDeath, setCityOfDeath] = useState("");
   const [hospital, setHospital] = useState("");
   const [comment, setComment] = useState("");
+  const [status, setStatus] = useState("");
 
   const [newFiles, setNewFiles] = useState(
     attachmentFields.reduce((acc, f) => ({ ...acc, [f.key]: null }), {})
@@ -103,6 +104,7 @@ const EditDeathcaseForm = () => {
       setCityOfDeath(deathcase.cityOfDeath || "");
       setHospital(deathcase.hospital || "");
       setComment(deathcase.comment || "");
+      setStatus(deathcase.status || "");
 
       // existing attachments
       setExistingUrls((prev) => {
@@ -190,6 +192,7 @@ const EditDeathcaseForm = () => {
     formData.append("cityOfDeath", cityOfDeath);
     formData.append("hospital", hospital);
     formData.append("comment", comment);
+    formData.append("status", status);
 
     attachmentFields.forEach(({ key }) => {
       if (newFiles[key]) {
@@ -239,6 +242,35 @@ const EditDeathcaseForm = () => {
       <div className="bg-white dark:bg-gray-700 border-gray-500 rounded-3xl shadow p-6 space-y-6">
         <form onSubmit={onSaveClicked}>
           <div className="grid grid-cols-6 gap-6">
+                          {/* Status Toggle */}
+                <div className="col-span-6 sm:col-span-6">
+                  <label className="text-sm font-medium text-gray-900 dark:text-white block mb-2">
+                    {t("status")}
+                  </label>
+                  <div className="flex space-x-4">
+                  {["new", "in_progress", "complete"].map((value) => {
+                    let activeClasses = "";
+                    if (status === value) {
+                      if (value === "new") activeClasses = "bg-blue-400 text-white border-blue-400";
+                      else if (value === "in_progress") activeClasses = "bg-orange-400 text-white border-orange-500";
+                      else if (value === "complete") activeClasses = "bg-green-500 text-white border-green-600";
+                    } else {
+                      activeClasses = "bg-gray-100 text-gray-900 border-gray-300 dark:bg-gray-800 dark:text-white";
+                    }
+
+                    return (
+                      <button
+                        key={value}
+                        type="button"
+                        onClick={() => setStatus(value)}
+                        className={`px-4 py-2 text-sm rounded-lg border transition-colors cursor-pointer ${activeClasses}`}
+                      >
+                        {t(value)}
+                      </button>
+                    );
+                  })}
+                </div>
+                </div>
             {/* Name */}
             <div className="col-span-6 sm:col-span-3">
               <label className="text-sm font-medium dark:text-white block mb-2">

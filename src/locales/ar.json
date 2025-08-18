@@ -145,5 +145,9 @@
   "hospitalLetter": "تقرير المستشفى",
   "corpseBurialPermit": "تصريح نقل/دفن جثمان",
   "policeLetter": "تقرير الشرطة",
-  "others": "أخرى"
+  "others": "أخرى",
+  "letterNumber": "رقم الخطاب",
+  "new": "جديد",
+  "in_progress": "تحت الإجراء",
+  "complete": "مكتمل"
 }

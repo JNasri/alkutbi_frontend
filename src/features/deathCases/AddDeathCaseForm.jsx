@@ -42,6 +42,7 @@ const AddDeathcaseForm = () => {
   const [cityOfDeath, setCityOfDeath] = useState("");
   const [hospital, setHospital] = useState("");
   const [comment, setComment] = useState("");
+  const [status, setStatus] = useState("new");
 
   // Attachments state
   const [files, setFiles] = useState(
@@ -61,6 +62,7 @@ const AddDeathcaseForm = () => {
       setCityOfDeath("");
       setHospital("");
       setComment("");
+      setStatus("");
       setFiles(attachmentFields.reduce((acc, f) => ({ ...acc, [f.key]: null }), {}));
       toast.success(t("deathcase_added_successfully"));
       navigate("/dashboard/deathcases");
@@ -117,6 +119,7 @@ const AddDeathcaseForm = () => {
     if (cityOfDeath) formData.append("cityOfDeath", cityOfDeath);
     if (hospital) formData.append("hospital", hospital);
     if (comment) formData.append("comment", comment);
+    if (status) formData.append("status", status);
 
     attachmentFields.forEach(({ key }) => {
       if (files[key]) formData.append(key, files[key]);
@@ -162,6 +165,36 @@ const AddDeathcaseForm = () => {
         <div className="p-6 space-y-6">
           <form onSubmit={onSaveClicked}>
             <div className="grid grid-cols-6 gap-6">
+              {/* Status Toggle */}
+                <div className="col-span-6 sm:col-span-6">
+                  <label className="text-sm font-medium text-gray-900 dark:text-white block mb-2">
+                    {t("status")}
+                  </label>
+                  <div className="flex space-x-4">
+                  {["new", "in_progress", "complete"].map((value) => {
+                    let activeClasses = "";
+                    if (status === value) {
+                      if (value === "new") activeClasses = "bg-blue-400 text-white border-blue-400";
+                      else if (value === "in_progress") activeClasses = "bg-orange-400 text-white border-orange-500";
+                      else if (value === "complete") activeClasses = "bg-green-500 text-white border-green-600";
+                    } else {
+                      activeClasses = "bg-gray-100 text-gray-900 border-gray-300 dark:bg-gray-800 dark:text-white";
+                    }
+
+                    return (
+                      <button
+                        key={value}
+                        type="button"
+                        onClick={() => setStatus(value)}
+                        className={`px-4 py-2 text-sm rounded-lg border transition-colors cursor-pointer ${activeClasses}`}
+                      >
+                        {t(value)}
+                      </button>
+                    );
+                  })}
+                </div>
+                </div>
+
               {/* Name (required) */}
               <div className="col-span-6 sm:col-span-3">
                 <label className="text-sm font-medium text-gray-900 dark:text-white block mb-2">
@@ -186,8 +219,8 @@ const AddDeathcaseForm = () => {
                   onChange={(e) => setSex(e.target.value)}
                   className="cursor-pointer shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg block w-full p-2.5 dark:bg-gray-800 dark:text-white"
                 >
-                  <option value="M">{t("male") || "Male"}</option>
-                  <option value="F">{t("female") || "Female"}</option>
+                  <option value="M">{t("Male") || "Male"}</option>
+                  <option value="F">{t("Female") || "Female"}</option>
                 </select>
               </div>
 

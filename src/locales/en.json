@@ -138,5 +138,10 @@
   "hospitalLetter": "Hospita Letter",
   "corpseBurialPermit": "Corpse Burial Permit",
   "policeLetter": "Police Letter",
-  "others": "Others"
+  "others": "Others",
+  "letterNumber": "Letter Number",
+  "status": "Status",
+  "new": "New",
+  "in_progress": "In Progress",
+  "complete": "Complete"
 }
