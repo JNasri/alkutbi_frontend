@@ -139,7 +139,7 @@ const OutgoingsList = () => {
             </p>
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
               {sortedList.length > 0
-                ? new Date(sortedList[0].createdAt).toLocaleDateString()
+                ? new Date(sortedList[0].date).toLocaleDateString()
                 : "—"}
             </h3>
           </div>

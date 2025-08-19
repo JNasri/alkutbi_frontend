@@ -6,7 +6,6 @@ import { InputText } from "primereact/inputtext";
 import { Button } from "primereact/button";
 import LoadingSpinner from "./LoadingSpinner"; // Assuming you have a LoadingSpinner component
 import i18n from "../../i18n";
-
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 import { FileText } from "lucide-react"; // Lucide document icon
@@ -17,7 +16,8 @@ import "primereact/resources/primereact.min.css";
 import "primeicons/primeicons.css";
 
 const DataTableWrapper = ({ data, columns, title }) => {
-  const { t } = useTranslation();
+  const { i18n, t } = useTranslation();
+  const isRTL = i18n.dir() === "rtl"; // Detect if language is RTL (like Arabic)
   const [globalFilter, setGlobalFilter] = useState("");
 
   const [loading, setLoading] = useState(false);
@@ -133,22 +133,23 @@ const DataTableWrapper = ({ data, columns, title }) => {
               },
             }}
           >
-            {columns.map((col, i) => (
-              <Column
-                key={i}
-                field={col.field}
-                header={col.header}
-                sortable={col.sortable ?? true}
-                style={{
-                  width: "10rem",
-                  padding: "0.5rem",
-                }}
-                alignHeader="center"
-                headerClassName="text-center bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-white text-sm font-bold"
-                bodyClassName="text-sm dark:bg-gray-900 text-gray-800 dark:text-gray-100 text-center font-medium"
-                frozen={i === columns.length - 1}
-              />
-            ))}
+           {columns.map((col, i) => (
+            <Column
+              key={i}
+              field={col.field}
+              header={col.header}
+              sortable={col.sortable ?? true}
+              style={{
+                width: "10rem",
+                padding: "0.5rem",
+              }}
+              alignHeader="center"
+              headerClassName="text-center bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-white text-sm font-bold"
+              bodyClassName="text-sm dark:bg-gray-900 text-gray-800 dark:text-gray-100 text-center font-medium"
+              frozen={i === columns.length - 1}
+              alignFrozen={i === columns.length - 1 ? (isRTL ? "left" : "right") : undefined}
+            />
+          ))}
           </DataTable>
         </div>
       </div>

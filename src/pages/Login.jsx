@@ -64,7 +64,7 @@ const Login = () => {
     <>
       <div className="min-h-screen flex flex-col lg:flex-row">
         {/* Content Section */}
-        <div className="relative w-full lg:w-1/2 flex items-center justify-center bg-yellow-50">
+        <div className="w-full h-screen lg:h-auto lg:w-1/2 flex flex-col items-center justify-center bg-yellow-50">
           {/* Language Switcher positioned based on language direction */}
           <div
             className={`absolute top-6 z-20 ${isRTL ? "right-6" : "left-6"}`}
@@ -171,7 +171,7 @@ const Login = () => {
           </div>
         </div>
         {/* Image Section - Hidden on mobile */}
-        <div className=" lg:flex lg:w-1/2 relative overflow-hidden">
+        <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
           <img
             src="alkutbi_bg.jpg"
             alt="Modern business office"
