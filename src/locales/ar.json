@@ -149,5 +149,7 @@
   "letterNumber": "رقم الخطاب",
   "new": "جديد",
   "in_progress": "تحت الإجراء",
-  "complete": "مكتمل"
+  "complete": "مكتمل",
+  "choose": "اختر...",
+  "click2create": "اضغط لإضافة"
 }

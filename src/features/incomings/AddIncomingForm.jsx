@@ -1,5 +1,9 @@
 import { useState, useEffect } from "react";
-import { useAddNewIncomingMutation } from "./incomingsApiSlice";
+import {
+  useAddNewIncomingMutation,
+  useGetIncomingsQuery,
+} from "./incomingsApiSlice";
+import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { ArrowLeft, ArrowRight } from "lucide-react";
@@ -7,10 +11,11 @@ import i18n from "../../../i18n";
 import toast from "react-hot-toast";
 import { useDropzone } from "react-dropzone";
 import LoadingSpinner from "../../components/LoadingSpinner";
+import CreatableSelect from "react-select/creatable";
+import Select from "react-select";
 
 const AddIncomingForm = () => {
   const [fileSizeError, setFileSizeError] = useState(false);
-
   // dropzone setup
   const onDrop = (acceptedFiles) => {
     const file = acceptedFiles[0];
@@ -40,6 +45,116 @@ const AddIncomingForm = () => {
   const [addNewIncoming, { isLoading, isSuccess, isError, error }] =
     useAddNewIncomingMutation();
 
+  const { data: incomingsData, isSuccess: isIncomingSuccess } =
+    useGetIncomingsQuery("incomingsList");
+
+  const customSelectStyles = {
+    control: (provided, state) => ({
+      ...provided,
+      backgroundColor: document.documentElement.classList.contains("dark")
+        ? "#1f2937" // bg-gray-800
+        : "#f9fafb", // bg-gray-50
+      borderColor: document.documentElement.classList.contains("dark")
+        ? "#ffffff" // border-white
+        : "#d1d5db", // border-gray-300
+      color: document.documentElement.classList.contains("dark")
+        ? "#ffffff"
+        : "#111827", // text-gray-900
+      borderRadius: "0.5rem", // rounded-lg
+      minHeight: "40px",
+      boxShadow: state.isFocused ? "0 0 0 1px #60a5fa" : "none", // focus ring
+      "&:hover": {
+        borderColor: "#60a5fa", // blue-400
+      },
+    }),
+    menu: (provided) => ({
+      ...provided,
+      backgroundColor: document.documentElement.classList.contains("dark")
+        ? "#1f2937" // bg-gray-800
+        : "#f9fafb", // bg-gray-50
+      borderRadius: "0.5rem",
+      zIndex: 50,
+    }),
+    option: (provided, state) => ({
+      ...provided,
+      backgroundColor: state.isFocused
+        ? document.documentElement.classList.contains("dark")
+          ? "#374151" // bg-gray-700
+          : "#e5e7eb" // bg-gray-200
+        : "transparent",
+      color: document.documentElement.classList.contains("dark")
+        ? "#ffffff"
+        : "#111827", // text-white or text-gray-900
+      "&:active": {
+        backgroundColor: document.documentElement.classList.contains("dark")
+          ? "#4b5563" // darker gray
+          : "#d1d5db", // gray-300
+      },
+    }),
+    singleValue: (provided) => ({
+      ...provided,
+      color: document.documentElement.classList.contains("dark")
+        ? "#ffffff"
+        : "#111827",
+    }),
+    input: (provided) => ({
+      ...provided,
+      color: document.documentElement.classList.contains("dark")
+        ? "#ffffff"
+        : "#111827",
+    }),
+    placeholder: (provided) => ({
+      ...provided,
+      color: document.documentElement.classList.contains("dark")
+        ? "#9ca3af" // text-gray-400
+        : "#6b7280", // text-gray-500
+    }),
+  };
+
+  const fromOptions = useMemo(() => {
+    if (!isIncomingSuccess) return [];
+    const uniqueFroms = new Set(
+      incomingsData.ids
+        .map((id) => incomingsData.entities[id]?.from)
+        .filter(Boolean)
+    );
+    return [...uniqueFroms].map((val) => ({ label: val, value: val }));
+  }, [incomingsData, isIncomingSuccess]);
+
+  const toOptions = useMemo(() => {
+    if (!isIncomingSuccess) return [];
+    const uniqueTos = new Set(
+      incomingsData.ids
+        .map((id) => incomingsData.entities[id]?.to)
+        .filter(Boolean)
+    );
+    return [...uniqueTos].map((val) => ({ label: val, value: val }));
+  }, [incomingsData, isIncomingSuccess]);
+
+  const useDarkMode = () => {
+    const getTheme = () =>
+      document.documentElement.classList.contains("dark") ? "dark" : "light";
+
+    const [theme, setTheme] = useState(getTheme());
+
+    useEffect(() => {
+      const observer = new MutationObserver(() => {
+        const currentTheme = getTheme();
+        setTheme(currentTheme);
+      });
+
+      observer.observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ["class"],
+      });
+
+      return () => observer.disconnect();
+    }, []);
+
+    return theme;
+  };
+  const theme = useDarkMode();
+
   // Form State
   const [toField, setToField] = useState("");
   const [fromField, setFromField] = useState("");
@@ -47,6 +162,10 @@ const AddIncomingForm = () => {
   const [purpose, setPurpose] = useState("");
   const [passportNumber, setPassportNumber] = useState("");
   const [incomingType, setIncomingType] = useState("external");
+  const typeOptions = [
+    { value: "internal", label: t("internal") },
+    { value: "external", label: t("external") },
+  ];
   const [borderNumber, setBorderNumber] = useState("");
   const [letterNumber, setLetterNumber] = useState("");
   const [attachment, setAttachment] = useState("");
@@ -146,30 +265,43 @@ const AddIncomingForm = () => {
             <div className="grid grid-cols-6 gap-6">
               {/* Type */}
               <div className="col-span-6 sm:col-span-3">
-                <label className="text-sm font-medium text-gray-900 dark:text-white block mb-2" htmlFor="incomingType">{t("paperType")}</label>
-                <select
-                  id="incomingType"
-                  className="cursor-pointer shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg block w-full p-2.5 dark:bg-gray-800 dark:text-white"
-                  value={incomingType}
-                  onChange={(e) => setIncomingType(e.target.value)}
-                  required
+                <label
+                  className="text-sm font-medium text-gray-900 dark:text-white block mb-2"
+                  htmlFor="incomingType"
                 >
-                  <option value="internal">{t("internal")}</option>
-                  <option value="external">{t("external")}</option>
-                </select>
+                  {t("paperType")}
+                </label>
+                <Select
+                  isSearchable={false}
+                  options={typeOptions}
+                  value={typeOptions.find((opt) => opt.value === incomingType)}
+                  onChange={(selected) =>
+                    setIncomingType(selected?.value || "")
+                  }
+                  styles={customSelectStyles}
+                />
               </div>
               {/* From */}
               <div className="col-span-6 sm:col-span-3">
                 <label className="text-sm font-medium text-gray-900 dark:text-white block mb-2">
                   {t("from")}
                 </label>
-                <input
-                  type="text"
-                  id="from"
-                  name="from"
-                  value={fromField}
-                  onChange={(e) => setFromField(e.target.value)}
-                  className="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg block w-full p-2.5 dark:bg-gray-800 dark:text-white"
+                <CreatableSelect
+                  key={theme}
+                  placeholder={t("choose")}
+                  formatCreateLabel={(inputValue) =>
+                    `${t("click2create")} "${inputValue}"`
+                  }
+                  isClearable
+                  options={fromOptions}
+                  onChange={(newValue) => setFromField(newValue?.value || "")}
+                  onCreateOption={(inputValue) => {
+                    setFromField(inputValue);
+                  }}
+                  value={
+                    fromField ? { value: fromField, label: fromField } : null
+                  }
+                  styles={customSelectStyles}
                 />
               </div>
               {/* To */}
@@ -177,13 +309,20 @@ const AddIncomingForm = () => {
                 <label className="text-sm font-medium text-gray-900 dark:text-white block mb-2">
                   {t("to")}
                 </label>
-                <input
-                  type="text"
-                  id="to"
-                  name="to"
-                  value={toField}
-                  onChange={(e) => setToField(e.target.value)}
-                  className="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg block w-full p-2.5 dark:bg-gray-800 dark:text-white"
+                <CreatableSelect
+                  key={theme}
+                  placeholder={t("choose")}
+                  formatCreateLabel={(inputValue) =>
+                    `${t("click2create")} "${inputValue}"`
+                  }
+                  isClearable
+                  options={toOptions}
+                  onChange={(newValue) => setToField(newValue?.value || "")}
+                  onCreateOption={(inputValue) => {
+                    setToField(inputValue);
+                  }}
+                  value={toField ? { value: toField, label: toField } : null}
+                  styles={customSelectStyles}
                 />
               </div>
               {/* letterNumber */}

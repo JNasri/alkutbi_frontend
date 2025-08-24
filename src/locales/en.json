@@ -143,5 +143,7 @@
   "status": "Status",
   "new": "New",
   "in_progress": "In Progress",
-  "complete": "Complete"
+  "complete": "Complete",
+  "choose": "Select...",
+  "click2create": "click to add"
 }
