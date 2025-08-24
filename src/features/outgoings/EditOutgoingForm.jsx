@@ -1,8 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   useGetOutgoingQuery,
   useUpdateOutgoingMutation,
   useDeleteOutgoingMutation,
+  useGetOutgoingsQuery
 } from "./outgoingsApiSlice";
 import { useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -11,6 +12,8 @@ import i18n from "../../../i18n";
 import toast from "react-hot-toast";
 import { useDropzone } from "react-dropzone";
 import LoadingSpinner from "../../components/LoadingSpinner";
+import CreatableSelect from "react-select/creatable";
+import Select from "react-select";
 
 const EditOutgoingForm = () => {
   const { id } = useParams();
@@ -22,6 +25,11 @@ const EditOutgoingForm = () => {
     isLoading: isFetching,
     isError: fetchError,
   } = useGetOutgoingQuery(id);
+
+  const {
+      data: outgoingsData,
+      isSuccess: isOutgoingSuccess,
+    } = useGetOutgoingsQuery();
 
   const [updateOutgoing, { isLoading: isUpdating, isSuccess, isError, error }] =
     useUpdateOutgoingMutation();
@@ -43,6 +51,10 @@ const EditOutgoingForm = () => {
   const [purpose, setPurpose] = useState("");
   const [passportNumber, setPassportNumber] = useState("");
   const [outgoingType, setOutgoingType] = useState("external");
+  const typeOptions = [
+    { value: "internal", label: t("internal") },
+    { value: "external", label: t("external") },
+  ];
   const [borderNumber, setBorderNumber] = useState("");
   const [attachment, setAttachment] = useState(null);
   const [existingAttachmentUrl, setExistingAttachmentUrl] = useState("");
@@ -97,6 +109,117 @@ const EditOutgoingForm = () => {
     navigate,
     t,
   ]);
+
+    const customSelectStyles = {
+      control: (provided, state) => ({
+        ...provided,
+        backgroundColor: document.documentElement.classList.contains("dark")
+          ? "#1f2937"
+          : "#f9fafb",
+        borderColor: document.documentElement.classList.contains("dark")
+          ? "#ffffff"
+          : "#d1d5db",
+        color: document.documentElement.classList.contains("dark")
+          ? "#ffffff"
+          : "#111827",
+        borderRadius: "0.5rem",
+        minHeight: "40px",
+        boxShadow: state.isFocused ? "0 0 0 1px #60a5fa" : "none",
+        "&:hover": {
+          borderColor: "#60a5fa",
+        },
+      }),
+      menu: (provided) => ({
+        ...provided,
+        backgroundColor: document.documentElement.classList.contains("dark")
+          ? "#1f2937"
+          : "#f9fafb",
+        borderRadius: "0.5rem",
+        zIndex: 50,
+      }),
+      option: (provided, state) => ({
+        ...provided,
+        backgroundColor: state.isFocused
+          ? document.documentElement.classList.contains("dark")
+            ? "#374151"
+            : "#e5e7eb"
+          : "transparent",
+        color: document.documentElement.classList.contains("dark")
+          ? "#ffffff"
+          : "#111827",
+        "&:active": {
+          backgroundColor: document.documentElement.classList.contains("dark")
+            ? "#4b5563"
+            : "#d1d5db",
+        },
+      }),
+      singleValue: (provided) => ({
+        ...provided,
+        color: document.documentElement.classList.contains("dark")
+          ? "#ffffff"
+          : "#111827",
+      }),
+      input: (provided) => ({
+        ...provided,
+        color: document.documentElement.classList.contains("dark")
+          ? "#ffffff"
+          : "#111827",
+      }),
+      placeholder: (provided) => ({
+        ...provided,
+        color: document.documentElement.classList.contains("dark")
+          ? "#9ca3af"
+          : "#6b7280",
+      }),
+    };
+  
+    const useDarkMode = () => {
+      const getTheme = () =>
+        document.documentElement.classList.contains("dark") ? "dark" : "light";
+  
+      const [theme, setTheme] = useState(getTheme());
+  
+      useEffect(() => {
+        const observer = new MutationObserver(() => {
+          const currentTheme = getTheme();
+          setTheme(currentTheme);
+        });
+  
+        observer.observe(document.documentElement, {
+          attributes: true,
+          attributeFilter: ["class"],
+        });
+  
+        return () => observer.disconnect();
+      }, []);
+  
+      return theme;
+    };
+  
+    const theme = useDarkMode();
+  
+    const fromOptions = useMemo(() => {
+      if (!isOutgoingSuccess || !outgoingsData?.ids) return [];
+      const uniqueFroms = new Set(
+        outgoingsData.ids
+          .map((id) => outgoingsData.entities[id]?.from)
+          .filter(Boolean)
+      );
+      return [...uniqueFroms].map((val) => ({ label: val, value: val }));
+    }, [outgoingsData, isOutgoingSuccess]);
+  
+    const toOptions = useMemo(() => {
+      if (!isOutgoingSuccess || !outgoingsData?.ids) return [];
+      const uniqueTos = new Set(
+        outgoingsData.ids
+          .map((id) => outgoingsData.entities[id]?.to)
+          .filter(Boolean)
+      );
+      return [...uniqueTos].map((val) => ({ label: val, value: val }));
+    }, [outgoingsData, isOutgoingSuccess]);
+
+
+
 
   const [fileSizeError, setFileSizeError] = useState(false);
   const onDrop = (acceptedFiles) => {
@@ -187,20 +310,68 @@ const EditOutgoingForm = () => {
         <form onSubmit={onSaveClicked}>
           <div className="grid grid-cols-6 gap-6">
             {/* Type */}
-              <div className="col-span-6 sm:col-span-3">
-                <label className="text-sm font-medium text-gray-900 dark:text-white block mb-2" htmlFor="outgoingType">{t("paperType")}</label>
-                <select
-                  id="outgoingType"
-                  className="cursor-pointer shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg block w-full p-2.5 dark:bg-gray-800 dark:text-white"
-                  value={outgoingType}
-                  onChange={(e) => setOutgoingType(e.target.value)}
-                  required
+                            <div className="col-span-6 sm:col-span-3">
+                <label
+                  className="text-sm font-medium text-gray-900 dark:text-white block mb-2"
+                  htmlFor="outgoingType"
                 >
-                  <option value="internal">{t("internal")}</option>
-                  <option value="external">{t("external")}</option>
-                </select>
+                  {t("paperType")}
+                </label>
+                <Select
+                  isSearchable={false}
+                  options={typeOptions}
+                  value={typeOptions.find((opt) => opt.value === outgoingType)}
+                  onChange={(selected) =>
+                    setOutgoingType(selected?.value || "")
+                  }
+                  styles={customSelectStyles}
+                />
               </div>
-            {["from", "to", "date", "purpose", "passportNumber", "borderNumber"].map(
+                            {/* From */}
+                            <div className="col-span-6 sm:col-span-3">
+                              <label className="text-sm font-medium text-gray-900 dark:text-white block mb-2">
+                                {t("from")}
+                              </label>
+                              <CreatableSelect
+                                key={theme}
+                                placeholder={t("choose")}
+                                formatCreateLabel={(inputValue) =>
+                                  `${t("click2create")} "${inputValue}"`
+                                }
+                                isClearable
+                                options={fromOptions}
+                                onChange={(newValue) => setFromField(newValue?.value || "")}
+                                onCreateOption={(inputValue) => {
+                                  setFromField(inputValue);
+                                }}
+                                value={
+                                  fromField ? { value: fromField, label: fromField } : null
+                                }
+                                styles={customSelectStyles}
+                              />
+                            </div>
+                            {/* To */}
+                            <div className="col-span-6 sm:col-span-3">
+                              <label className="text-sm font-medium text-gray-900 dark:text-white block mb-2">
+                                {t("to")}
+                              </label>
+                              <CreatableSelect
+                                key={theme}
+                                placeholder={t("choose")}
+                                formatCreateLabel={(inputValue) =>
+                                  `${t("click2create")} "${inputValue}"`
+                                }
+                                isClearable
+                                options={toOptions}
+                                onChange={(newValue) => setToField(newValue?.value || "")}
+                                onCreateOption={(inputValue) => {
+                                  setToField(inputValue);
+                                }}
+                                value={toField ? { value: toField, label: toField } : null}
+                                styles={customSelectStyles}
+                              />
+                            </div>
+            {["date", "purpose", "passportNumber", "borderNumber"].map(
               (field) => (
                 <div key={field} className="col-span-6 sm:col-span-3">
                   <label className="text-sm font-medium dark:text-white block mb-2">
@@ -211,11 +382,7 @@ const EditOutgoingForm = () => {
                     id={field}
                     name={field}
                     value={
-                      field === "from"
-                        ? fromField
-                        : field === "to"
-                        ? toField
-                        : field === "date"
+                        field === "date"
                         ? date
                         : field === "purpose"
                         ? purpose
@@ -225,9 +392,7 @@ const EditOutgoingForm = () => {
                     }
                     onChange={(e) => {
                       const v = e.target.value;
-                      if (field === "from") setFromField(v);
-                      else if (field === "to") setToField(v);
-                      else if (field === "date") setDate(v);
+                      if (field === "date") setDate(v);
                       else if (field === "purpose") setPurpose(v);
                       else if (field === "borderNumber") setBorderNumber(v);
                       else setPassportNumber(v);

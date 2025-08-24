@@ -1,5 +1,8 @@
-import { useState, useEffect } from "react";
-import { useAddNewOutgoingMutation } from "./outgoingsApiSlice";
+import { useState, useEffect, useMemo } from "react";
+import {
+  useAddNewOutgoingMutation,
+  useGetOutgoingsQuery,
+} from "./outgoingsApiSlice";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { ArrowLeft, ArrowRight } from "lucide-react";
@@ -7,11 +10,14 @@ import i18n from "../../../i18n";
 import toast from "react-hot-toast";
 import { useDropzone } from "react-dropzone";
 import LoadingSpinner from "../../components/LoadingSpinner";
+import CreatableSelect from "react-select/creatable";
+import Select from "react-select";
 
 const AddOutgoingForm = () => {
   const [fileSizeError, setFileSizeError] = useState(false);
+  const [attachment, setAttachment] = useState("");
 
-  // Dropzone setup
+  // Dropzone configuration
   const onDrop = (acceptedFiles) => {
     const file = acceptedFiles[0];
     if (file && file.size <= 10 * 1024 * 1024) {
@@ -22,7 +28,7 @@ const AddOutgoingForm = () => {
       setFileSizeError(true);
     }
   };
-
+  
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     multiple: false,
@@ -39,15 +45,126 @@ const AddOutgoingForm = () => {
   const [addNewOutgoing, { isLoading, isSuccess, isError, error }] =
     useAddNewOutgoingMutation();
 
-  // Form State
+  const { data: outgoingsData, isSuccess: isOutgoingSuccess } =
+    useGetOutgoingsQuery("outgoingsList");
+
+  // Custom styles for react-select, like your incoming form
+  const customSelectStyles = {
+    control: (provided, state) => ({
+      ...provided,
+      backgroundColor: document.documentElement.classList.contains("dark")
+        ? "#1f2937"
+        : "#f9fafb",
+      borderColor: document.documentElement.classList.contains("dark")
+        ? "#ffffff"
+        : "#d1d5db",
+      color: document.documentElement.classList.contains("dark")
+        ? "#ffffff"
+        : "#111827",
+      borderRadius: "0.5rem",
+      minHeight: "40px",
+      boxShadow: state.isFocused ? "0 0 0 1px #60a5fa" : "none",
+      "&:hover": { borderColor: "#60a5fa" },
+    }),
+    menu: (provided) => ({
+      ...provided,
+      backgroundColor: document.documentElement.classList.contains("dark")
+        ? "#1f2937"
+        : "#f9fafb",
+      borderRadius: "0.5rem",
+      zIndex: 50,
+    }),
+    option: (provided, state) => ({
+      ...provided,
+      backgroundColor: state.isFocused
+        ? document.documentElement.classList.contains("dark")
+          ? "#374151"
+          : "#e5e7eb"
+        : "transparent",
+      color: document.documentElement.classList.contains("dark")
+        ? "#ffffff"
+        : "#111827",
+      "&:active": {
+        backgroundColor: document.documentElement.classList.contains("dark")
+          ? "#4b5563"
+          : "#d1d5db",
+      },
+    }),
+    singleValue: (provided) => ({
+      ...provided,
+      color: document.documentElement.classList.contains("dark")
+        ? "#ffffff"
+        : "#111827",
+    }),
+    input: (provided) => ({
+      ...provided,
+      color: document.documentElement.classList.contains("dark")
+        ? "#ffffff"
+        : "#111827",
+    }),
+    placeholder: (provided) => ({
+      ...provided,
+      color: document.documentElement.classList.contains("dark")
+        ? "#9ca3af"
+        : "#6b7280",
+    }),
+  };
+
+  // Memoized derived dropdown options
+  const fromOptions = useMemo(() => {
+    if (!isOutgoingSuccess) return [];
+    const unique = Array.from(
+      new Set(
+        outgoingsData.ids
+          .map((id) => outgoingsData.entities[id]?.from)
+          .filter(Boolean)
+      )
+    );
+    return unique.map((val) => ({ label: val, value: val }));
+  }, [outgoingsData, isOutgoingSuccess]);
+
+  const toOptions = useMemo(() => {
+    if (!isOutgoingSuccess) return [];
+    const unique = Array.from(
+      new Set(
+        outgoingsData.ids
+          .map((id) => outgoingsData.entities[id]?.to)
+          .filter(Boolean)
+      )
+    );
+    return unique.map((val) => ({ label: val, value: val }));
+  }, [outgoingsData, isOutgoingSuccess]);
+
+  // Dark-mode re-render trigger
+  const useDarkMode = () => {
+    const getTheme = () =>
+      document.documentElement.classList.contains("dark") ? "dark" : "light";
+    const [theme, setTheme] = useState(getTheme());
+
+    useEffect(() => {
+      const observer = new MutationObserver(() => {
+        setTheme(getTheme());
+      });
+      observer.observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ["class"],
+      });
+
+      return () => observer.disconnect();
+    }, []);
+
+    return theme;
+  };
+  const theme = useDarkMode();
+
+  // Form state variables
   const [toField, setToField] = useState("");
   const [fromField, setFromField] = useState("");
   const [date, setDate] = useState("");
   const [purpose, setPurpose] = useState("");
   const [passportNumber, setPassportNumber] = useState("");
-  const [outgoingType, setoutgoingType] = useState("external");
+  const [outgoingType, setOutgoingType] = useState("external");
   const [borderNumber, setBorderNumber] = useState("");
-  const [attachment, setAttachment] = useState("");
 
   useEffect(() => {
     if (isSuccess) {
@@ -56,7 +173,7 @@ const AddOutgoingForm = () => {
       setDate("");
       setPurpose("");
       setPassportNumber("");
-      setoutgoingType("");
+      setOutgoingType("external");
       setBorderNumber("");
       setAttachment("");
       toast.success(t("outgoing_added_successfully"));
@@ -66,7 +183,6 @@ const AddOutgoingForm = () => {
 
   const onSaveOutgoingClicked = async (e) => {
     e.preventDefault();
-
     if (!attachment) {
       toast.error(t("attachment_required"));
       return;
@@ -120,47 +236,56 @@ const AddOutgoingForm = () => {
         <div className="p-6 space-y-6">
           <form onSubmit={onSaveOutgoingClicked}>
             <div className="grid grid-cols-6 gap-6">
-              {/* Type */}
+              {/* Paper Type */}
               <div className="col-span-6 sm:col-span-3">
-                <label className="text-sm font-medium text-gray-900 dark:text-white block mb-2" htmlFor="outgoingType">{t("paperType")}</label>
-                <select
-                  id="outgoingType"
-                  className="cursor-pointer shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg block w-full p-2.5 dark:bg-gray-800 dark:text-white"
-                  value={outgoingType}
-                  onChange={(e) => setoutgoingType(e.target.value)}
-                  required
-                >
-                  <option value="internal">{t("internal")}</option>
-                  <option value="external">{t("external")}</option>
-                </select>
+                <label htmlFor="outgoingType" className="text-sm font-medium text-gray-900 dark:text-white block mb-2">
+                  {t("paperType")}
+                </label>
+                <Select
+                  isSearchable={false}
+                  options={[
+                    { value: "internal", label: t("internal") },
+                    { value: "external", label: t("external") },
+                  ]}
+                  value={{ value: outgoingType, label: t(outgoingType) }}
+                  onChange={(opt) => setOutgoingType(opt?.value ?? "")}
+                  styles={customSelectStyles}
+                />
               </div>
-              {/* From */}
+
+              {/* From Field */}
               <div className="col-span-6 sm:col-span-3">
                 <label className="text-sm font-medium text-gray-900 dark:text-white block mb-2">
                   {t("from")}
                 </label>
-                <input
-                  type="text"
-                  id="from"
-                  name="from"
-                  value={fromField}
-                  onChange={(e) => setFromField(e.target.value)}
-                  className="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg block w-full p-2.5 dark:bg-gray-800 dark:text-white"
+                <CreatableSelect
+                  key={`${theme}-from`}
+                  placeholder={t("choose")}
+                  formatCreateLabel={(input) => `${t("click2create")} "${input}"`}
+                  isClearable
+                  options={fromOptions}
+                  onChange={(opt) => setFromField(opt?.value ?? "")}
+                  onCreateOption={(input) => setFromField(input)}
+                  value={fromField ? { label: fromField, value: fromField } : null}
+                  styles={customSelectStyles}
                 />
               </div>
 
-              {/* To */}
+              {/* To Field */}
               <div className="col-span-6 sm:col-span-3">
                 <label className="text-sm font-medium text-gray-900 dark:text-white block mb-2">
                   {t("to")}
                 </label>
-                <input
-                  type="text"
-                  id="to"
-                  name="to"
-                  value={toField}
-                  onChange={(e) => setToField(e.target.value)}
-                  className="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg block w-full p-2.5 dark:bg-gray-800 dark:text-white"
+                <CreatableSelect
+                  key={`${theme}-to`}
+                  placeholder={t("choose")}
+                  formatCreateLabel={(input) => `${t("click2create")} "${input}"`}
+                  isClearable
+                  options={toOptions}
+                  onChange={(opt) => setToField(opt?.value ?? "")}
+                  onCreateOption={(input) => setToField(input)}
+                  value={toField ? { label: toField, value: toField } : null}
+                  styles={customSelectStyles}
                 />
               </div>
 
@@ -171,8 +296,6 @@ const AddOutgoingForm = () => {
                 </label>
                 <input
                   type="date"
-                  id="date"
-                  name="date"
                   value={date}
                   onChange={(e) => setDate(e.target.value)}
                   className="cursor-pointer shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg block w-full p-2.5 dark:bg-gray-800 dark:text-white"
@@ -186,8 +309,6 @@ const AddOutgoingForm = () => {
                 </label>
                 <input
                   type="text"
-                  id="purpose"
-                  name="purpose"
                   value={purpose}
                   onChange={(e) => setPurpose(e.target.value)}
                   className="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg block w-full p-2.5 dark:bg-gray-800 dark:text-white"
@@ -201,13 +322,12 @@ const AddOutgoingForm = () => {
                 </label>
                 <input
                   type="text"
-                  id="passportNumber"
-                  name="passportNumber"
                   value={passportNumber}
                   onChange={(e) => setPassportNumber(e.target.value)}
                   className="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg block w-full p-2.5 dark:bg-gray-800 dark:text-white"
                 />
               </div>
+
               {/* Border Number */}
               <div className="col-span-6 sm:col-span-3">
                 <label className="text-sm font-medium text-gray-900 dark:text-white block mb-2">
@@ -215,14 +335,13 @@ const AddOutgoingForm = () => {
                 </label>
                 <input
                   type="text"
-                  id="borderNumber"
-                  name="borderNumber"
                   value={borderNumber}
                   onChange={(e) => setBorderNumber(e.target.value)}
                   className="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg block w-full p-2.5 dark:bg-gray-800 dark:text-white"
                 />
               </div>
-              {/* Attachment */}
+
+              {/* Attachment Upload */}
               <div className="col-span-6 sm:col-span-3">
                 <label className="text-sm font-medium text-gray-900 dark:text-white mb-2">
                   {t("attachment")}
@@ -238,9 +357,7 @@ const AddOutgoingForm = () => {
                 >
                   <input {...getInputProps()} />
                   {isDragActive ? (
-                    <span className="text-sm text-center mx-auto">
-                      {t("drop_here")}
-                    </span>
+                    <span className="text-sm text-center mx-auto">{t("drop_here")}</span>
                   ) : attachment ? (
                     <div className="flex items-center justify-between w-full">
                       <p className="text-sm truncate">{attachment.name}</p>
@@ -256,19 +373,17 @@ const AddOutgoingForm = () => {
                       </button>
                     </div>
                   ) : (
-                    <p className="text-sm text-center w-full">
-                      {t("drag_drop_or_click")}
-                    </p>
+                    <p className="text-sm text-center w-full">{t("drag_drop_or_click")}</p>
                   )}
                 </div>
               </div>
             </div>
 
-            {/* Submit Button */}
+            {/* Submit */}
             <div className="pt-6">
               <button
                 type="submit"
-                className="text-black dark:text-white bg-gray-100  dark:bg-gray-800 border dark:border-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 disabled:bg-gray-400 cursor-pointer disabled:cursor-not-allowed focus:ring-4 focus:ring-cyan-200 font-medium rounded-4xl text-sm px-5 py-2.5"
+                className="text-black dark:text-white bg-gray-100 dark:bg-gray-800 border dark:border-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 disabled:bg-gray-400 cursor-pointer disabled:cursor-not-allowed focus:ring-4 focus:ring-cyan-200 font-medium rounded-4xl text-sm px-5 py-2.5"
               >
                 {t("add_outgoing")} ✅
               </button>

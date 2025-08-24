@@ -1,8 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   useGetIncomingQuery,
   useUpdateIncomingMutation,
-  useDeleteIncomingMutation, // ✅ Add this
+  useDeleteIncomingMutation,
+  useGetIncomingsQuery, // ✅ Added for 'from' and 'to' options
 } from "./incomingsApiSlice";
 import { useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -11,6 +12,8 @@ import i18n from "../../../i18n";
 import toast from "react-hot-toast";
 import { useDropzone } from "react-dropzone";
 import LoadingSpinner from "../../components/LoadingSpinner";
+import CreatableSelect from "react-select/creatable";
+import Select from "react-select";
 
 const EditIncomingForm = () => {
   const { id } = useParams();
@@ -22,6 +25,11 @@ const EditIncomingForm = () => {
     isLoading: isFetching,
     isError: fetchError,
   } = useGetIncomingQuery(id);
+
+  const {
+    data: incomingsData,
+    isSuccess: isIncomingSuccess,
+  } = useGetIncomingsQuery();
 
   const [updateIncoming, { isLoading: isUpdating, isSuccess, isError, error }] =
     useUpdateIncomingMutation();
@@ -49,6 +57,13 @@ const EditIncomingForm = () => {
   const [existingAttachmentUrl, setExistingAttachmentUrl] = useState("");
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [fileSizeError, setFileSizeError] = useState(false);
+
+  const typeOptions = [
+    { value: "internal", label: t("internal") },
+    { value: "external", label: t("external") },
+  ];
+
   const handleDeleteClick = () => setShowDeleteModal(true);
   const handleCancelDelete = () => setShowDeleteModal(false);
 
@@ -63,7 +78,7 @@ const EditIncomingForm = () => {
 
   useEffect(() => {
     if (incoming) {
-      setIdentifier(incoming.identifier)
+      setIdentifier(incoming.identifier);
       setToField(incoming.to || "");
       setFromField(incoming.from || "");
       setDate(incoming.date ? incoming.date.slice(0, 10) : "");
@@ -102,7 +117,113 @@ const EditIncomingForm = () => {
     t,
   ]);
 
-  const [fileSizeError, setFileSizeError] = useState(false);
+  const customSelectStyles = {
+    control: (provided, state) => ({
+      ...provided,
+      backgroundColor: document.documentElement.classList.contains("dark")
+        ? "#1f2937"
+        : "#f9fafb",
+      borderColor: document.documentElement.classList.contains("dark")
+        ? "#ffffff"
+        : "#d1d5db",
+      color: document.documentElement.classList.contains("dark")
+        ? "#ffffff"
+        : "#111827",
+      borderRadius: "0.5rem",
+      minHeight: "40px",
+      boxShadow: state.isFocused ? "0 0 0 1px #60a5fa" : "none",
+      "&:hover": {
+        borderColor: "#60a5fa",
+      },
+    }),
+    menu: (provided) => ({
+      ...provided,
+      backgroundColor: document.documentElement.classList.contains("dark")
+        ? "#1f2937"
+        : "#f9fafb",
+      borderRadius: "0.5rem",
+      zIndex: 50,
+    }),
+    option: (provided, state) => ({
+      ...provided,
+      backgroundColor: state.isFocused
+        ? document.documentElement.classList.contains("dark")
+          ? "#374151"
+          : "#e5e7eb"
+        : "transparent",
+      color: document.documentElement.classList.contains("dark")
+        ? "#ffffff"
+        : "#111827",
+      "&:active": {
+        backgroundColor: document.documentElement.classList.contains("dark")
+          ? "#4b5563"
+          : "#d1d5db",
+      },
+    }),
+    singleValue: (provided) => ({
+      ...provided,
+      color: document.documentElement.classList.contains("dark")
+        ? "#ffffff"
+        : "#111827",
+    }),
+    input: (provided) => ({
+      ...provided,
+      color: document.documentElement.classList.contains("dark")
+        ? "#ffffff"
+        : "#111827",
+    }),
+    placeholder: (provided) => ({
+      ...provided,
+      color: document.documentElement.classList.contains("dark")
+        ? "#9ca3af"
+        : "#6b7280",
+    }),
+  };
+
+  const useDarkMode = () => {
+    const getTheme = () =>
+      document.documentElement.classList.contains("dark") ? "dark" : "light";
+
+    const [theme, setTheme] = useState(getTheme());
+
+    useEffect(() => {
+      const observer = new MutationObserver(() => {
+        const currentTheme = getTheme();
+        setTheme(currentTheme);
+      });
+
+      observer.observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ["class"],
+      });
+
+      return () => observer.disconnect();
+    }, []);
+
+    return theme;
+  };
+
+  const theme = useDarkMode();
+
+  const fromOptions = useMemo(() => {
+    if (!isIncomingSuccess || !incomingsData?.ids) return [];
+    const uniqueFroms = new Set(
+      incomingsData.ids
+        .map((id) => incomingsData.entities[id]?.from)
+        .filter(Boolean)
+    );
+    return [...uniqueFroms].map((val) => ({ label: val, value: val }));
+  }, [incomingsData, isIncomingSuccess]);
+
+  const toOptions = useMemo(() => {
+    if (!isIncomingSuccess || !incomingsData?.ids) return [];
+    const uniqueTos = new Set(
+      incomingsData.ids
+        .map((id) => incomingsData.entities[id]?.to)
+        .filter(Boolean)
+    );
+    return [...uniqueTos].map((val) => ({ label: val, value: val }));
+  }, [incomingsData, isIncomingSuccess]);
 
   const onDrop = (acceptedFiles) => {
     const file = acceptedFiles[0];
@@ -136,8 +257,8 @@ const EditIncomingForm = () => {
       return toast.error(t("file_too_large", { size: "10MB" }));
     }
     const formData = new FormData();
-    formData.append("identifier", identifier);
     formData.append("id", id);
+    formData.append("identifier", identifier);
     formData.append("to", toField);
     formData.append("from", fromField);
     formData.append("date", date);
@@ -147,10 +268,12 @@ const EditIncomingForm = () => {
     formData.append("letterNumber", letterNumber);
     formData.append("passportNumber", passportNumber);
 
-    if (attachment) formData.append("attachment", attachment);
-    if (!attachment && !existingAttachmentUrl) {
+    if (attachment) {
+      formData.append("attachment", attachment);
+    } else if (!existingAttachmentUrl) {
       formData.append("removeAttachment", "true");
     }
+
     await updateIncoming(formData).unwrap();
   };
 
@@ -195,19 +318,67 @@ const EditIncomingForm = () => {
           <div className="grid grid-cols-6 gap-6">
             {/* Type */}
               <div className="col-span-6 sm:col-span-3">
-                <label className="text-sm font-medium text-gray-900 dark:text-white block mb-2" htmlFor="incomingType">{t("paperType")}</label>
-                <select
-                  id="incomingType"
-                  className="cursor-pointer shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg block w-full p-2.5 dark:bg-gray-800 dark:text-white"
-                  value={incomingType}
-                  onChange={(e) => setIncomingType(e.target.value)}
-                  required
+                <label
+                  className="text-sm font-medium text-gray-900 dark:text-white block mb-2"
+                  htmlFor="incomingType"
                 >
-                  <option value="internal">{t("internal")}</option>
-                  <option value="external">{t("external")}</option>
-                </select>
+                  {t("paperType")}
+                </label>
+                <Select
+                  isSearchable={false}
+                  options={typeOptions}
+                  value={typeOptions.find((opt) => opt.value === incomingType)}
+                  onChange={(selected) =>
+                    setIncomingType(selected?.value || "")
+                  }
+                  styles={customSelectStyles}
+                />
               </div>
-            {["from", "to", "letterNumber", "date", "purpose", "passportNumber", "borderNumber"].map(
+                            {/* From */}
+                            <div className="col-span-6 sm:col-span-3">
+                              <label className="text-sm font-medium text-gray-900 dark:text-white block mb-2">
+                                {t("from")}
+                              </label>
+                              <CreatableSelect
+                                key={theme}
+                                placeholder={t("choose")}
+                                formatCreateLabel={(inputValue) =>
+                                  `${t("click2create")} "${inputValue}"`
+                                }
+                                isClearable
+                                options={fromOptions}
+                                onChange={(newValue) => setFromField(newValue?.value || "")}
+                                onCreateOption={(inputValue) => {
+                                  setFromField(inputValue);
+                                }}
+                                value={
+                                  fromField ? { value: fromField, label: fromField } : null
+                                }
+                                styles={customSelectStyles}
+                              />
+                            </div>
+                            {/* To */}
+                            <div className="col-span-6 sm:col-span-3">
+                              <label className="text-sm font-medium text-gray-900 dark:text-white block mb-2">
+                                {t("to")}
+                              </label>
+                              <CreatableSelect
+                                key={theme}
+                                placeholder={t("choose")}
+                                formatCreateLabel={(inputValue) =>
+                                  `${t("click2create")} "${inputValue}"`
+                                }
+                                isClearable
+                                options={toOptions}
+                                onChange={(newValue) => setToField(newValue?.value || "")}
+                                onCreateOption={(inputValue) => {
+                                  setToField(inputValue);
+                                }}
+                                value={toField ? { value: toField, label: toField } : null}
+                                styles={customSelectStyles}
+                              />
+                            </div>
+            {["letterNumber", "date", "purpose", "passportNumber", "borderNumber"].map(
               (field) => (
                 <div key={field} className="col-span-6 sm:col-span-3">
                   <label className="text-sm font-medium dark:text-white block mb-2">
@@ -218,11 +389,7 @@ const EditIncomingForm = () => {
                     id={field}
                     name={field}
                     value={
-                      field === "from" 
-                        ? fromField
-                        : field === "to"
-                        ? toField
-                        : field === "letterNumber"
+                        field === "letterNumber"
                         ? letterNumber
                         : field === "date"
                         ? date
@@ -234,9 +401,7 @@ const EditIncomingForm = () => {
                     }
                     onChange={(e) => {
                       const v = e.target.value;
-                      if (field === "from") setFromField(v);
-                      else if (field === "to") setToField(v);
-                      else if (field === "letterNumber") setLetterNumber(v);
+                      if (field === "letterNumber") setLetterNumber(v);
                       else if (field === "date") setDate(v);
                       else if (field === "purpose") setPurpose(v);
                       else if (field === "borderNumber") setBorderNumber(v);
