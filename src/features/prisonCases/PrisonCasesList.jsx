@@ -66,43 +66,42 @@ const PrisoncasesList = () => {
       { field: "updatedAt", header: t("updatedAt") },
       { field: "actions", header: t("actions") },
     ];
-    
 
     const transformedData = sortedList.map((p) => ({
       ...p,
       sex: p.sex === "M" ? t("Male") : t("Female"),
-      attachments: p.passportAttachment && p.visaAttachment ? (
-        <div>
-        <a
-          href={p.passportAttachment}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-blue-600 dark:text-blue-400 hover:underline"
-        >
-          {t("passport")}
-        </a>
-        <br />
-        <br />
-        <a
-          href={p.visaAttachment}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-blue-600 dark:text-blue-400 hover:underline"
-        >
-          {t("visa")}
-        </a>
-        </div>
-
-      ) : (
-        "—"
-      ),
+      attachments:
+        p.passportAttachment && p.visaAttachment ? (
+          <div>
+            <a
+              href={p.passportAttachment}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              {t("passport")}
+            </a>
+            <br />
+            <br />
+            <a
+              href={p.visaAttachment}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              {t("visa")}
+            </a>
+          </div>
+        ) : (
+          "—"
+        ),
       createdAt: new Date(p.createdAt).toLocaleDateString(),
       updatedAt: new Date(p.updatedAt).toLocaleDateString(),
       status: t(p.status || "—"),
       actions: (
         <div className="flex flex-col items-center text-center space-y-3 my-4">
           <div
-              className={`flex items-center justify-center  p-2 rounded-full text-white text-xs font-bold
+            className={`flex items-center justify-center  p-2 rounded-full text-white text-xs font-bold
               ${
                 p.status === "new"
                   ? "bg-blue-300"
@@ -113,9 +112,9 @@ const PrisoncasesList = () => {
                   : "bg-gray-300"
               }
             `}
-            >
-              {t(p.status)}
-            </div>
+          >
+            {t(p.status)}
+          </div>
           <Link
             to={`/dashboard/prisoncases/edit/${p.id}`}
             className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 text-sm"
@@ -169,9 +168,7 @@ const PrisoncasesList = () => {
               {t("last_prison_date")}
             </p>
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-              {sortedList.length > 0
-                ? sortedList[0].dateOfArrest
-                : "—"}
+              {sortedList.length > 0 ? sortedList[0].dateOfArrest : "—"}
             </h3>
           </div>
 
@@ -205,55 +202,64 @@ const PrisoncasesList = () => {
 
         {/* Timeline Modal */}
         {selectedTimeline !== null && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/30 dark:bg-gray-900/30 backdrop-blur-xs">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/30 dark:bg-gray-900/30 backdrop-blur-xs">
             <div className="bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl shadow-2xl p-10 mx-16 w-full overflow-y-auto relative">
-            <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-4">
+              <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-4">
                 {t("timeline")}
-            </h2>
+              </h2>
 
-            {selectedTimeline.length ? (
+              {selectedTimeline.length ? (
                 <Chrono
-                items={selectedTimeline.map((entry, i) => ({
-                    title: entry.date || `Step ${i + 1}`,
-                    cardTitle: entry.note || "",
-                    
-                }))}
-                mode="VERTICAL"
-                disableToolbar
-                scrollable
-                cardHeight={1}
-                theme={{
-                    cardBgColor: document.documentElement.classList.contains("dark")
-                    ? "#11171fff"
-                    : "#dbdcdfff",
-                    toolbarBgColor: document.documentElement.classList.contains("dark")
-                    ? "#11171fff"
-                    : "#dbdcdfff",
-                    cardForeColor: document.documentElement.classList.contains("dark")
-                    ? "#ffffffff"
-                    : "#6b7280",
-                    secondary: document.documentElement.classList.contains("dark")
-                    ? "#11171fff"
-                    : "#dbdcdfff"
-                }}
+                  items={selectedTimeline
+                    .map((entry, i) => ({
+                      title: entry.date || `Step ${i + 1}`,
+                      cardTitle: entry.note || "",
+                    }))
+                    .reverse()}
+                  mode="VERTICAL"
+                  disableToolbar
+                  scrollable
+                  mediaSettings={{ align: "center" }}
+                  cardHeight={1}
+                  theme={{
+                    cardBgColor: document.documentElement.classList.contains(
+                      "dark"
+                    )
+                      ? "#11171fff"
+                      : "#dbdcdfff",
+                    toolbarBgColor: document.documentElement.classList.contains(
+                      "dark"
+                    )
+                      ? "#11171fff"
+                      : "#dbdcdfff",
+                    cardForeColor: document.documentElement.classList.contains(
+                      "dark"
+                    )
+                      ? "#ffffffff"
+                      : "#6b7280",
+                    secondary: document.documentElement.classList.contains(
+                      "dark"
+                    )
+                      ? "#11171fff"
+                      : "#dbdcdfff",
+                  }}
                 />
-            ) : (
+              ) : (
                 <p className="text-gray-500 dark:text-gray-400">
-                {t("no_timeline_entries")}
+                  {t("no_timeline_entries")}
                 </p>
-            )}
+              )}
 
-            <button
+              <button
                 onClick={() => setSelectedTimeline(null)}
                 className="absolute top-3 right-4 text-gray-600 dark:text-gray-300 hover:text-red-500 text-xl cursor-pointer"
                 title={t("close")}
-            >
+              >
                 ✕
-            </button>
+              </button>
             </div>
-        </div>
+          </div>
         )}
-
       </>
     );
   }
