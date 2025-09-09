@@ -21,5 +21,4 @@ const DashLayout = () => {
   );
 };
 
-
 export default DashLayout;

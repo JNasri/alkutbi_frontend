@@ -5,12 +5,13 @@ import DataTableWrapper from "../../components/DataTableWrapper";
 import LoadingSpinner from "../../components/LoadingSpinner";
 import { Link } from "react-router-dom";
 import { Plus } from "lucide-react";
-import Sticker from "../../components/Sticker";
+import useAuth from "../../hooks/useAuth";
 
 const OutgoingsList = () => {
   const { t } = useTranslation();
-
-  const [activeSticker, setActiveSticker] = useState(null);
+  const { roles } = useAuth(); // 👈 get roles array from token
+  const canViewAttachment =
+    roles.includes("Admin") || roles.includes("Special Papers Manager");
 
   const {
     data: outgoings,
@@ -65,18 +66,20 @@ const OutgoingsList = () => {
       outgoingType: t(item.outgoingType), // 👈 Translate here
       createdAt: new Date(item.createdAt).toLocaleDateString(),
       updatedAt: new Date(item.updatedAt).toLocaleDateString(),
-      attachment: item.attachment ? (
-        <a
-          href={item.attachment}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-blue-600 dark:text-blue-400 hover:underline"
-        >
-          {t("view_attachment")}
-        </a>
-      ) : (
-        "—"
-      ),
+      attachment:
+        canViewAttachment && item.attachment ? (
+          <a
+            href={item.attachment}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-600 dark:text-blue-400 hover:underline"
+            title="Open Attachment"
+          >
+            {t("view_attachment")}
+          </a>
+        ) : (
+          "—"
+        ),
       sticker: (
         <a
           href={`/sticker?identifier=${encodeURIComponent(

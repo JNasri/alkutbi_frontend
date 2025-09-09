@@ -30,7 +30,7 @@ const PageLangSwitch = () => {
       onClick={toggleLanguage}
       aria-label="Toggle language"
     >
-      <span className="relative px-5 py-2.5 transition-all ease-in duration-75 bg-white rounded-md group-hover:bg-transparent group-hover:dark:bg-transparent">
+      <span className="relative px-5 py-2.5 transition-all ease-in duration-75 bg-white rounded-md group-hover:bg-transparent group-hover:dark:bg-transparent font-bold">
         {t("toggle_language")}
       </span>
     </button>
