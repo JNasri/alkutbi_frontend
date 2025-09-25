@@ -254,7 +254,7 @@ const AddIncomingForm = () => {
         </div>
 
         {/* Title */}
-        <h1 className="text-4xl text-gray-800 dark:text-white">
+        <h1 className="text-4xl font-bold text-gray-800 dark:text-white">
           {t("add_incoming")} :
         </h1>
       </div>

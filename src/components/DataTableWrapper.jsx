@@ -63,7 +63,7 @@ const DataTableWrapper = ({ data, columns, title }) => {
       <div className="bg-white dark:bg-gray-800 p-6 rounded-3xl shadow-2xl transition-all duration-300">
         {/* Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-          <h2 className="text-2xl font-semibold text-gray-900 dark:text-white tracking-tight">
+          <h2 className="text-2xl text-gray-900 dark:text-white tracking-tight">
             {title}
           </h2>
 
@@ -133,23 +133,29 @@ const DataTableWrapper = ({ data, columns, title }) => {
               },
             }}
           >
-           {columns.map((col, i) => (
-            <Column
-              key={i}
-              field={col.field}
-              header={col.header}
-              sortable={col.sortable ?? true}
-              style={{
-                width: "10rem",
-                padding: "0.5rem",
-              }}
-              alignHeader="center"
-              headerClassName="text-center bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-white text-sm font-bold"
-              bodyClassName="text-sm dark:bg-gray-900 text-gray-800 dark:text-gray-100 text-center font-medium"
-              frozen={i === columns.length - 1}
-              alignFrozen={i === columns.length - 1 ? (isRTL ? "left" : "right") : undefined}
-            />
-          ))}
+            {columns.map((col, i) => (
+              <Column
+                key={i}
+                field={col.field}
+                header={col.header}
+                sortable={col.sortable ?? true}
+                style={{
+                  width: "10rem",
+                  padding: "0.5rem",
+                }}
+                alignHeader="center"
+                headerClassName="text-center bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-white text-sm font-bold"
+                bodyClassName="text-sm dark:bg-gray-900 text-gray-800 dark:text-gray-100 text-center font-medium"
+                frozen={i === columns.length - 1}
+                alignFrozen={
+                  i === columns.length - 1
+                    ? isRTL
+                      ? "left"
+                      : "right"
+                    : undefined
+                }
+              />
+            ))}
           </DataTable>
         </div>
       </div>

@@ -11,6 +11,7 @@ import {
   Skull,
   ShieldAlert,
   Footprints,
+  Package,
 } from "lucide-react"; // ✅ added icons
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
@@ -153,24 +154,39 @@ const DashSidebar = () => {
                 <Link to="/dashboard/deathcases">
                   <div className="flex items-center gap-6 p-2 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 transition">
                     <Skull size={18} />
-                    {isOpen && <span className="text-sm">{t("death_cases")}</span>}
+                    {isOpen && (
+                      <span className="text-sm">{t("death_cases")}</span>
+                    )}
                   </div>
                 </Link>
                 <Link to="/dashboard/prisoncases">
                   <div className="flex items-center gap-6 p-2 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 transition">
                     <ShieldAlert size={18} />
-                    {isOpen && <span className="text-sm">{t("prison_cases")}</span>}
+                    {isOpen && (
+                      <span className="text-sm">{t("prison_cases")}</span>
+                    )}
                   </div>
                 </Link>
                 <Link to="/dashboard/escapecases">
                   <div className="flex items-center gap-6 p-2 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 transition">
                     <Footprints size={18} />
-                    {isOpen && <span className="text-sm">{t("escape_cases")}</span>}
+                    {isOpen && (
+                      <span className="text-sm">{t("escape_cases")}</span>
+                    )}
                   </div>
                 </Link>
               </div>
             )}
           </div>
+
+          {/* Assets */}
+          <Link
+            to="/dashboard/assets"
+            className="flex items-center gap-4 p-4 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 transition"
+          >
+            <Package size={20} />
+            {isOpen && <span className="text-sm">{t("assets")}</span>}
+          </Link>
 
           {/* Logs */}
           {isAdmin && (

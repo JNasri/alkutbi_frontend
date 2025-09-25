@@ -1,6 +1,6 @@
 {
   "welcome": "Welcome to",
-  "login_welcome": "Welcome back",
+  "login_welcome": "Welcome back,",
   "login_info": "Sign in to your Alkutbi System account",
   "alkutbi": "Alkutbi Group",
   "welcome_info": "UMRAH • HOTELS • TRANSPORTATION • MARKETING",
@@ -166,5 +166,24 @@
   "add_timeline_entry": "Add New",
   "prisoncase_added_successfully": "تم إضافة حالة السجن بنجاح",
   "prisoncase_updated_successfully": "تم تحديث حالة السجن بنجاح",
-  "prisoncase_deleted_successfully": "تم حذف حالة السجن بنجاح"
+  "prisoncase_deleted_successfully": "تم حذف حالة السجن بنجاح",
+  "assets": "Company Assets",
+  "assets_list": "Assets List",
+  "yes": "Yes",
+  "no": "No",
+  "total_users": "Total Users",
+  "total_prisoncases": "Total Prison Cases",
+  "total_assets": "Total Assets",
+  "asset_id": "Asset ID",
+  "description": "Description",
+  "employee_name": "Employee Name",
+  "department": "Department",
+  "added_in_jisr": "Added in Jisr",
+  "handover_date": "Handover Date",
+  "add_asset": "Add Asset",
+  "edit_asset": "Edit Asset",
+  "asset_added_successfully": "Asset Added Successfully",
+  "asset_updated_successfully": "Asset Updated Successfully",
+  "asset_deleted_successfully": "Asset Deleted Successfully",
+  "no_assets_found": "No assets found"
 }

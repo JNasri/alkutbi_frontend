@@ -227,7 +227,7 @@ const AddOutgoingForm = () => {
             )}
           </button>
         </div>
-        <h1 className="text-4xl text-gray-800 dark:text-white">
+        <h1 className="text-4xl font-bold text-gray-800 dark:text-white">
           {t("add_outgoing")} :
         </h1>
       </div>

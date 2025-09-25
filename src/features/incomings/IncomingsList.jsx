@@ -114,8 +114,8 @@ const IncomingsList = () => {
     return (
       <>
         <div className="flex items-center mb-2 p-1">
-          <h1 className="text-4xl text-gray-800 dark:text-white">
-            {t("incomings")}
+          <h1 className="text-4xl font-bold text-gray-800 dark:text-white">
+            📩 {t("incomings")}
           </h1>
           <div className="relative group ms-auto">
             <Link

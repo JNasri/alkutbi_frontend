@@ -278,7 +278,7 @@ if (files.visaAttachment) {
         >
           {i18n.language === "ar" ? <ArrowRight size={20} /> : <ArrowLeft size={20} />}
         </button>
-        <h1 className="text-4xl text-gray-800 dark:text-white">
+        <h1 className="text-4xl font-bold text-gray-800 dark:text-white">
           {t("add_prisoncase")}
         </h1>
       </div>
