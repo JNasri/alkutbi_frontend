@@ -12,6 +12,7 @@ import {
   ShieldAlert,
   Footprints,
   Package,
+  ShoppingCart,
 } from "lucide-react"; // ✅ added icons
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
@@ -82,6 +83,15 @@ const DashSidebar = () => {
               {isOpen && <span className="text-sm">{t("users")}</span>}
             </Link>
           )}
+
+          {/* Purchase Orders */}
+          <Link
+            to="/dashboard/purchaseorders"
+            className="flex items-center gap-4 p-4 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 transition"
+          >
+            <ShoppingCart size={20} />
+            {isOpen && <span className="text-sm">{t("purchase_orders")}</span>}
+          </Link>
 
           {/* Special Papers */}
           <div>

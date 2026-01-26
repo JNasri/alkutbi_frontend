@@ -28,6 +28,10 @@ import AddOutgoingForm from "./features/outgoings/AddOutgoingForm";
 import AddDeathcaseForm from "./features/deathCases/AddDeathCaseForm";
 import AddPrisonCaseForm from "./features/prisonCases/AddPrisonCaseForm";
 import AddAssetForm from "./features/assets/AddAssetForm";
+// purchase orders
+import PurchaseOrdersList from "./features/purchaseOrders/PurchaseOrdersList";
+import AddPurchaseOrderForm from "./features/purchaseOrders/AddPurchaseOrderForm";
+import EditPurchaseOrderForm from "./features/purchaseOrders/EditPurchaseOrderForm";
 // logs
 import LogsList from "./features/logger/LogsList";
 // not found
@@ -162,6 +166,12 @@ function App() {
                     <Route index element={<AssetsList />} />
                     <Route path="add" element={<AddAssetForm />} />
                     <Route path="edit/:id" element={<EditAssetForm />} />
+                  </Route>
+                  {/* /purchaseorders */}
+                  <Route path="purchaseorders">
+                    <Route index element={<PurchaseOrdersList />} />
+                    <Route path="add" element={<AddPurchaseOrderForm />} />
+                    <Route path="edit/:id" element={<EditPurchaseOrderForm />} />
                   </Route>
                   {/* /logs */}
                   <Route element={<RequireAuth allowedRoles={[ROLES.Admin]} />}>
