@@ -23,38 +23,39 @@ const DashHeader = () => {
   const userName = currentLang === "ar" ? user.ar_name : user.en_name;
 
   return (
-    <header className="flex items-center justify-between h-20 border-b border-gray-200 bg-gray-100 dark:bg-gray-800 dark:border-gray-700 shadow-sm">
+    <header className="flex items-center justify-between h-16 px-2 border-b border-gray-200 bg-white dark:bg-gray-800 dark:border-gray-700 shadow-sm">
       <Link
         to="/dashboard"
-        className="text-xl font-bold tracking-wide flex items-center text-gray-800"
+        className="flex items-center gap-3 text-xl font-bold tracking-wide text-gray-800 dark:text-gray-200 hover:opacity-80 transition-opacity"
       >
-        <img src="/LOGO_ONLY.png" alt="ss" className="w-15" />
-        <span className="hidden md:block dark:text-gray-200 ">
+        <img src="/LOGO_ONLY.png" alt="Logo" className="h-12 w-auto" />
+        <span className="hidden md:block">
           {t("alkutbi")}
         </span>
       </Link>
 
-      <div className="flex items-center gap-6 px-3">
+      <div className="flex items-center gap-4">
         <LanguageSwitcher />
         <ThemeToggleButton />
+        
         <div className="relative group">
           <button
-            className="flex items-center justify-center text-gray-500 transition-colors bg-gray-100 border border-gray-500 rounded-full hover:text-red-500 h-11 w-11 hover:bg-gray-100 dark:border-white dark:bg-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-red-400 cursor-pointer"
+            className="flex items-center justify-center w-10 h-10 text-gray-600 dark:text-gray-300 transition-all bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-full hover:text-red-500 dark:hover:text-red-400 hover:bg-gray-200 dark:hover:bg-gray-600 hover:border-red-300 dark:hover:border-red-500 cursor-pointer"
             onClick={handleLogout}
             aria-label="Logout"
           >
-            <LogOut size={20} />
+            <LogOut size={18} />
           </button>
 
-          {/* Tooltip positioned below the button */}
-          <div className="absolute left-1/2 top-full mt-2 -translate-x-1/2 whitespace-nowrap px-3 py-1.5 text-sm text-gray-800 bg-gray-300 dark:bg-gray-200 dark:text-gray-800 rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none z-10 shadow-md font-medium">
+          {/* Tooltip */}
+          <div className="absolute left-1/2 top-full mt-2 -translate-x-1/2 whitespace-nowrap px-3 py-1.5 text-xs font-medium text-white bg-gray-800 dark:bg-gray-200 dark:text-gray-800 rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-10 shadow-lg">
             {t("logout")}
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          <UserCircle size={24} />
-          <span className="text-sm">{userName || t("guest")}</span>
+        <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
+          <UserCircle size={20} className="text-gray-600 dark:text-gray-300" />
+          <span className="text-sm font-medium text-gray-700 dark:text-gray-200">{userName || t("guest")}</span>
         </div>
       </div>
     </header>

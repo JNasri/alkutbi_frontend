@@ -4,23 +4,30 @@ import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
 import { InputText } from "primereact/inputtext";
 import { Button } from "primereact/button";
-import LoadingSpinner from "./LoadingSpinner"; // Assuming you have a LoadingSpinner component
+import { Dropdown } from "primereact/dropdown";
+import LoadingSpinner from "./LoadingSpinner";
 import i18n from "../../i18n";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
-import { FileText } from "lucide-react"; // Lucide document icon
+import { FileText, FileSpreadsheet, Download } from "lucide-react";
 
-// index.js or App.js imports
+// PrimeReact imports
 import "primereact/resources/themes/lara-light-indigo/theme.css";
 import "primereact/resources/primereact.min.css";
 import "primeicons/primeicons.css";
 
 const DataTableWrapper = ({ data, columns, title }) => {
   const { i18n, t } = useTranslation();
-  const isRTL = i18n.dir() === "rtl"; // Detect if language is RTL (like Arabic)
+  const isRTL = i18n.dir() === "rtl";
   const [globalFilter, setGlobalFilter] = useState("");
-
+  const [selectedRows, setSelectedRows] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [first, setFirst] = useState(0);
+  const [rows, setRows] = useState(10);
+  const dt = useRef(null);
+
+  // Row options for pagination
+  const rowsPerPageOptions = [5, 10, 25, 50];
 
   // Excel export
   const exportExcel = () => {
@@ -30,7 +37,14 @@ const DataTableWrapper = ({ data, columns, title }) => {
         const worksheetData = data.map((row) => {
           const obj = {};
           columns.forEach((col) => {
-            obj[col.header] = row[col.field];
+            // Handle JSX elements by extracting text content
+            const value = row[col.field];
+            if (typeof value === 'object' && value !== null && value.props) {
+              // It's a React element, try to extract text
+              obj[col.header] = value.props.children || value.props.title || '';
+            } else {
+              obj[col.header] = value;
+            }
           });
           return obj;
         });
@@ -52,50 +66,68 @@ const DataTableWrapper = ({ data, columns, title }) => {
       } finally {
         setLoading(false);
       }
-    }, 100); // slight delay so spinner renders before blocking operation
+    }, 100);
   };
 
-  const dt = useRef(null);
+  // CSV export
+  const exportCSV = () => {
+    dt.current.exportCSV();
+  };
+
+  // Header template with search and export buttons
+  const header = (
+    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
+      <h2 className="text-2xl font-semibold text-gray-900 dark:text-white">
+        {title}
+      </h2>
+
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 w-full sm:w-auto">
+        <span className="relative w-full sm:w-72">
+          <i
+            className={`pi pi-search absolute top-1/2 transform -translate-y-1/2 text-gray-400 ${
+              i18n.language === "ar" ? "left-3" : "right-3"
+            }`}
+          />
+          <InputText
+            value={globalFilter}
+            onChange={(e) => setGlobalFilter(e.target.value)}
+            placeholder={t("search...")}
+            style={{
+              backgroundColor: 'var(--surface-b)',
+              color: 'var(--text-color)',
+              borderColor: 'var(--surface-c)'
+            }}
+            className={`w-full ${
+              i18n.language === "ar" ? "pr-10 pl-3" : "pl-3 pr-10"
+            } py-2 rounded-lg text-sm border focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition`}
+          />
+        </span>
+        <div className="flex gap-2">
+          <Button
+            label={t("Clear")}
+            icon="pi pi-filter-slash"
+            className="p-button-sm bg-blue-500 dark:bg-blue-600 text-white hover:bg-blue-600 dark:hover:bg-blue-700 transition rounded-lg px-3 py-2 border-0"
+            onClick={() => {
+              setGlobalFilter("");
+              setSelectedRows([]);
+            }}
+          />
+          <Button
+            label={t("Export Excel")}
+            icon="pi pi-file-excel"
+            className="p-button-sm bg-blue-500 dark:bg-blue-600 text-white hover:bg-blue-600 dark:hover:bg-blue-700 transition rounded-lg px-3 py-2 border-0"
+            onClick={exportExcel}
+          />
+        </div>
+      </div>
+    </div>
+  );
 
   return (
     <>
       {loading && <LoadingSpinner />}
-      <div className="bg-white dark:bg-gray-800 p-6 rounded-3xl shadow-2xl transition-all duration-300">
-        {/* Header */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-          <h2 className="text-2xl text-gray-900 dark:text-white tracking-tight">
-            {title}
-          </h2>
-
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 w-full sm:w-auto">
-            <span className="relative w-full sm:w-72">
-              <i
-                className={`pi pi-search absolute top-1/2 transform -translate-y-1/2 text-gray-400 ${
-                  i18n.language === "ar" ? "left-3" : "right-3"
-                }`}
-              />
-
-              <InputText
-                value={globalFilter}
-                onChange={(e) => setGlobalFilter(e.target.value)}
-                placeholder={t("search...")}
-                className="px-2 py-2 w-full rounded-lg text-sm dark:bg-gray-700 dark:text-white border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-700 dark:focus:ring-white transition"
-              />
-            </span>
-            <Button
-              label={t("Clear")}
-              className="p-button-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-600 transition rounded-lg p-2 focus:ring-gray-700 dark:focus:ring-white"
-              onClick={() => setGlobalFilter("")}
-            />
-            <Button
-              className="p-button-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-600 transition rounded-lg p-2 focus:ring-gray-700 dark:focus:ring-white flex items-center gap-2"
-              onClick={exportExcel}
-            >
-              <FileText className="w-4 h-4" />
-              <span>{t("Export Excel")}</span>
-            </Button>
-          </div>
-        </div>
+      <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-lg transition-all duration-300">
+        {header}
 
         <hr className="my-4 border-gray-300 dark:border-gray-700" />
 
@@ -104,48 +136,44 @@ const DataTableWrapper = ({ data, columns, title }) => {
           <DataTable
             ref={dt}
             value={data}
-            rowClassName={() => "border-b border-gray-300 dark:border-gray-700"}
+            dataKey="id"
             paginator
-            rows={10}
-            tableStyle={{ tableLayout: "fixed" }} // 👈 Ensure table layout is fixed
-            scrollable
-            currentPageReportTemplate="Showing {first} to {last} of {totalRecords}"
-            stripedRows
-            sortMode="multiple"
-            removableSort
+            rows={rows}
+            first={first}
+            onPage={(e) => {
+              setFirst(e.first);
+              setRows(e.rows);
+            }}
+            rowsPerPageOptions={rowsPerPageOptions}
+            paginatorTemplate="RowsPerPageDropdown FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink"
             globalFilter={globalFilter}
             emptyMessage={t("No records found")}
+            stripedRows
+            showGridlines
+            sortMode="multiple"
+            removableSort
+            resizableColumns
+            columnResizeMode="expand"
+            reorderableColumns
+            scrollable
+            scrollHeight="flex"
             className="custom-table p-datatable-sm"
-            pt={{
-              paginator: {
-                root: "p-1 text-sm flex items-center bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-white shadow-sm",
-                start: "flex items-center space-x-2",
-                end: "flex items-center space-x-2",
-                pageLinks: "flex space-x-1",
-                dropdown:
-                  "border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-600 dark:focus:ring-gray-300",
-                rowsPerPageButton:
-                  "border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-600 dark:focus:ring-gray-300",
-                currentPageReport: "text-gray-700 dark:text-gray-300 text-sm",
-                navButton:
-                  "p-2 rounded-md hover:bg-gray-300 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 transition",
-                navButtonDisabled: "opacity-50 cursor-not-allowed",
-              },
-            }}
           >
+
             {columns.map((col, i) => (
               <Column
                 key={i}
                 field={col.field}
                 header={col.header}
-                sortable={col.sortable ?? true}
+                sortable={col.sortable !== false}
+                body={col.body}
                 style={{
-                  width: "10rem",
-                  padding: "0.5rem",
+                  minWidth: col.width || "150px",
+                  maxWidth: col.maxWidth || "300px",
                 }}
                 alignHeader="center"
-                headerClassName="text-center bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-white text-sm font-bold"
-                bodyClassName="text-sm dark:bg-gray-900 text-gray-800 dark:text-gray-100 text-center font-medium"
+                headerClassName="bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white text-sm font-semibold py-3 px-4"
+                bodyClassName="text-sm text-gray-800 dark:text-gray-100 text-center py-2 px-4 border-b border-gray-200 dark:border-gray-700"
                 frozen={i === columns.length - 1}
                 alignFrozen={
                   i === columns.length - 1

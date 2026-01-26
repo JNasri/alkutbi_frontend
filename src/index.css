@@ -22,37 +22,412 @@ select:-webkit-autofill:focus {
   --font-ar: "Tajawal", sans-serif;
 }
 
-/* Default font (you can adjust this later dynamically) */
+/* Default font */
 body {
   font-family: var(--font-en);
 }
 
-/* Optional: RTL styles */
+/* RTL styles */
 html[lang="ar"] body {
   font-family: var(--font-ar);
 }
 
 /* Light mode overrides */
 :root {
-  --surface-a: #f9fafb; /* Background */
+  --surface-a: #f9fafb;
   --surface-b: #ffffff;
-  --surface-c: #e5e7eb; /* borders, etc */
-  --text-color: #1f2937; /* gray-800 */
-  --primary-color: #2563eb; /* blue-600 */
+  --surface-c: #e5e7eb;
+  --text-color: #1f2937;
+  --primary-color: #3b82f6;
   --primary-color-text: #ffffff;
 }
 
 /* Dark mode overrides */
 .dark {
-  --surface-a: #111827; /* bg-gray-900 */
-  --surface-b: #1f2937; /* bg-gray-800 */
-  --surface-c: #374151; /* border-gray-700 */
-  --text-color: #d1d5db; /* text-gray-300 */
-  --primary-color: #3b82f6; /* blue-500 */
+  --surface-a: #111827;
+  --surface-b: #1f2937;
+  --surface-c: #374151;
+  --text-color: #d1d5db;
+  --primary-color: #3b82f6;
   --primary-color-text: #ffffff;
 }
 
-/* Hover effect for page numbers */
+/* Enhanced PrimeReact DataTable Styling */
+.custom-table .p-datatable-thead > tr > th {
+  background: var(--surface-c) !important;
+  color: var(--text-color) !important;
+  font-weight: 600;
+  border: none !important;
+  text-align: center !important;
+}
+
+.custom-table .p-datatable-tbody > tr {
+  transition: background-color 0.2s ease;
+}
+
+.custom-table .p-datatable-tbody > tr:hover {
+  background-color: var(--surface-a) !important;
+}
+
+.custom-table .p-datatable-tbody > tr > td {
+  text-align: center !important;
+}
+
 .custom-table .p-paginator-page:hover {
-  @apply bg-gray-100 dark:bg-gray-700 rounded-4xl text-black dark:text-gray-100;
+  background-color: var(--surface-c) !important;
+  border-radius: 0.375rem;
+}
+
+.custom-table .p-paginator-page.p-highlight {
+  background-color: var(--primary-color) !important;
+  color: var(--primary-color-text) !important;
+  border-radius: 0.375rem;
+}
+
+/* Column resize handle */
+.custom-table .p-column-resizer {
+  border-right: 2px solid transparent;
+  transition: border-color 0.2s ease;
+}
+
+.custom-table .p-column-resizer:hover {
+  border-right-color: var(--primary-color);
+}
+
+/* Filter inputs */
+.custom-table .p-column-filter {
+  width: 100%;
+  padding: 0.5rem;
+  border-radius: 0.375rem;
+  border: 1px solid var(--surface-c);
+  background: var(--surface-b);
+  color: var(--text-color);
+  text-align: center !important;
+}
+
+.custom-table .p-column-filter:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+/* Frozen column styling */
+.custom-table .p-frozen-column {
+  position: sticky !important;
+  background: var(--surface-b) !important;
+  z-index: 1 !important;
+}
+
+.custom-table .p-datatable-thead > tr > th.p-frozen-column {
+  position: sticky !important;
+  background: var(--surface-c) !important;
+  z-index: 2 !important;
+}
+
+.custom-table .p-datatable-tbody > tr > td.p-frozen-column {
+  position: sticky !important;
+  background: inherit !important;
+  z-index: 1 !important;
+}
+
+/* Dark mode frozen columns */
+.dark .custom-table .p-frozen-column {
+  background: #1f2937 !important;
+}
+
+.dark .custom-table .p-datatable-thead > tr > th.p-frozen-column {
+  background: #374151 !important;
+}
+
+.dark .custom-table .p-datatable-tbody > tr > td.p-frozen-column {
+  background: #1f2937 !important;
+}
+
+.dark .custom-table .p-datatable-tbody > tr:nth-child(even) > td.p-frozen-column {
+  background: #111827 !important;
+}
+
+.dark .custom-table .p-datatable-tbody > tr:hover > td.p-frozen-column {
+  background: #374151 !important;
+}
+
+/* Dark mode for PrimeReact Dropdown */
+.dark .p-dropdown {
+  background: #374151 !important;
+  border-color: #4b5563 !important;
+  color: #f3f4f6 !important;
+}
+
+.dark .p-dropdown:hover {
+  border-color: #6b7280 !important;
+}
+
+.dark .p-dropdown-panel {
+  background: #374151 !important;
+  border-color: #4b5563 !important;
+}
+
+.dark .p-dropdown-item {
+  color: #f3f4f6 !important;
+}
+
+.dark .p-dropdown-item:hover {
+  background: #4b5563 !important;
+}
+
+.dark .p-dropdown-item.p-highlight {
+  background: #3b82f6 !important;
+  color: white !important;
+}
+
+.dark .p-dropdown-trigger {
+  color: #d1d5db !important;
+}
+
+/* Dark mode for checkboxes */
+.dark .p-checkbox .p-checkbox-box {
+  background: #374151 !important;
+  border-color: #4b5563 !important;
+}
+
+.dark .p-checkbox .p-checkbox-box.p-highlight {
+  background: #3b82f6 !important;
+  border-color: #3b82f6 !important;
+}
+
+.dark .p-checkbox .p-checkbox-box .p-checkbox-icon {
+  color: white !important;
+}
+
+/* Dark mode for sort icons */
+.dark .p-sortable-column-icon {
+  color: #9ca3af !important;
+}
+
+/* Dark mode for filter menu */
+.dark .p-column-filter-menu-button {
+  color: #d1d5db !important;
+}
+
+.dark .p-column-filter-menu-button:hover {
+  color: #3b82f6 !important;
+}
+
+/* Dark mode for paginator */
+.dark .p-paginator {
+  background: #374151 !important;
+  border-color: #4b5563 !important;
+  color: #f3f4f6 !important;
+}
+
+.dark .p-paginator .p-paginator-pages .p-paginator-page {
+  color: #d1d5db !important;
+}
+
+.dark .p-paginator .p-paginator-pages .p-paginator-page:hover {
+  background: #4b5563 !important;
+}
+
+.dark .p-paginator .p-paginator-pages .p-paginator-page.p-highlight {
+  background: #3b82f6 !important;
+  color: white !important;
+}
+
+.dark .p-paginator-first,
+.dark .p-paginator-prev,
+.dark .p-paginator-next,
+.dark .p-paginator-last {
+  color: #d1d5db !important;
+}
+
+.dark .p-paginator-first:hover,
+.dark .p-paginator-prev:hover,
+.dark .p-paginator-next:hover,
+.dark .p-paginator-last:hover {
+  background: #4b5563 !important;
+}
+
+/* Dark mode for empty message */
+.dark .p-datatable-emptymessage td {
+  color: #9ca3af !important;
+}
+
+/* Dark mode for DataTable structure */
+.dark .p-datatable {
+  background: #1f2937 !important;
+  color: #f3f4f6 !important;
+}
+
+.dark .p-datatable .p-datatable-header {
+  background: #374151 !important;
+  border-color: #4b5563 !important;
+  color: #f3f4f6 !important;
+}
+
+.dark .p-datatable .p-datatable-thead > tr > th {
+  background: #374151 !important;
+  border-color: #4b5563 !important;
+  color: #f3f4f6 !important;
+  text-align: center !important;
+}
+
+.dark .p-datatable .p-datatable-tbody > tr {
+  background: #1f2937 !important;
+  color: #f3f4f6 !important;
+}
+
+.dark .p-datatable .p-datatable-tbody > tr > td {
+  border-color: #374151 !important;
+  background: inherit !important;
+  color: #f3f4f6 !important;
+  text-align: center !important;
+}
+
+.dark .p-datatable .p-datatable-tbody > tr:nth-child(even) {
+  background: #111827 !important;
+}
+
+.dark .p-datatable .p-datatable-tbody > tr:nth-child(even) > td {
+  background: #111827 !important;
+}
+
+.dark .p-datatable .p-datatable-tbody > tr:hover {
+  background: #374151 !important;
+}
+
+.dark .p-datatable .p-datatable-tbody > tr:hover > td {
+  background: #374151 !important;
+}
+
+/* Dark mode for filter inputs in table */
+.dark .p-datatable .p-column-filter {
+  background: #374151 !important;
+  border-color: #4b5563 !important;
+  color: #f3f4f6 !important;
+  text-align: center !important;
+}
+
+.dark .p-datatable .p-column-filter::placeholder {
+  color: #9ca3af !important;
+}
+
+.dark .p-datatable .p-column-filter:focus {
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2) !important;
+}
+
+/* Dark mode for filter row */
+.dark .p-datatable .p-datatable-thead > tr.p-filter-row > th {
+  background: #1f2937 !important;
+  border-color: #4b5563 !important;
+  text-align: center !important;
+}
+
+/* Dark mode for InputText globally */
+.dark .p-inputtext {
+  background: #374151 !important;
+  border-color: #4b5563 !important;
+  color: #f3f4f6 !important;
+}
+
+.dark .p-inputtext::placeholder {
+  color: #9ca3af !important;
+}
+
+.dark .p-inputtext:enabled:focus {
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2) !important;
+}
+
+.dark .p-inputtext:enabled:hover {
+  border-color: #6b7280 !important;
+}
+
+/* Paginator styling for better alignment */
+.p-paginator {
+  display: flex !important;
+  align-items: center !important;
+
+}
+
+.p-paginator .p-paginator-first,
+.p-paginator .p-paginator-prev,
+.p-paginator .p-paginator-next,
+.p-paginator .p-paginator-last {
+  height: 2rem !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.p-paginator .p-paginator-pages {
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.25rem !important;
+}
+
+.p-paginator .p-paginator-page {
+  min-width: 2rem !important;
+  height: 2rem !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.p-paginator .p-dropdown {
+  margin: 0 !important;
+}
+
+.p-paginator .p-paginator-current {
+  margin: 0 1rem !important;
+}
+
+/* Dark mode paginator */
+.dark .p-paginator {
+  background: #374151 !important;
+  border-color: #4b5563 !important;
+  color: #f3f4f6 !important;
+}
+
+.dark .p-paginator .p-paginator-first,
+.dark .p-paginator .p-paginator-prev,
+.dark .p-paginator .p-paginator-next,
+.dark .p-paginator .p-paginator-last,
+.dark .p-paginator .p-paginator-page {
+  color: #d1d5db !important;
+}
+
+.dark .p-paginator .p-paginator-first:hover,
+.dark .p-paginator .p-paginator-prev:hover,
+.dark .p-paginator .p-paginator-next:hover,
+.dark .p-paginator .p-paginator-last:hover,
+.dark .p-paginator .p-paginator-page:hover {
+  background: #4b5563 !important;
+}
+
+.dark .p-paginator .p-paginator-page.p-highlight {
+  background: #3b82f6 !important;
+  color: white !important;
+}
+
+.dark .p-paginator .p-paginator-current {
+  color: #d1d5db !important;
+}
+
+/* Flip pagination arrows in RTL */
+html[dir="rtl"] .p-paginator .p-paginator-first .p-paginator-icon,
+html[dir="rtl"] .p-paginator .p-paginator-last .p-paginator-icon {
+  transform: scaleX(-1) !important;
+}
+
+html[dir="rtl"] .p-paginator .p-paginator-prev .p-paginator-icon,
+html[dir="rtl"] .p-paginator .p-paginator-next .p-paginator-icon {
+  transform: scaleX(-1) !important;
+}
+
+/* Smooth transitions */
+* {
+  transition-property: background-color, border-color, color;
+  transition-duration: 200ms;
+  transition-timing-function: ease-in-out;
 }

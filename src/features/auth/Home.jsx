@@ -8,6 +8,7 @@ import { useGetPrisoncasesQuery } from "../prisonCases/prisonCasesApiSlice";
 import { useGetAssetsQuery } from "../assets/assetsApiSlice";
 import { useSelector } from "react-redux";
 import { selectCurrentUser } from "../../features/auth/authSlice";
+import LoadingSpinner from "../../components/LoadingSpinner";
 
 const Home = () => {
   const { t, i18n } = useTranslation();
@@ -15,17 +16,26 @@ const Home = () => {
   const currentLang = i18n.language;
   const userName = currentLang === "ar" ? user.ar_name : user.en_name;
 
-  // Data queries with destructured results
-  const { data: users, isSuccess: isUsersSuccess } = useGetUsersQuery();
-  const { data: incomings, isSuccess: isIncomingsSuccess } =
+  // Data queries with destructured results including loading states
+  const { data: users, isSuccess: isUsersSuccess, isLoading: isUsersLoading } = useGetUsersQuery();
+  const { data: incomings, isSuccess: isIncomingsSuccess, isLoading: isIncomingsLoading } =
     useGetIncomingsQuery();
-  const { data: outgoings, isSuccess: isOutgoingsSuccess } =
+  const { data: outgoings, isSuccess: isOutgoingsSuccess, isLoading: isOutgoingsLoading } =
     useGetOutgoingsQuery();
-  const { data: deathcases, isSuccess: isDeathcasesSuccess } =
+  const { data: deathcases, isSuccess: isDeathcasesSuccess, isLoading: isDeathcasesLoading } =
     useGetDeathcasesQuery();
-  const { data: prisoncases, isSuccess: isPrisoncasesSuccess } =
+  const { data: prisoncases, isSuccess: isPrisoncasesSuccess, isLoading: isPrisoncasesLoading } =
     useGetPrisoncasesQuery();
-  const { data: assets, isSuccess: isAssetsSuccess } = useGetAssetsQuery();
+  const { data: assets, isSuccess: isAssetsSuccess, isLoading: isAssetsLoading } = useGetAssetsQuery();
+
+  // Check if any query is still loading
+  const isLoading = isUsersLoading || isIncomingsLoading || isOutgoingsLoading || 
+                    isDeathcasesLoading || isPrisoncasesLoading || isAssetsLoading;
+
+  // Show loading spinner while any data is loading
+  if (isLoading) {
+    return <LoadingSpinner />;
+  }
 
   // Cards with safe data access
   const cards = [

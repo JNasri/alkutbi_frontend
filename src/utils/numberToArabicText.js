@@ -74,13 +74,14 @@ export const numberToArabicText = (num) => {
       const t = Math.floor(n / 10);
       const o = n % 10;
       
-      if (t > 0) {
-        result += tens[t];
-        if (o > 0) result += " و";
-      }
-      
+      // In Arabic, ones come BEFORE tens (e.g., 85 = خمسة وثمانون)
       if (o > 0) {
         result += ones[o];
+        if (t > 0) result += " و";
+      }
+      
+      if (t > 0) {
+        result += tens[t];
       }
     }
     
