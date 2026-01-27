@@ -14,12 +14,14 @@ export default defineConfig({
   build: {
     // Optimize chunk splitting
     rollupOptions: {
+      // Exclude PrimeReact's optional peer dependencies that we don't use
+      external: ['chart.js/auto', 'quill', 'fullcalendar'],
       output: {
         manualChunks: {
           // Vendor chunks
           'react-vendor': ['react', 'react-dom', 'react-router-dom'],
           'redux-vendor': ['@reduxjs/toolkit', 'react-redux'],
-          'primereact-vendor': ['primereact', 'primeicons', 'primeflex'],
+          'primereact-vendor': ['primereact'],
           'utils': ['date-fns', 'moment-hijri', 'jwt-decode'],
           'i18n': ['i18next', 'react-i18next', 'i18next-browser-languagedetector'],
           'icons': ['lucide-react', 'react-icons'],
@@ -29,14 +31,8 @@ export default defineConfig({
     },
     // Increase chunk size warning limit
     chunkSizeWarningLimit: 1000,
-    // Enable minification
-    minify: 'terser',
-    terserOptions: {
-      compress: {
-        drop_console: true, // Remove console.logs in production
-        drop_debugger: true,
-      },
-    },
+    // Enable minification with esbuild (built into Vite)
+    minify: 'esbuild',
   },
   // Optimize dependencies
   optimizeDeps: {
