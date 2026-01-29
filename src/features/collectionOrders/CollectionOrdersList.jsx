@@ -1,21 +1,21 @@
 import { useTranslation } from "react-i18next";
-import { useGetPurchaseOrdersQuery } from "./purchaseOrdersApiSlice";
+import { useGetCollectionOrdersQuery } from "./collectionOrdersApiSlice";
 import DataTableWrapper from "../../components/DataTableWrapper";
 import LoadingSpinner from "../../components/LoadingSpinner";
 import { Link } from "react-router-dom";
 import { Plus } from "lucide-react";
-import PurchaseOrderPrint from "./PurchaseOrderPrint";
+import CollectionOrderPrint from "./CollectionOrderPrint";
 
-const PurchaseOrdersList = () => {
+const CollectionOrdersList = () => {
   const { t } = useTranslation();
 
   const {
-    data: purchaseOrders,
+    data: collectionOrders,
     isLoading,
     isSuccess,
     isError,
     error,
-  } = useGetPurchaseOrdersQuery("purchaseOrdersList", {
+  } = useGetCollectionOrdersQuery("collectionOrdersList", {
     pollingInterval: 60000,
     refetchOnFocus: true,
     refetchOnMountOrArgChange: true,
@@ -35,56 +35,48 @@ const PurchaseOrdersList = () => {
   }
 
   if (isSuccess) {
-    const purchaseOrderList = purchaseOrders.ids.map(
-      (id) => purchaseOrders.entities[id]
+    const collectionOrderList = collectionOrders.ids.map(
+      (id) => collectionOrders.entities[id]
     );
 
-    const sortedList = [...purchaseOrderList].sort(
+    const sortedList = [...collectionOrderList].sort(
       (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
     );
 
-    if (!purchaseOrderList || purchaseOrderList.length === 0) {
+    if (!collectionOrderList || collectionOrderList.length === 0) {
       return (
         <div className="text-center text-gray-500 dark:text-gray-400 p-6">
-          {t("no_purchase_orders_found")}
+          {t("no_collection_orders_found")}
         </div>
       );
     }
 
-    const paymentMethodTranslations = {
+    const collectMethodTranslations = {
       cash: t("cash"),
-      visa: t("visa"),
       bank_transfer: t("bank_transfer"),
-      sadad: t("sadad"),
     };
 
-    const transactionTypeTranslations = {
-      expenses: t("expenses"),
-      receivables: t("receivables"),
-      custody: t("custody"),
-      advance: t("advance"),
+    const collectedFromTranslations = {
+      umrah: t("umrah"),
+      transport: t("transport"),
+      hotels: t("hotels"),
+      others: t("others_external"),
+      additional: t("additional"),
     };
 
     const columns = [
       { field: "print", header: t("print"), width: "80px" },
-      { field: "purchasingId", header: t("purchasing_id"), width: "180px" },
-      { field: "transactionType", header: t("transaction_type"), width: "150px" },
-      { field: "status", header: t("po_status"), width: "150px" },
+      { field: "collectingId", header: t("collecting_id"), width: "180px" },
+      { field: "collectedFrom", header: t("collected_from"), width: "150px" },
+      { field: "status", header: t("status"), width: "150px" },
       { field: "dayName", header: t("day_name"), width: "120px" },
       { field: "dateHijri", header: t("date_hijri"), width: "150px" },
       { field: "dateAD", header: t("date_ad"), width: "150px" },
-      { field: "paymentMethod", header: t("payment_method"), width: "150px" },
-      { field: "bankNameFrom", header: t("bank_name_from"), width: "180px" },
-      { field: "ibanNumberFrom", header: t("iban_number_from"), width: "250px" },
-      { field: "bankNameTo", header: t("bank_name_to"), width: "180px" },
-      { field: "ibanNumberTo", header: t("iban_number_to"), width: "250px" },
-      { field: "managementName", header: t("management_name"), width: "180px" },
-      { field: "supplier", header: t("supplier"), width: "180px" },
-      { field: "item", header: t("item"), width: "200px" },
+      { field: "collectMethod", header: t("collect_method"), width: "150px" },
+      { field: "voucherNumber", header: t("voucher_number"), width: "180px" },
+      { field: "receivingBankName", header: t("receiving_bank_name"), width: "200px" },
       { field: "totalAmount", header: t("total_amount"), width: "150px" },
       { field: "totalAmountText", header: t("total_amount_text"), width: "400px" },
-      { field: "deductedFrom", header: t("deducted_from"), width: "180px" },
-      { field: "addedTo", header: t("added_to"), width: "180px" },
       { field: "createdAt", header: t("createdAt"), width: "150px" },
       { field: "updatedAt", header: t("updatedAt"), width: "150px" },
       { field: "edit", header: t("edit"), width: "80px" },
@@ -133,28 +125,21 @@ const PurchaseOrdersList = () => {
 
     const transformedData = sortedList.map((item) => ({
       ...item,
-      print: <PurchaseOrderPrint purchaseOrder={item} />,
-      purchasingId: item.purchasingId || "—",
-      transactionType: transactionTypeTranslations[item.transactionType] || item.transactionType || "—",
+      print: <CollectionOrderPrint collectionOrder={item} />,
+      collectingId: item.collectingId || "—",
+      collectedFrom: collectedFromTranslations[item.collectedFrom] || item.collectedFrom || "—",
       status: getStatusBadge(item.status),
       dayName: convertDayNameToArabic(item.dayName), // Always show in Arabic
-      paymentMethod: paymentMethodTranslations[item.paymentMethod] || item.paymentMethod || "—",
-      bankNameFrom: item.bankNameFrom || "—",
-      ibanNumberFrom: item.ibanNumberFrom || "—",
-      bankNameTo: item.bankNameTo || "—",
-      ibanNumberTo: item.ibanNumberTo || "—",
-      managementName: item.managementName || "—",
-      supplier: item.supplier || "—",
-      item: item.item || "—",
+      collectMethod: collectMethodTranslations[item.collectMethod] || item.collectMethod || "—",
+      voucherNumber: item.voucherNumber || "—",
+      receivingBankName: item.receivingBankName || "—",
       totalAmount: item.totalAmount ? `${item.totalAmount.toLocaleString()} ${t("sar")}` : "—",
       totalAmountText: item.totalAmountText || "—",
-      deductedFrom: item.deductedFrom || "—",
-      addedTo: item.addedTo || "—",
       createdAt: new Date(item.createdAt).toLocaleDateString(),
       updatedAt: new Date(item.updatedAt).toLocaleDateString(),
       edit: (
         <Link
-          to={`/dashboard/purchaseorders/edit/${item.id}`}
+          to={`/dashboard/collectionorders/edit/${item.id}`}
           className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
         >
           {t("edit")}
@@ -162,7 +147,7 @@ const PurchaseOrdersList = () => {
       ),
     }));
 
-    const totalAmount = purchaseOrderList.reduce(
+    const totalAmount = collectionOrderList.reduce(
       (sum, order) => sum + (order.totalAmount || 0),
       0
     );
@@ -171,31 +156,31 @@ const PurchaseOrdersList = () => {
       <>
         <div className="flex items-center mb-2 p-1">
           <h1 className="text-4xl font-bold text-gray-800 dark:text-white">
-            🛒 {t("purchase_orders")}
+            💰 {t("collection_orders")}
           </h1>
           <div className="relative group ms-auto">
             <Link
-              to="/dashboard/purchaseorders/add"
+              to="/dashboard/collectionorders/add"
               className="mr-auto w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 border border-gray-500 hover:text-dark-900 hover:bg-gray-100 hover:text-gray-700 dark:border-white dark:bg-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white cursor-pointer"
               data-tooltip-target="tooltip-right"
             >
               <Plus size={20} />
             </Link>
             <div className="absolute end-full top-1/2 me-2 -translate-y-1/2 whitespace-nowrap px-3 py-1.5 text-sm text-gray-800 bg-gray-300 dark:bg-gray-200 dark:text-gray-800 rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-10 shadow-md font-medium">
-              {t("add_purchase_order")}
+              {t("add_collection_order")}
             </div>
           </div>
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          {/* Total Purchase Orders */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+          {/* Total Collection Orders */}
           <div className="p-4 bg-gray-200 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-md transition hover:shadow-lg">
             <p className="text-sm text-gray-600 dark:text-gray-400">
-              {t("total_purchase_orders")}
+              {t("total_collection_orders")}
             </p>
             <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
-              {purchaseOrderList.length}
+              {collectionOrderList.length}
             </h3>
           </div>
 
@@ -212,7 +197,7 @@ const PurchaseOrdersList = () => {
           {/* Last Added Date */}
           <div className="p-4 bg-gray-200 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-md transition hover:shadow-lg">
             <p className="text-sm text-gray-600 dark:text-gray-400">
-              {t("last_purchase_order_date")}
+              {t("last_collection_order_date")}
             </p>
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
               {sortedList.length > 0
@@ -220,22 +205,12 @@ const PurchaseOrdersList = () => {
                 : "—"}
             </h3>
           </div>
-
-          {/* Last Supplier */}
-          <div className="p-4 bg-gray-200 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-md transition hover:shadow-lg">
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              {t("last_supplier")}
-            </p>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-              {sortedList.length > 0 ? sortedList[0].supplier : "—"}
-            </h3>
-          </div>
         </div>
 
         <DataTableWrapper
           data={transformedData}
           columns={columns}
-          title={t("purchase_orders_list")}
+          title={t("collection_orders_list")}
         />
       </>
     );
@@ -243,9 +218,9 @@ const PurchaseOrdersList = () => {
 
   return (
     <div className="text-center text-gray-500 dark:text-gray-400 p-6">
-      {t("no_purchase_orders_found")}
+      {t("no_collection_orders_found")}
     </div>
   );
 };
 
-export default PurchaseOrdersList;
+export default CollectionOrdersList;

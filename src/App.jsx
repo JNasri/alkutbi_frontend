@@ -46,6 +46,11 @@ const AddPrisonCaseForm = lazy(() => import("./features/prisonCases/AddPrisonCas
 const AddAssetForm = lazy(() => import("./features/assets/AddAssetForm"));
 const AddPurchaseOrderForm = lazy(() => import("./features/purchaseOrders/AddPurchaseOrderForm"));
 
+// Collection Orders
+const CollectionOrdersList = lazy(() => import("./features/collectionOrders/CollectionOrdersList"));
+const AddCollectionOrderForm = lazy(() => import("./features/collectionOrders/AddCollectionOrderForm"));
+const EditCollectionOrderForm = lazy(() => import("./features/collectionOrders/EditCollectionOrderForm"));
+
 //
 // // PrimeReact core styles
 // import "primereact/resources/themes/lara-light-indigo/theme.css"; // or sakai theme if you get it
@@ -177,6 +182,12 @@ function App() {
                       <Route index element={<PurchaseOrdersList />} />
                       <Route path="add" element={<AddPurchaseOrderForm />} />
                       <Route path="edit/:id" element={<EditPurchaseOrderForm />} />
+                    </Route>
+                    {/* /collectionorders */}
+                    <Route path="collectionorders">
+                      <Route index element={<CollectionOrdersList />} />
+                      <Route path="add" element={<AddCollectionOrderForm />} />
+                      <Route path="edit/:id" element={<EditCollectionOrderForm />} />
                     </Route>
                     {/* /logs */}
                     <Route element={<RequireAuth allowedRoles={[ROLES.Admin]} />}>

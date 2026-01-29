@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Printer } from "lucide-react";
 import LoadingSpinner from "../../components/LoadingSpinner";
 
-const PurchaseOrderPrint = ({ purchaseOrder }) => {
+const CollectionOrderPrint = ({ collectionOrder }) => {
   const [isLoading, setIsLoading] = useState(false);
 
   const handlePrint = () => {
@@ -19,7 +19,7 @@ const PurchaseOrderPrint = ({ purchaseOrder }) => {
     
     document.body.appendChild(iframe);
     
-    const printContent = generatePrintContent(purchaseOrder);
+    const printContent = generatePrintContent(collectionOrder);
     const iframeDoc = iframe.contentWindow.document;
     
     iframeDoc.open();
@@ -46,20 +46,19 @@ const PurchaseOrderPrint = ({ purchaseOrder }) => {
   };
 
   const generatePrintContent = (order) => {
-    // Payment method translations
-    const paymentMethodArabic = {
+    // Collect method translations
+    const collectMethodArabic = {
       cash: "نقدي",
-      visa: "فيزا",
       bank_transfer: "تحويل بنكي",
-      sadad: "سداد",
     };
 
-    // Transaction type translations
-    const transactionTypeArabic = {
-      expenses: "مصروفات",
-      receivables: "مستحقات",
-      custody: "عهدة",
-      advance: "سلفة",
+    // Collected from translations
+    const collectedFromArabic = {
+      umrah: "عمرة",
+      transport: "نقل",
+      hotels: "فنادق",
+      others: "خارجي",
+      additional: "إضافي",
     };
 
     // Convert Arabic/Hindi numerals to English numerals
@@ -83,7 +82,7 @@ const PurchaseOrderPrint = ({ purchaseOrder }) => {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>أمر شراء - ${order.purchasingId}</title>
+  <title>أمر تحصيل - ${order.collectingId}</title>
   <style>
     * {
       margin: 0;
@@ -288,52 +287,34 @@ const PurchaseOrderPrint = ({ purchaseOrder }) => {
       <div><strong>اليوم:</strong> ${order.dayName || "—"}</div>
       <div><strong>التاريخ الميلادي:</strong> <span class="english-numbers">${toEnglishNumbers(order.dateAD) || "—"}</span></div>
       <div><strong>التاريخ الهجري:</strong> <span class="english-numbers">${toEnglishNumbers(order.dateHijri) || "—"}</span></div>
-      <div><strong>رقم أمر الشراء:</strong> <span class="english-numbers">${toEnglishNumbers(order.purchasingId) || "—"}</span></div>
+      <div><strong>رقم أمر التحصيل:</strong> <span class="english-numbers">${toEnglishNumbers(order.collectingId) || "—"}</span></div>
     </div>
     
     <!-- Main Title -->
-    <h1 class="main-title">أمر شراء</h1>
+    <h1 class="main-title">أمر تحصيل</h1>
     
     <!-- Data Table -->
     <table class="data-table">
-      ${order.transactionType ? `
+      ${order.collectedFrom ? `
       <tr>
-        <td><strong>نوع المعاملة:</strong></td>
-        <td>${transactionTypeArabic[order.transactionType] || order.transactionType}</td>
+        <td><strong>مجال التحصيل:</strong></td>
+        <td>${collectedFromArabic[order.collectedFrom] || order.collectedFrom}</td>
       </tr>
       ` : ""}
       <tr>
-        <td>طريقة الدفع</td>
-        <td>${paymentMethodArabic[order.paymentMethod] || order.paymentMethod || "—"}</td>
+        <td>طريقة التحصيل</td>
+        <td>${collectMethodArabic[order.collectMethod] || order.collectMethod || "—"}</td>
       </tr>
-      ${(order.bankNameFrom || order.ibanNumberFrom) ? `
+      ${order.voucherNumber ? `
       <tr>
-        <td>البنك / الآيبان (من)</td>
-        <td>${[order.bankNameFrom, order.ibanNumberFrom].filter(Boolean).join(" - ")}</td>
-      </tr>
-      ` : ""}
-      ${(order.bankNameTo || order.ibanNumberTo) ? `
-      <tr>
-        <td>البنك / الآيبان (إلى)</td>
-        <td>${[order.bankNameTo, order.ibanNumberTo].filter(Boolean).join(" - ")}</td>
+        <td>رقم السند</td>
+        <td>${order.voucherNumber}</td>
       </tr>
       ` : ""}
-      ${order.managementName ? `
+      ${order.receivingBankName ? `
       <tr>
-        <td>اسم الإدارة</td>
-        <td>${order.managementName}</td>
-      </tr>
-      ` : ""}
-      ${order.supplier ? `
-      <tr>
-        <td>المورد</td>
-        <td>${order.supplier}</td>
-      </tr>
-      ` : ""}
-      ${order.item ? `
-      <tr>
-        <td>الصنف</td>
-        <td>${order.item}</td>
+        <td>اسم البنك المستقبل</td>
+        <td>${order.receivingBankName}</td>
       </tr>
       ` : ""}
       ${order.totalAmount ? `
@@ -348,18 +329,6 @@ const PurchaseOrderPrint = ({ purchaseOrder }) => {
         <td>${order.totalAmountText}</td>
       </tr>
       ` : ""}
-      ${order.deductedFrom ? `
-      <tr>
-        <td>يخصم من</td>
-        <td>${order.deductedFrom}</td>
-      </tr>
-      ` : ""}
-      ${order.addedTo ? `
-      <tr>
-        <td>يضاف إلى</td>
-        <td>${order.addedTo}</td>
-      </tr>
-      ` : ""}
     </table>
     
     <!-- Signatures Section -->
@@ -371,13 +340,13 @@ const PurchaseOrderPrint = ({ purchaseOrder }) => {
         أمجاد با شماخ / ................................................
       </div>
       <div class="signature-line">
-        <strong>التعميد/</strong> أعتمد تنفيذ أمر الشراء أعلاه
+        <strong>التعميد/</strong> أعتمد تنفيذ أمر التحصيل أعلاه
       </div>
       <div class="signature-line">
         بلال محمد/ ................................................
       </div>
       <div class="signature-line">
-        <strong>التدقيق النهائي/</strong> تم إنهاء أمر الشراء وتدقيقه
+        <strong>التدقيق النهائي/</strong> تم إنهاء أمر التحصيل وتدقيقه
       </div>
       <div class="signature-line">
         شيماء جاوي/ ................................................
@@ -413,7 +382,7 @@ const PurchaseOrderPrint = ({ purchaseOrder }) => {
       <button
         onClick={handlePrint}
         className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 transition cursor-pointer"
-        title="طباعة أمر الشراء"
+        title="طباعة أمر التحصيل"
         disabled={isLoading}
       >
         <Printer size={16} />
@@ -422,4 +391,4 @@ const PurchaseOrderPrint = ({ purchaseOrder }) => {
   );
 };
 
-export default PurchaseOrderPrint;
+export default CollectionOrderPrint;

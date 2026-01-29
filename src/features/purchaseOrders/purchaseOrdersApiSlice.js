@@ -49,6 +49,7 @@ export const purchaseOrdersApiSlice = apiSlice.injectEndpoints({
       }),
       invalidatesTags: (result, error, arg) => [
         { type: "PurchaseOrder", id: arg.id },
+        { type: "PurchaseOrder", id: "LIST" },
       ],
     }),
 

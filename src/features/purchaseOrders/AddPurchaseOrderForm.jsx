@@ -14,6 +14,7 @@ import CreatableSelect from "react-select/creatable";
 import Select from "react-select";
 import { numberToArabicText } from "../../utils/numberToArabicText";
 import moment from "moment-hijri";
+import ModernDatePicker from "../../components/ModernDatePicker";
 
 const AddPurchaseOrderForm = () => {
   const { t } = useTranslation();
@@ -140,15 +141,20 @@ const AddPurchaseOrderForm = () => {
   };
   const theme = useDarkMode();
 
-  // Form State - dates empty by default
+  // Form State - dates with today as default
   const [status, setStatus] = useState("new");
   const [dayName, setDayName] = useState("");
   const [dateHijri, setDateHijri] = useState("");
-  const [dateAD, setDateAD] = useState("");
+  const [dateAD, setDateAD] = useState(getTodayAD());
   const [purchasingId, setPurchasingId] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("cash");
   const [bankName, setBankName] = useState("");
   const [ibanNumber, setIbanNumber] = useState("");
+  const [bankNameFrom, setBankNameFrom] = useState("");
+  const [ibanNumberFrom, setIbanNumberFrom] = useState("");
+  const [bankNameTo, setBankNameTo] = useState("");
+  const [ibanNumberTo, setIbanNumberTo] = useState("");
+  const [transactionType, setTransactionType] = useState("");
   const [managementName, setManagementName] = useState("");
   const [supplier, setSupplier] = useState("");
   const [item, setItem] = useState("");
@@ -171,6 +177,14 @@ const AddPurchaseOrderForm = () => {
     { value: "visa", label: t("visa") },
     { value: "bank_transfer", label: t("bank_transfer") },
     { value: "sadad", label: t("sadad") },
+  ];
+
+  // Transaction type options
+  const transactionTypeOptions = [
+    { value: "expenses", label: t("expenses") },
+    { value: "receivables", label: t("receivables") },
+    { value: "custody", label: t("custody") },
+    { value: "advance", label: t("advance") },
   ];
 
   // Auto-convert number to Arabic text
@@ -289,6 +303,46 @@ const AddPurchaseOrderForm = () => {
     return [...uniqueAddedTo].map((val) => ({ label: val, value: val }));
   }, [purchaseOrdersData, isPurchaseOrdersSuccess]);
 
+  const bankNameFromOptions = useMemo(() => {
+    if (!isPurchaseOrdersSuccess) return [];
+    const uniqueBankNames = new Set(
+      purchaseOrdersData.ids
+        .map((id) => purchaseOrdersData.entities[id]?.bankNameFrom)
+        .filter(Boolean)
+    );
+    return [...uniqueBankNames].map((val) => ({ label: val, value: val }));
+  }, [purchaseOrdersData, isPurchaseOrdersSuccess]);
+
+  const ibanNumberFromOptions = useMemo(() => {
+    if (!isPurchaseOrdersSuccess) return [];
+    const uniqueIbans = new Set(
+      purchaseOrdersData.ids
+        .map((id) => purchaseOrdersData.entities[id]?.ibanNumberFrom)
+        .filter(Boolean)
+    );
+    return [...uniqueIbans].map((val) => ({ label: val, value: val }));
+  }, [purchaseOrdersData, isPurchaseOrdersSuccess]);
+
+  const bankNameToOptions = useMemo(() => {
+    if (!isPurchaseOrdersSuccess) return [];
+    const uniqueBankNames = new Set(
+      purchaseOrdersData.ids
+        .map((id) => purchaseOrdersData.entities[id]?.bankNameTo)
+        .filter(Boolean)
+    );
+    return [...uniqueBankNames].map((val) => ({ label: val, value: val }));
+  }, [purchaseOrdersData, isPurchaseOrdersSuccess]);
+
+  const ibanNumberToOptions = useMemo(() => {
+    if (!isPurchaseOrdersSuccess) return [];
+    const uniqueIbans = new Set(
+      purchaseOrdersData.ids
+        .map((id) => purchaseOrdersData.entities[id]?.ibanNumberTo)
+        .filter(Boolean)
+    );
+    return [...uniqueIbans].map((val) => ({ label: val, value: val }));
+  }, [purchaseOrdersData, isPurchaseOrdersSuccess]);
+
   useEffect(() => {
     if (isSuccess) {
       setStatus("new");
@@ -299,6 +353,11 @@ const AddPurchaseOrderForm = () => {
       setPaymentMethod("cash");
       setBankName("");
       setIbanNumber("");
+      setBankNameFrom("");
+      setIbanNumberFrom("");
+      setBankNameTo("");
+      setIbanNumberTo("");
+      setTransactionType("");
       setManagementName("");
       setSupplier("");
       setItem("");
@@ -320,7 +379,7 @@ const AddPurchaseOrderForm = () => {
       return;
     }
 
-    if ((paymentMethod === "bank_transfer" || paymentMethod === "sadad") && (!bankName || !ibanNumber)) {
+    if ((paymentMethod === "bank_transfer" || paymentMethod === "sadad") && (!bankNameFrom || !ibanNumberFrom || !bankNameTo || !ibanNumberTo)) {
       toast.error(t("bank_details_required"));
       return;
     }
@@ -334,6 +393,11 @@ const AddPurchaseOrderForm = () => {
       paymentMethod: paymentMethod || "",
       bankName: bankName || "",
       ibanNumber: ibanNumber || "",
+      bankNameFrom: bankNameFrom || "",
+      ibanNumberFrom: ibanNumberFrom || "",
+      bankNameTo: bankNameTo || "",
+      ibanNumberTo: ibanNumberTo || "",
+      transactionType: transactionType || "",
       managementName: managementName || "",
       supplier: supplier || "",
       item: item || "",
@@ -386,51 +450,33 @@ const AddPurchaseOrderForm = () => {
         <div className="p-6 space-y-6">
           <form onSubmit={onSavePurchaseOrderClicked}>
             <div className="grid grid-cols-6 gap-6">
-              {/* Status - First field at the top */}
+              {/* Transaction Type - Full width at the top */}
               <div className="col-span-6">
                 <label className="text-sm font-medium text-gray-900 dark:text-white block mb-2">
-                  {t("po_status")}
+                  {t("transaction_type")}
                 </label>
                 <Select
                   isSearchable={false}
-                  options={statusOptions}
-                  value={statusOptions.find((opt) => opt.value === status)}
-                  onChange={(selected) => setStatus(selected?.value || "new")}
+                  isClearable
+                  options={transactionTypeOptions}
+                  value={transactionTypeOptions.find((opt) => opt.value === transactionType)}
+                  onChange={(selected) => setTransactionType(selected?.value || "")}
                   styles={customSelectStyles}
-                  formatOptionLabel={(option) => (
-                    <div className="flex items-center gap-2">
-                      <span
-                        className={`inline-block w-3 h-3 rounded-full ${
-                          option.color === "blue"
-                            ? "bg-blue-500"
-                            : option.color === "orange"
-                            ? "bg-orange-500"
-                            : option.color === "yellow"
-                            ? "bg-yellow-500"
-                            : "bg-green-500"
-                        }`}
-                      ></span>
-                      <span>{option.label}</span>
-                    </div>
-                  )}
+                  placeholder={t("choose")}
                 />
               </div>
 
               {/* Date AD (prefilled) */}
               <div className="col-span-6 sm:col-span-3">
-                <label className="text-sm font-medium text-gray-900 dark:text-white block mb-2">
-                  {t("date_ad")}
-                </label>
-                <input
-                  type="date"
+                <ModernDatePicker
+                  label={t("date_ad")}
                   value={dateAD}
-                  onChange={(e) => setDateAD(e.target.value)}
-                  className="cursor-pointer shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg block w-full p-2.5 dark:bg-gray-800 dark:text-white"
+                  onChange={setDateAD}
                 />
               </div>
 
 
-              {/* Date Hijri (prefilled) */}
+              {/* Date Hijri (auto-filled, read-only) */}
               <div className="col-span-6 sm:col-span-3">
                 <label className="text-sm font-medium text-gray-900 dark:text-white block mb-2">
                   {t("date_hijri")}
@@ -438,12 +484,13 @@ const AddPurchaseOrderForm = () => {
                 <input
                   type="text"
                   value={dateHijri}
-                  onChange={(e) => setDateHijri(e.target.value)}
-                  className="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg block w-full p-2.5 dark:bg-gray-800 dark:text-white"
+                  readOnly
+                  disabled
+                  className="shadow-sm bg-gray-100 border border-gray-300 text-gray-900 sm:text-sm rounded-lg block w-full p-2.5 dark:bg-gray-600 dark:text-white cursor-not-allowed"
                 />
               </div>
 
-              {/* Day Name (Arabic, auto-filled from AD date) */}
+              {/* Day Name (auto-filled, read-only) */}
               <div className="col-span-6 sm:col-span-3">
                 <label className="text-sm font-medium text-gray-900 dark:text-white block mb-2">
                   {t("day_name")}
@@ -451,8 +498,9 @@ const AddPurchaseOrderForm = () => {
                 <input
                   type="text"
                   value={dayName}
-                  onChange={(e) => setDayName(e.target.value)}
-                  className="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg block w-full p-2.5 dark:bg-gray-800 dark:text-white"
+                  readOnly
+                  disabled
+                  className="shadow-sm bg-gray-100 border border-gray-300 text-gray-900 sm:text-sm rounded-lg block w-full p-2.5 dark:bg-gray-600 dark:text-white cursor-not-allowed"
                 />
               </div>
 
@@ -484,34 +532,98 @@ const AddPurchaseOrderForm = () => {
                 />
               </div>
 
-              {/* Bank Name (conditional) */}
+              {/* Bank Name From (conditional) */}
               {showBankFields && (
                 <div className="col-span-6 sm:col-span-3">
                   <label className="text-sm font-medium text-gray-900 dark:text-white block mb-2">
-                    {t("bank_name")}
+                    {t("bank_name_from")}
                   </label>
-                  <input
-                    type="text"
-                    value={bankName}
-                    onChange={(e) => setBankName(e.target.value)}
-                    className="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg block w-full p-2.5 dark:bg-gray-800 dark:text-white"
-                    required={showBankFields}
+                  <CreatableSelect
+                    key={theme}
+                    placeholder={t("choose")}
+                    formatCreateLabel={(inputValue) =>
+                      `${t("click2create")} "${inputValue}"`
+                    }
+                    isClearable
+                    options={bankNameFromOptions}
+                    onChange={(newValue) => setBankNameFrom(newValue?.value || "")}
+                    onCreateOption={(inputValue) => {
+                      setBankNameFrom(inputValue);
+                    }}
+                    value={bankNameFrom ? { value: bankNameFrom, label: bankNameFrom } : null}
+                    styles={customSelectStyles}
                   />
                 </div>
               )}
 
-              {/* IBAN Number (conditional) */}
+              {/* IBAN Number From (conditional) */}
               {showBankFields && (
                 <div className="col-span-6 sm:col-span-3">
                   <label className="text-sm font-medium text-gray-900 dark:text-white block mb-2">
-                    {t("iban_number")}
+                    {t("iban_number_from")}
                   </label>
-                  <input
-                    type="text"
-                    value={ibanNumber}
-                    onChange={(e) => setIbanNumber(e.target.value)}
-                    className="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg block w-full p-2.5 dark:bg-gray-800 dark:text-white"
-                    required={showBankFields}
+                  <CreatableSelect
+                    key={theme}
+                    placeholder={t("choose")}
+                    formatCreateLabel={(inputValue) =>
+                      `${t("click2create")} "${inputValue}"`
+                    }
+                    isClearable
+                    options={ibanNumberFromOptions}
+                    onChange={(newValue) => setIbanNumberFrom(newValue?.value || "")}
+                    onCreateOption={(inputValue) => {
+                      setIbanNumberFrom(inputValue);
+                    }}
+                    value={ibanNumberFrom ? { value: ibanNumberFrom, label: ibanNumberFrom } : null}
+                    styles={customSelectStyles}
+                  />
+                </div>
+              )}
+
+              {/* Bank Name To (conditional) */}
+              {showBankFields && (
+                <div className="col-span-6 sm:col-span-3">
+                  <label className="text-sm font-medium text-gray-900 dark:text-white block mb-2">
+                    {t("bank_name_to")}
+                  </label>
+                  <CreatableSelect
+                    key={theme}
+                    placeholder={t("choose")}
+                    formatCreateLabel={(inputValue) =>
+                      `${t("click2create")} "${inputValue}"`
+                    }
+                    isClearable
+                    options={bankNameToOptions}
+                    onChange={(newValue) => setBankNameTo(newValue?.value || "")}
+                    onCreateOption={(inputValue) => {
+                      setBankNameTo(inputValue);
+                    }}
+                    value={bankNameTo ? { value: bankNameTo, label: bankNameTo } : null}
+                    styles={customSelectStyles}
+                  />
+                </div>
+              )}
+
+              {/* IBAN Number To (conditional) */}
+              {showBankFields && (
+                <div className="col-span-6 sm:col-span-3">
+                  <label className="text-sm font-medium text-gray-900 dark:text-white block mb-2">
+                    {t("iban_number_to")}
+                  </label>
+                  <CreatableSelect
+                    key={theme}
+                    placeholder={t("choose")}
+                    formatCreateLabel={(inputValue) =>
+                      `${t("click2create")} "${inputValue}"`
+                    }
+                    isClearable
+                    options={ibanNumberToOptions}
+                    onChange={(newValue) => setIbanNumberTo(newValue?.value || "")}
+                    onCreateOption={(inputValue) => {
+                      setIbanNumberTo(inputValue);
+                    }}
+                    value={ibanNumberTo ? { value: ibanNumberTo, label: ibanNumberTo } : null}
+                    styles={customSelectStyles}
                   />
                 </div>
               )}

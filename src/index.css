@@ -116,6 +116,15 @@ html[lang="ar"] body {
   position: sticky !important;
   background: var(--surface-b) !important;
   z-index: 1 !important;
+  border-inline-start: 1px solid var(--surface-c) !important;
+}
+
+/* Add a subtle shadow to indicate the column is floating */
+html[dir="rtl"] .custom-table .p-frozen-column {
+  box-shadow: 4px 0 10px -5px rgba(0, 0, 0, 0.1) !important;
+}
+html[dir="ltr"] .custom-table .p-frozen-column {
+  box-shadow: -4px 0 10px -5px rgba(0, 0, 0, 0.1) !important;
 }
 
 .custom-table .p-datatable-thead > tr > th.p-frozen-column {

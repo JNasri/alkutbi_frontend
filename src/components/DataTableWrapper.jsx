@@ -168,8 +168,9 @@ const DataTableWrapper = ({ data, columns, title }) => {
                 sortable={col.sortable !== false}
                 body={col.body}
                 style={{
-                  minWidth: col.width || "150px",
-                  maxWidth: col.maxWidth || "300px",
+                  minWidth: col.width || (i18n.language === "ar" ? "180px" : "150px"),
+                  maxWidth: col.maxWidth || "500px",
+                  whiteSpace: col.nowrap ? "nowrap" : "normal",
                 }}
                 alignHeader="center"
                 headerClassName="bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white text-sm font-semibold py-3 px-4"

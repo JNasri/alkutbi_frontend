@@ -44,5 +44,9 @@ export default defineConfig({
       'react-redux',
     ],
   },
+  server: {
+    host: true,
+    port: 5173,
+  },
 });
 

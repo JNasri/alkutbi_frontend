@@ -13,6 +13,7 @@ import {
   Footprints,
   Package,
   ShoppingCart,
+  Coins,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Link, useLocation } from "react-router-dom";
@@ -108,6 +109,19 @@ const DashSidebar = () => {
           >
             <ShoppingCart size={20} className="flex-shrink-0" />
             {isOpen && <span className="text-sm">{t("purchase_orders")}</span>}
+          </Link>
+
+          {/* Collection Orders */}
+          <Link
+            to="/dashboard/collectionorders"
+            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 ${
+              isActive("/dashboard/collectionorders")
+                ? "bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white font-semibold"
+                : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+            }`}
+          >
+            <Coins size={20} className="flex-shrink-0" />
+            {isOpen && <span className="text-sm">{t("collection_orders")}</span>}
           </Link>
 
           {/* Special Papers */}
