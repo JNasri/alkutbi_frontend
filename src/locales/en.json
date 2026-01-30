@@ -268,5 +268,18 @@
   "receiving_bank_name_required": "Receiving bank name is required for bank transfer",
   "total_collection_orders": "Total Collection Orders",
   "last_collection_order_date": "Last Collection Order Date",
-  "financial_orders": "Financial Orders"
+  "financial_orders": "Financial Orders",
+  "User": "User",
+  "Action": "Action",
+  "Resource": "Resource",
+  "Details": "Details",
+  "URL": "URL",
+  "time": "Time",
+  "SystemAudits": "System Audits",
+  "Add": "Add",
+  "Edit": "Edit",
+  "Delete": "Delete",
+  "vouchers": "Vouchers",
+  "purchaseorders": "Purchase Orders",
+  "collectionorders": "Collection Orders"
 }

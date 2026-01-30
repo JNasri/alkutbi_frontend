@@ -275,5 +275,18 @@
   "receiving_bank_name_required": "اسم البنك المستقبل مطلوب للتحويل البنكي",
   "total_collection_orders": "إجمالي أوامر التحصيل",
   "last_collection_order_date": "تاريخ آخر أمر تحصيل",
-  "financial_orders": "الأوامر المالية"
+  "financial_orders": "الأوامر المالية",
+  "User": "المستخدم",
+  "Action": "الإجراء",
+  "Resource": "الصفحة",
+  "Details": "التفاصيل",
+  "URL": "الرابط",
+  "time": "الوقت",
+  "SystemAudits": "سجلات النظام",
+  "Add": "إضافة",
+  "Edit": "تعديل",
+  "Delete": "حذف",
+  "vouchers": "السندات",
+  "purchaseorders": "أوامر الشراء",
+  "collectionorders": "أوامر التحصيل"
 }

@@ -2,14 +2,14 @@ import { useGetLogsQuery } from "./logsApiSlice";
 import DataTableWrapper from "../../components/DataTableWrapper";
 import LoadingSpinner from "../../components/LoadingSpinner";
 import { useTranslation } from "react-i18next";
-import { parseLogs } from "../../config/parseLogs";
-import { Folder } from "lucide-react";
+import { format } from "date-fns";
 
 const LogsList = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const currentLang = i18n.language;
 
   const {
-    data: rawLogs,
+    data: audits,
     isLoading,
     isSuccess,
     isError,
@@ -30,18 +30,24 @@ const LogsList = () => {
     );
   }
 
-  if (isSuccess && rawLogs) {
-    const logs = parseLogs(rawLogs).reverse();
+  if (isSuccess && audits) {
+    const formattedLogs = audits.map((audit) => ({
+      ...audit,
+      displayName: (currentLang.startsWith("ar") ? audit.ar_name : audit.en_name) || audit.user,
+      translatedAction: t(audit.action),
+      translatedResource: t(audit.resource),
+      date: format(new Date(audit.createdAt), "dd-MM-yyyy"),
+      time: format(new Date(audit.createdAt), "HH:mm:ss"),
+    }));
 
     const columns = [
-      { field: "date", header: t("Date") },
-      { field: "time", header: t("Time") },
-      { field: "requestId", header: t("Request ID") },
-      { field: "message", header: t("Message") },
-      { field: "method", header: t("Method") },
+      { field: "date", header: t("date") },
+      { field: "time", header: t("time") },
+      { field: "displayName", header: t("User") },
+      { field: "translatedAction", header: t("Action") },
+      { field: "translatedResource", header: t("Resource") },
+      { field: "details", header: t("Details") },
       { field: "url", header: t("URL") },
-      { field: "username", header: t("Username") },
-      { field: "origin", header: t("Origin") },
     ];
 
     return (
@@ -52,9 +58,9 @@ const LogsList = () => {
           </h1>
         </div>
         <DataTableWrapper
-          data={logs}
+          data={formattedLogs}
           columns={columns}
-          title={t("System Logs")}
+          title={t("SystemAudits")}
         />
       </>
     );
