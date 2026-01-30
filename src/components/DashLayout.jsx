@@ -9,7 +9,7 @@ const DashLayout = () => {
       <header className="flex-shrink-0">
         <DashHeader />
       </header>
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1">
         {/* Sidebar */}
         <DashSidebar />
         {/* Main page content (Outlet) */}

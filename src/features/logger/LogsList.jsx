@@ -3,6 +3,7 @@ import DataTableWrapper from "../../components/DataTableWrapper";
 import LoadingSpinner from "../../components/LoadingSpinner";
 import { useTranslation } from "react-i18next";
 import { parseLogs } from "../../config/parseLogs";
+import { Folder } from "lucide-react";
 
 const LogsList = () => {
   const { t } = useTranslation();
@@ -45,9 +46,9 @@ const LogsList = () => {
 
     return (
       <>
-        <div className="flex items-center mb-2 p-1">
-          <h1 className="text-4xl  text-gray-800 dark:text-white">
-            {t("logs")}
+        <div className="flex items-center mb-4 p-1">
+          <h1 className="text-4xl font-bold text-gray-800 dark:text-white">
+            📄 {t("logs")}
           </h1>
         </div>
         <DataTableWrapper

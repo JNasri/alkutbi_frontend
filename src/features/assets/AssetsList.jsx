@@ -62,7 +62,7 @@ const AssetsList = () => {
         </Link>
       ),
     }));
-
+    
     return (
       <>
         {/* Header */}

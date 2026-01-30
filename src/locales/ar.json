@@ -274,5 +274,6 @@
   "voucher_number_required": "رقم السند مطلوب للتحصيل النقدي",
   "receiving_bank_name_required": "اسم البنك المستقبل مطلوب للتحويل البنكي",
   "total_collection_orders": "إجمالي أوامر التحصيل",
-  "last_collection_order_date": "تاريخ آخر أمر تحصيل"
+  "last_collection_order_date": "تاريخ آخر أمر تحصيل",
+  "financial_orders": "الأوامر المالية"
 }

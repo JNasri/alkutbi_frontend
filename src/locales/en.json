@@ -267,5 +267,6 @@
   "voucher_number_required": "Voucher number is required for cash collection",
   "receiving_bank_name_required": "Receiving bank name is required for bank transfer",
   "total_collection_orders": "Total Collection Orders",
-  "last_collection_order_date": "Last Collection Order Date"
+  "last_collection_order_date": "Last Collection Order Date",
+  "financial_orders": "Financial Orders"
 }
