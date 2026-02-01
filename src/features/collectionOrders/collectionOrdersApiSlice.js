@@ -33,20 +33,40 @@ export const collectionOrdersApiSlice = apiSlice.injectEndpoints({
     }),
 
     addNewCollectionOrder: builder.mutation({
-      query: (initialData) => ({
-        url: "/collectionorders",
-        method: "POST",
-        body: initialData,
-      }),
+      query: (initialData) => {
+        const formData = new FormData();
+        for (const key in initialData) {
+          if (key === "file" && initialData[key]) {
+            formData.append("file", initialData[key]);
+          } else {
+            formData.append(key, initialData[key]);
+          }
+        }
+        return {
+          url: "/collectionorders",
+          method: "POST",
+          body: formData,
+        };
+      },
       invalidatesTags: [{ type: "CollectionOrder", id: "LIST" }],
     }),
 
     updateCollectionOrder: builder.mutation({
-      query: (updatedData) => ({
-        url: "/collectionorders",
-        method: "PATCH",
-        body: updatedData,
-      }),
+      query: (updatedData) => {
+        const formData = new FormData();
+        for (const key in updatedData) {
+          if (key === "file" && updatedData[key]) {
+            formData.append("file", updatedData[key]);
+          } else {
+            formData.append(key, updatedData[key]);
+          }
+        }
+        return {
+          url: "/collectionorders",
+          method: "PATCH",
+          body: formData,
+        };
+      },
       invalidatesTags: (result, error, arg) => [
         { type: "CollectionOrder", id: arg.id },
         { type: "CollectionOrder", id: "LIST" },

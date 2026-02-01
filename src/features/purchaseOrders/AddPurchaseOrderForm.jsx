@@ -168,7 +168,6 @@ const AddPurchaseOrderForm = () => {
     { value: "new", label: t("status_new"), color: "blue" },
     { value: "audited", label: t("status_audited"), color: "orange" },
     { value: "authorized", label: t("status_authorized"), color: "yellow" },
-    { value: "finalized", label: t("status_finalized"), color: "green" },
   ];
 
   // Payment method options
@@ -186,6 +185,7 @@ const AddPurchaseOrderForm = () => {
     { value: "custody", label: t("custody") },
     { value: "advance", label: t("advance") },
   ];
+
 
   // Auto-convert number to Arabic text
   useEffect(() => {
@@ -378,6 +378,7 @@ const AddPurchaseOrderForm = () => {
       toast.error(t("required_fields_missing"));
       return;
     }
+
 
     if ((paymentMethod === "bank_transfer" || paymentMethod === "sadad") && (!bankNameFrom || !ibanNumberFrom || !bankNameTo || !ibanNumberTo)) {
       toast.error(t("bank_details_required"));

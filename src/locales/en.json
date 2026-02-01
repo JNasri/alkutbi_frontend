@@ -255,8 +255,8 @@
   "umrah": "Umrah",
   "transport": "Transport",
   "hotels": "Hotels",
-  "others_external": "External",
-  "additional": "Additional",
+  "other_source": "Other Source",
+  "type_source": "Type source here...",
   "collection_order_added_successfully": "Collection order added successfully",
   "collection_order_updated_successfully": "Collection order updated successfully",
   "collection_order_deleted_successfully": "Collection order deleted successfully",
@@ -281,5 +281,10 @@
   "Delete": "Delete",
   "vouchers": "Vouchers",
   "purchaseorders": "Purchase Orders",
-  "collectionorders": "Collection Orders"
+  "collectionorders": "Collection Orders",
+  "total_balance": "Total Balance",
+  "issuer_purchase": "P.O. Issuer",
+  "issuer_collection": "C.O. Issuer",
+  "document_upload_required_to_finalize": "Document upload is mandatory to finalize the order",
+  "Voucher.file": "File"
 }

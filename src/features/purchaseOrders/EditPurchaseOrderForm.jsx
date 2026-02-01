@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import {
   useGetPurchaseOrdersQuery,
   useUpdatePurchaseOrderMutation,
@@ -15,6 +15,8 @@ import Select from "react-select";
 import { numberToArabicText } from "../../utils/numberToArabicText";
 import moment from "moment-hijri";
 import ModernDatePicker from "../../components/ModernDatePicker";
+import { useDropzone } from "react-dropzone";
+import { ExternalLink } from "lucide-react";
 
 const EditPurchaseOrderForm = () => {
   const { id } = useParams();
@@ -65,6 +67,8 @@ const EditPurchaseOrderForm = () => {
   const [totalAmountText, setTotalAmountText] = useState("");
   const [deductedFrom, setDeductedFrom] = useState("");
   const [addedTo, setAddedTo] = useState("");
+  const [file, setFile] = useState(null);
+  const [existingFileUrl, setExistingFileUrl] = useState("");
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
@@ -118,6 +122,7 @@ const EditPurchaseOrderForm = () => {
       setTotalAmountText(purchaseOrder.totalAmountText || "");
       setDeductedFrom(purchaseOrder.deductedFrom || "");
       setAddedTo(purchaseOrder.addedTo || "");
+      setExistingFileUrl(purchaseOrder.fileUrl || "");
       setIsInitialLoad(false);
     }
   }, [purchaseOrder]);
@@ -277,6 +282,17 @@ const EditPurchaseOrderForm = () => {
     { value: "advance", label: t("advance") },
   ];
 
+  // Dropzone configuration
+  const onDrop = useCallback((acceptedFiles) => {
+    setFile(acceptedFiles[0]);
+  }, []);
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop,
+    multiple: false,
+    maxFiles: 1,
+  });
+
   const managementOptions = useMemo(() => {
     if (!isPurchaseOrdersSuccess) return [];
     const uniqueManagements = new Set(
@@ -375,6 +391,11 @@ const EditPurchaseOrderForm = () => {
       return toast.error(t("required_fields_missing"));
     }
 
+    // Mandatory document upload for finalized status
+    if (status === "finalized" && !file && !existingFileUrl) {
+      return toast.error(t("document_upload_required_to_finalize"));
+    }
+
     if (
       (paymentMethod === "bank_transfer" || paymentMethod === "sadad") &&
       (!bankNameFrom || !ibanNumberFrom || !bankNameTo || !ibanNumberTo)
@@ -404,6 +425,7 @@ const EditPurchaseOrderForm = () => {
       totalAmountText: totalAmountText || "",
       deductedFrom: deductedFrom || "",
       addedTo: addedTo || "",
+      file,
     };
 
     await updatePurchaseOrder(purchaseOrderData).unwrap();
@@ -799,6 +821,67 @@ const EditPurchaseOrderForm = () => {
                 styles={customSelectStyles}
               />
             </div>
+
+            {/* Document Upload - ONLY show when status is finalized */}
+            {status === "finalized" && (
+              <div className="col-span-6">
+                <label className="text-sm font-medium text-gray-900 dark:text-white block mb-2">
+                  {t("Voucher.file")} <span className="text-red-500">*</span>
+                </label>
+                
+                {/* Show existing file if any */}
+                {existingFileUrl && (
+                  <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-blue-700 dark:text-blue-300">
+                      <ExternalLink size={18} />
+                      <span className="text-sm font-medium">Existing Document:</span>
+                    </div>
+                    <a 
+                      href={existingFileUrl} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-sm text-blue-600 dark:text-blue-400 hover:underline font-bold"
+                    >
+                      View File 📄
+                    </a>
+                  </div>
+                )}
+
+                <div
+                  {...getRootProps()}
+                  className={`flex cursor-pointer appearance-none justify-center rounded-lg border border-dashed border-gray-300 dark:border-gray-500 bg-gray-50 dark:bg-gray-800 p-6 text-sm transition hover:border-gray-400 dark:hover:border-gray-400 focus:outline-none ${
+                      !file && !existingFileUrl ? "border-red-500 dark:border-red-400" : ""
+                  }`}
+                >
+                  <input {...getInputProps()} />
+                  {file ? (
+                    <div className="text-center">
+                      <p className="text-gray-700 dark:text-gray-300 font-medium">New File Selected:</p>
+                      <p className="text-blue-600 dark:text-blue-400">{file.name}</p>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setFile(null);
+                        }}
+                        className="mt-2 text-sm text-red-600 dark:text-red-400 font-bold hover:underline"
+                      >
+                        {t("Delete")} 🗑️
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center gap-2">
+                      <svg className="h-8 w-8 text-gray-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M3 15a4 4 0 004 4h10a4 4 0 004-4m-7-3l-3-3m0 0l-3 3m3-3v12" />
+                      </svg>
+                      <p className="text-gray-600 dark:text-gray-400 text-center">
+                        {existingFileUrl ? "Click or drag to replace the current file" : `${t("Voucher.file")} - ${i18n.language === "ar" ? "اضغط هنا لاختيار ملف" : "Click or drag file to upload"}`}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="flex items-center pt-6">

@@ -14,7 +14,9 @@ i18n
       en: { translation: en },
       ar: { translation: ar },
     },
+    supportedLngs: ["en", "ar"],
     fallbackLng: "en",
+    load: "languageOnly", // ⬅️ this ensures it doesn't try to load things like en-US
     interpolation: {
       escapeValue: false,
     },

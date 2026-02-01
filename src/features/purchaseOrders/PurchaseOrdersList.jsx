@@ -1,9 +1,10 @@
 import { useTranslation } from "react-i18next";
 import { useGetPurchaseOrdersQuery } from "./purchaseOrdersApiSlice";
+import { useGetCollectionOrdersQuery } from "../collectionOrders/collectionOrdersApiSlice";
 import DataTableWrapper from "../../components/DataTableWrapper";
 import LoadingSpinner from "../../components/LoadingSpinner";
 import { Link } from "react-router-dom";
-import { Plus } from "lucide-react";
+import { Plus, Paperclip, Pencil } from "lucide-react";
 import PurchaseOrderPrint from "./PurchaseOrderPrint";
 
 const PurchaseOrdersList = () => {
@@ -11,30 +12,42 @@ const PurchaseOrdersList = () => {
 
   const {
     data: purchaseOrders,
-    isLoading,
-    isSuccess,
-    isError,
-    error,
+    isLoading: isLoadingPO,
+    isSuccess: isSuccessPO,
+    isError: isErrorPO,
+    error: errorPO,
   } = useGetPurchaseOrdersQuery("purchaseOrdersList", {
     pollingInterval: 60000,
     refetchOnFocus: true,
     refetchOnMountOrArgChange: true,
   });
 
-  if (isLoading) return <LoadingSpinner />;
+  const {
+    data: collectionOrders,
+    isLoading: isLoadingCO,
+    isSuccess: isSuccessCO,
+    isError: isErrorCO,
+    error: errorCO,
+  } = useGetCollectionOrdersQuery("collectionOrdersList", {
+    pollingInterval: 60000,
+    refetchOnFocus: true,
+    refetchOnMountOrArgChange: true,
+  });
 
-  if (isError) {
+  if (isLoadingPO || isLoadingCO) return <LoadingSpinner />;
+
+  if (isErrorPO || isErrorCO) {
     return (
       <div
         className="p-4 mb-4 text-sm text-red-800 rounded-lg bg-red-50 dark:bg-gray-800 dark:text-red-400"
         role="alert"
       >
-        <span className="font-medium">Alert! :</span> {error?.data?.message}
+        <span className="font-medium">Alert! :</span> {errorPO?.data?.message || errorCO?.data?.message}
       </div>
     );
   }
 
-  if (isSuccess) {
+  if (isSuccessPO && isSuccessCO) {
     const purchaseOrderList = purchaseOrders.ids.map(
       (id) => purchaseOrders.entities[id]
     );
@@ -66,28 +79,30 @@ const PurchaseOrdersList = () => {
     };
 
     const columns = [
-      { field: "print", header: t("print"), width: "80px" },
-      { field: "purchasingId", header: t("purchasing_id"), width: "180px" },
-      { field: "transactionType", header: t("transaction_type"), width: "150px" },
-      { field: "status", header: t("po_status"), width: "150px" },
-      { field: "dayName", header: t("day_name"), width: "120px" },
-      { field: "dateHijri", header: t("date_hijri"), width: "150px" },
-      { field: "dateAD", header: t("date_ad"), width: "150px" },
-      { field: "paymentMethod", header: t("payment_method"), width: "150px" },
-      { field: "bankNameFrom", header: t("bank_name_from"), width: "180px" },
-      { field: "ibanNumberFrom", header: t("iban_number_from"), width: "250px" },
-      { field: "bankNameTo", header: t("bank_name_to"), width: "180px" },
-      { field: "ibanNumberTo", header: t("iban_number_to"), width: "250px" },
-      { field: "managementName", header: t("management_name"), width: "180px" },
-      { field: "supplier", header: t("supplier"), width: "180px" },
-      { field: "item", header: t("item"), width: "200px" },
-      { field: "totalAmount", header: t("total_amount"), width: "150px" },
-      { field: "totalAmountText", header: t("total_amount_text"), width: "400px" },
-      { field: "deductedFrom", header: t("deducted_from"), width: "180px" },
-      { field: "addedTo", header: t("added_to"), width: "180px" },
-      { field: "createdAt", header: t("createdAt"), width: "150px" },
-      { field: "updatedAt", header: t("updatedAt"), width: "150px" },
-      { field: "edit", header: t("edit"), width: "80px" },
+      { field: "print", header: t("print"), autoWidth: true },
+      { field: "attachment", header: t("Voucher.file"), autoWidth: true },
+      { field: "purchasingId", header: t("purchasing_id"), nowrap: true },
+      { field: "issuer", header: t("issuer_purchase"), nowrap: true },
+      { field: "transactionType", header: t("transaction_type") },
+      { field: "status", header: t("po_status"), nowrap: true },
+      { field: "dayName", header: t("day_name"), nowrap: true },
+      { field: "dateHijri", header: t("date_hijri"), nowrap: true },
+      { field: "dateAD", header: t("date_ad"), nowrap: true },
+      { field: "paymentMethod", header: t("payment_method") },
+      { field: "bankNameFrom", header: t("bank_name_from") },
+      { field: "ibanNumberFrom", header: t("iban_number_from") },
+      { field: "bankNameTo", header: t("bank_name_to") },
+      { field: "ibanNumberTo", header: t("iban_number_to") },
+      { field: "managementName", header: t("management_name") },
+      { field: "supplier", header: t("supplier") },
+      { field: "item", header: t("item") },
+      { field: "totalAmount", header: t("total_amount"), nowrap: true },
+      { field: "totalAmountText", header: t("total_amount_text") },
+      { field: "deductedFrom", header: t("deducted_from") },
+      { field: "addedTo", header: t("added_to") },
+      { field: "createdAt", header: t("createdAt"), nowrap: true },
+      { field: "updatedAt", header: t("updatedAt"), nowrap: true },
+      { field: "edit", header: t("edit"), autoWidth: true },
     ];
 
     const getStatusBadge = (status) => {
@@ -134,7 +149,15 @@ const PurchaseOrdersList = () => {
     const transformedData = sortedList.map((item) => ({
       ...item,
       print: <PurchaseOrderPrint purchaseOrder={item} />,
+      attachment: item.fileUrl ? (
+        <a href={item.fileUrl} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:text-blue-700 flex justify-center">
+          <Paperclip size={20} />
+        </a>
+      ) : (
+        <span className="text-gray-300 flex justify-center">—</span>
+      ),
       purchasingId: item.purchasingId || "—",
+      issuer: item.issuer?.ar_name || item.issuer?.username || "—",
       transactionType: transactionTypeTranslations[item.transactionType] || item.transactionType || "—",
       status: getStatusBadge(item.status),
       dayName: convertDayNameToArabic(item.dayName), // Always show in Arabic
@@ -155,17 +178,29 @@ const PurchaseOrdersList = () => {
       edit: (
         <Link
           to={`/dashboard/purchaseorders/edit/${item.id}`}
-          className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800 transition-all hover:bg-blue-100 dark:hover:bg-blue-900/50 hover:shadow-sm group font-medium"
         >
+          <Pencil size={14} className="group-hover:rotate-12 transition-transform" />
           {t("edit")}
         </Link>
       ),
     }));
 
-    const totalAmount = purchaseOrderList.reduce(
+    const totalPurchaseAmount = purchaseOrderList.reduce(
       (sum, order) => sum + (order.totalAmount || 0),
       0
     );
+
+    const collectionOrderList = collectionOrders.ids.map(
+      (id) => collectionOrders.entities[id]
+    );
+
+    const totalCollectionAmount = collectionOrderList.reduce(
+      (sum, order) => sum + (order.totalAmount || 0),
+      0
+    );
+
+    const balance = totalCollectionAmount - totalPurchaseAmount;
 
     return (
       <>
@@ -205,7 +240,7 @@ const PurchaseOrdersList = () => {
               {t("total_amount_sum")}
             </p>
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-              {totalAmount.toLocaleString()} {t("sar")}
+              {totalPurchaseAmount.toLocaleString()} {t("sar")}
             </h3>
           </div>
 
@@ -221,13 +256,13 @@ const PurchaseOrdersList = () => {
             </h3>
           </div>
 
-          {/* Last Supplier */}
+          {/* Total Balance */}
           <div className="p-4 bg-gray-200 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-md transition hover:shadow-lg">
             <p className="text-sm text-gray-600 dark:text-gray-400">
-              {t("last_supplier")}
+              {t("total_balance")}
             </p>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-              {sortedList.length > 0 ? sortedList[0].supplier : "—"}
+            <h3 className={`text-lg font-bold ${balance >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}>
+              {balance.toLocaleString()} {t("sar")}
             </h3>
           </div>
         </div>

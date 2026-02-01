@@ -262,8 +262,8 @@
   "umrah": "عمرة",
   "transport": "نقل",
   "hotels": "فنادق",
-  "others_external": "خارجي",
-  "additional": "إضافي",
+  "other_source": "مصدر آخر",
+  "type_source": "اكتب المصدر هنا...",
   "collection_order_added_successfully": "تم إضافة أمر التحصيل بنجاح",
   "collection_order_updated_successfully": "تم تحديث أمر التحصيل بنجاح",
   "collection_order_deleted_successfully": "تم حذف أمر التحصيل بنجاح",
@@ -288,5 +288,10 @@
   "Delete": "حذف",
   "vouchers": "السندات",
   "purchaseorders": "أوامر الشراء",
-  "collectionorders": "أوامر التحصيل"
+  "collectionorders": "أوامر التحصيل",
+  "total_balance": "إجمالي الرصيد",
+  "issuer_purchase": "منشئ أمر الشراء",
+  "issuer_collection": "منشئ أمر التحصيل",
+  "document_upload_required_to_finalize": "يجب رفع ملف للموافقة النهائية على الطلب",
+  "Voucher.file": "الملف"
 }

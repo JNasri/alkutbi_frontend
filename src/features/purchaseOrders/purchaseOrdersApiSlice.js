@@ -33,20 +33,40 @@ export const purchaseOrdersApiSlice = apiSlice.injectEndpoints({
     }),
 
     addNewPurchaseOrder: builder.mutation({
-      query: (initialData) => ({
-        url: "/purchaseorders",
-        method: "POST",
-        body: initialData,
-      }),
+      query: (initialData) => {
+        const formData = new FormData();
+        for (const key in initialData) {
+          if (key === "file" && initialData[key]) {
+            formData.append("file", initialData[key]);
+          } else {
+            formData.append(key, initialData[key]);
+          }
+        }
+        return {
+          url: "/purchaseorders",
+          method: "POST",
+          body: formData,
+        };
+      },
       invalidatesTags: [{ type: "PurchaseOrder", id: "LIST" }],
     }),
 
     updatePurchaseOrder: builder.mutation({
-      query: (updatedData) => ({
-        url: "/purchaseorders",
-        method: "PATCH",
-        body: updatedData,
-      }),
+      query: (updatedData) => {
+        const formData = new FormData();
+        for (const key in updatedData) {
+          if (key === "file" && updatedData[key]) {
+            formData.append("file", updatedData[key]);
+          } else {
+            formData.append(key, updatedData[key]);
+          }
+        }
+        return {
+          url: "/purchaseorders",
+          method: "PATCH",
+          body: formData,
+        };
+      },
       invalidatesTags: (result, error, arg) => [
         { type: "PurchaseOrder", id: arg.id },
         { type: "PurchaseOrder", id: "LIST" },

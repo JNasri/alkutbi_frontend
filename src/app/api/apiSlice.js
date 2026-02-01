@@ -54,6 +54,7 @@ export const apiSlice = createApi({
     "PurchaseOrder",
     "PurchaseOrderItem",
     "CollectionOrder",
+    "CollectionOrderItem",
   ],
   endpoints: (builder) => ({}),
 });

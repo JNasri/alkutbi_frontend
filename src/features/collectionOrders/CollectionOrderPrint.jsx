@@ -163,23 +163,29 @@ const CollectionOrderPrint = ({ collectionOrder }) => {
     
     /* Header Information */
     .header-info {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding: 5px 50px;
+      margin-bottom: 5px;
+    }
+    
+    .header-info-right {
       text-align: right;
-      font-size: 13px;
-      line-height: 1.5;
-      background-color: #f9f9f9;
-      border-radius: 3px;
-      padding-x: 8px;
+    }
+    
+    .header-info-left {
+      text-align: left;
     }
     
     .header-info div {
-      margin-bottom: 1px;
-      margin-right: 25px;
+      margin-bottom: 2px;
     }
     
     .header-info strong {
       font-weight: bold;
       display: inline-block;
-      min-width: 110px;
+      min-width: 100px;
     }
     
     .main-title {
@@ -284,11 +290,16 @@ const CollectionOrderPrint = ({ collectionOrder }) => {
     <div class="content-area">
       <!-- Header Information -->
       <div class="header-info">
-      <div><strong>اليوم:</strong> ${order.dayName || "—"}</div>
-      <div><strong>التاريخ الميلادي:</strong> <span class="english-numbers">${toEnglishNumbers(order.dateAD) || "—"}</span></div>
-      <div><strong>التاريخ الهجري:</strong> <span class="english-numbers">${toEnglishNumbers(order.dateHijri) || "—"}</span></div>
-      <div><strong>رقم أمر التحصيل:</strong> <span class="english-numbers">${toEnglishNumbers(order.collectingId) || "—"}</span></div>
-    </div>
+        <div class="header-info-right">
+          <div><strong>اليوم:</strong> ${order.dayName || "—"}</div>
+          <div><strong>التاريخ الميلادي:</strong> <span class="english-numbers">${toEnglishNumbers(order.dateAD) || "—"}</span></div>
+          <div><strong>التاريخ الهجري:</strong> <span class="english-numbers">${toEnglishNumbers(order.dateHijri) || "—"}</span></div>
+        </div>
+        <div class="header-info-left">
+          <div><strong>رقم أمر التحصيل:</strong> <span class="english-numbers">${toEnglishNumbers(order.collectingId) || "—"}</span></div>
+          ${order.issuer?.ar_name ? `<div><strong>منشئ أمر التحصيل:</strong> ${order.issuer.ar_name}</div>` : ""}
+        </div>
+      </div>
     
     <!-- Main Title -->
     <h1 class="main-title">أمر تحصيل</h1>
@@ -327,6 +338,18 @@ const CollectionOrderPrint = ({ collectionOrder }) => {
       <tr>
         <td>المبلغ كتابة</td>
         <td>${order.totalAmountText}</td>
+      </tr>
+      ` : ""}
+      ${order.deductedFrom ? `
+      <tr>
+        <td>يخصم من</td>
+        <td>${order.deductedFrom}</td>
+      </tr>
+      ` : ""}
+      ${order.addedTo ? `
+      <tr>
+        <td>يضاف إلى</td>
+        <td>${order.addedTo}</td>
       </tr>
       ` : ""}
     </table>

@@ -3,7 +3,7 @@ import { useGetDeathcasesQuery } from "./deathCasesApiSlice";
 import DataTableWrapper from "../../components/DataTableWrapper";
 import LoadingSpinner from "../../components/LoadingSpinner";
 import { Link } from "react-router-dom";
-import { Plus } from "lucide-react";
+import { Plus, Pencil } from "lucide-react";
 
 const DeathcasesList = () => {
   const { t } = useTranslation();
@@ -104,17 +104,17 @@ const DeathcasesList = () => {
         attachments: attachmentItems.length ? attachmentItems : "—",
         status: t(d.status),
         edit: (
-          <div className="flex flex-col items-center text-center space-y-4">
+          <div className="flex flex-col items-center gap-3 py-2">
             <div
-              className={`flex items-center justify-center  p-2 rounded-full text-white text-xs font-bold
+              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase shadow-sm
               ${
                 d.status === "new"
-                  ? "bg-blue-300"
+                  ? "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300"
                   : d.status === "in_progress"
-                  ? "bg-orange-400"
+                  ? "bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300"
                   : d.status === "complete"
-                  ? "bg-green-500"
-                  : "bg-gray-300"
+                  ? "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300"
+                  : "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300"
               }
             `}
             >
@@ -122,8 +122,9 @@ const DeathcasesList = () => {
             </div>
             <Link
               to={`/dashboard/deathcases/edit/${d.id}`}
-              className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 text-sm"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800 transition-all hover:bg-blue-100 dark:hover:bg-blue-900/50 hover:shadow-sm group font-medium text-xs"
             >
+              <Pencil size={12} className="group-hover:rotate-12 transition-transform" />
               {t("edit")}
             </Link>
           </div>

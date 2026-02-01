@@ -9,7 +9,7 @@ import LoadingSpinner from "./LoadingSpinner";
 import i18n from "../../i18n";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
-import { FileText, FileSpreadsheet, Download } from "lucide-react";
+import { FileText, FileSpreadsheet, Download, Pencil, Search, FilterX } from "lucide-react";
 
 // PrimeReact imports
 import "primereact/resources/themes/lara-light-indigo/theme.css";
@@ -76,48 +76,51 @@ const DataTableWrapper = ({ data, columns, title }) => {
 
   // Header template with search and export buttons
   const header = (
-    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
-      <h2 className="text-2xl font-semibold text-gray-900 dark:text-white">
+    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-6">
+      <h2 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">
         {title}
       </h2>
 
-      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 w-full sm:w-auto">
-        <span className="relative w-full sm:w-72">
-          <i
-            className={`pi pi-search absolute top-1/2 transform -translate-y-1/2 text-gray-400 ${
-              i18n.language === "ar" ? "left-3" : "right-3"
+      <div className="flex flex-col lg:flex-row items-center gap-4 w-full lg:w-auto">
+        {/* Modern Search Field */}
+        <div className="relative w-full lg:w-80 group">
+          <Search
+            size={18}
+            className={`absolute top-1/2 transform -translate-y-1/2 text-gray-400 group-focus-within:text-blue-500 transition-colors pointer-events-none ${
+              i18n.language === "ar" ? "left-4" : "right-4"
             }`}
           />
-          <InputText
+          <input
+            type="text"
             value={globalFilter}
             onChange={(e) => setGlobalFilter(e.target.value)}
             placeholder={t("search...")}
-            style={{
-              backgroundColor: 'var(--surface-b)',
-              color: 'var(--text-color)',
-              borderColor: 'var(--surface-c)'
-            }}
             className={`w-full ${
-              i18n.language === "ar" ? "pr-10 pl-3" : "pl-3 pr-10"
-            } py-2 rounded-lg text-sm border focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition`}
+              i18n.language === "ar" ? "pr-5 pl-12" : "pl-5 pr-12"
+            } py-2.5 bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-xl text-sm focus:bg-white dark:focus:bg-gray-900 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none text-gray-700 dark:text-gray-200 placeholder-gray-400`}
           />
-        </span>
-        <div className="flex gap-2">
-          <Button
-            label={t("Clear")}
-            icon="pi pi-filter-slash"
-            className="p-button-sm bg-blue-500 dark:bg-blue-600 text-white hover:bg-blue-600 dark:hover:bg-blue-700 transition rounded-lg px-3 py-2 border-0"
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex items-center gap-3 w-full sm:w-auto justify-center">
+          <button
             onClick={() => {
               setGlobalFilter("");
               setSelectedRows([]);
             }}
-          />
-          <Button
-            label={t("Export Excel")}
-            icon="pi pi-file-excel"
-            className="p-button-sm bg-blue-500 dark:bg-blue-600 text-white hover:bg-blue-600 dark:hover:bg-blue-700 transition rounded-lg px-3 py-2 border-0"
+            className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400 border border-orange-200 dark:border-orange-800 transition-all hover:bg-orange-100 dark:hover:bg-orange-900/40 hover:shadow-md font-semibold text-sm cursor-pointer whitespace-nowrap group"
+          >
+            <FilterX size={18} className="group-hover:-rotate-6 transition-transform" />
+            {t("Clear")}
+          </button>
+
+          <button
             onClick={exportExcel}
-          />
+            className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 border border-green-200 dark:border-green-800 transition-all hover:bg-green-100 dark:hover:bg-green-900/40 hover:shadow-md font-semibold text-sm cursor-pointer whitespace-nowrap group"
+          >
+            <FileSpreadsheet size={18} className="group-hover:scale-110 transition-transform" />
+            {t("Export Excel")}
+          </button>
         </div>
       </div>
     </div>
@@ -166,11 +169,24 @@ const DataTableWrapper = ({ data, columns, title }) => {
                 field={col.field}
                 header={col.header}
                 sortable={col.sortable !== false}
-                body={col.body}
+                body={(rowData) => {
+                  if (col.body) return col.body(rowData);
+                  const value = rowData[col.field];
+                  
+                  if (col.field === "edit" || col.field === "actions" || col.field === "print" || col.field === "attachment") {
+                    return (
+                      <div className="flex justify-center">
+                         {value}
+                      </div>
+                    );
+                  }
+                  return value;
+                }}
                 style={{
-                  minWidth: col.width || (i18n.language === "ar" ? "180px" : "150px"),
+                  minWidth: col.autoWidth ? "auto" : (col.width || (i18n.language === "ar" ? "180px" : "150px")),
                   maxWidth: col.maxWidth || "500px",
                   whiteSpace: col.nowrap ? "nowrap" : "normal",
+                  width: col.autoWidth ? "1%" : "auto", // This helps autoWidth columns stay compact
                 }}
                 alignHeader="center"
                 headerClassName="bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white text-sm font-semibold py-3 px-4"

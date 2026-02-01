@@ -3,7 +3,7 @@ import { useGetIncomingsQuery } from "./incomingsApiSlice";
 import DataTableWrapper from "../../components/DataTableWrapper";
 import LoadingSpinner from "../../components/LoadingSpinner";
 import { Link } from "react-router-dom";
-import { Plus } from "lucide-react";
+import { Plus, Pencil } from "lucide-react";
 import useAuth from "../../hooks/useAuth";
 
 const IncomingsList = () => {
@@ -104,9 +104,10 @@ const IncomingsList = () => {
       edit: (
         <Link
           to={`/dashboard/incomings/edit/${item.id}`}
-          className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800 transition-all hover:bg-blue-100 dark:hover:bg-blue-900/50 hover:shadow-sm group font-medium"
         >
-          {t("edit")}
+          <Pencil size={14} className="group-hover:rotate-12 transition-transform" />
+           {t("edit")}
         </Link>
       ),
     }));

@@ -1,9 +1,10 @@
 import { useTranslation } from "react-i18next";
 import { useGetCollectionOrdersQuery } from "./collectionOrdersApiSlice";
+import { useGetPurchaseOrdersQuery } from "../purchaseOrders/purchaseOrdersApiSlice";
 import DataTableWrapper from "../../components/DataTableWrapper";
 import LoadingSpinner from "../../components/LoadingSpinner";
 import { Link } from "react-router-dom";
-import { Plus } from "lucide-react";
+import { Plus, Paperclip, Pencil } from "lucide-react";
 import CollectionOrderPrint from "./CollectionOrderPrint";
 
 const CollectionOrdersList = () => {
@@ -11,30 +12,42 @@ const CollectionOrdersList = () => {
 
   const {
     data: collectionOrders,
-    isLoading,
-    isSuccess,
-    isError,
-    error,
+    isLoading: isLoadingCO,
+    isSuccess: isSuccessCO,
+    isError: isErrorCO,
+    error: errorCO,
   } = useGetCollectionOrdersQuery("collectionOrdersList", {
     pollingInterval: 60000,
     refetchOnFocus: true,
     refetchOnMountOrArgChange: true,
   });
 
-  if (isLoading) return <LoadingSpinner />;
+  const {
+    data: purchaseOrders,
+    isLoading: isLoadingPO,
+    isSuccess: isSuccessPO,
+    isError: isErrorPO,
+    error: errorPO,
+  } = useGetPurchaseOrdersQuery("purchaseOrdersList", {
+    pollingInterval: 60000,
+    refetchOnFocus: true,
+    refetchOnMountOrArgChange: true,
+  });
 
-  if (isError) {
+  if (isLoadingCO || isLoadingPO) return <LoadingSpinner />;
+
+  if (isErrorCO || isErrorPO) {
     return (
       <div
         className="p-4 mb-4 text-sm text-red-800 rounded-lg bg-red-50 dark:bg-gray-800 dark:text-red-400"
         role="alert"
       >
-        <span className="font-medium">Alert! :</span> {error?.data?.message}
+        <span className="font-medium">Alert! :</span> {errorCO?.data?.message || errorPO?.data?.message}
       </div>
     );
   }
 
-  if (isSuccess) {
+  if (isSuccessCO && isSuccessPO) {
     const collectionOrderList = collectionOrders.ids.map(
       (id) => collectionOrders.entities[id]
     );
@@ -65,21 +78,25 @@ const CollectionOrdersList = () => {
     };
 
     const columns = [
-      { field: "print", header: t("print"), width: "80px" },
-      { field: "collectingId", header: t("collecting_id"), width: "180px" },
-      { field: "collectedFrom", header: t("collected_from"), width: "150px" },
-      { field: "status", header: t("status"), width: "150px" },
-      { field: "dayName", header: t("day_name"), width: "120px" },
-      { field: "dateHijri", header: t("date_hijri"), width: "150px" },
-      { field: "dateAD", header: t("date_ad"), width: "150px" },
-      { field: "collectMethod", header: t("collect_method"), width: "150px" },
-      { field: "voucherNumber", header: t("voucher_number"), width: "180px" },
-      { field: "receivingBankName", header: t("receiving_bank_name"), width: "200px" },
-      { field: "totalAmount", header: t("total_amount"), width: "150px" },
-      { field: "totalAmountText", header: t("total_amount_text"), width: "400px" },
-      { field: "createdAt", header: t("createdAt"), width: "150px" },
-      { field: "updatedAt", header: t("updatedAt"), width: "150px" },
-      { field: "edit", header: t("edit"), width: "80px" },
+      { field: "print", header: t("print"), autoWidth: true },
+      { field: "attachment", header: t("Voucher.file"), autoWidth: true },
+      { field: "collectingId", header: t("collecting_id"), nowrap: true },
+      { field: "issuer", header: t("issuer_collection"), nowrap: true },
+      { field: "collectedFrom", header: t("collected_from") },
+      { field: "status", header: t("status"), nowrap: true },
+      { field: "dayName", header: t("day_name"), nowrap: true },
+      { field: "dateHijri", header: t("date_hijri"), nowrap: true },
+      { field: "dateAD", header: t("date_ad"), nowrap: true },
+      { field: "collectMethod", header: t("collect_method") },
+      { field: "voucherNumber", header: t("voucher_number") },
+      { field: "receivingBankName", header: t("receiving_bank_name") },
+      { field: "totalAmount", header: t("total_amount"), nowrap: true },
+      { field: "totalAmountText", header: t("total_amount_text") },
+      { field: "deductedFrom", header: t("deducted_from") },
+      { field: "addedTo", header: t("added_to") },
+      { field: "createdAt", header: t("createdAt"), nowrap: true },
+      { field: "updatedAt", header: t("updatedAt"), nowrap: true },
+      { field: "edit", header: t("edit"), autoWidth: true },
     ];
 
     const getStatusBadge = (status) => {
@@ -126,7 +143,15 @@ const CollectionOrdersList = () => {
     const transformedData = sortedList.map((item) => ({
       ...item,
       print: <CollectionOrderPrint collectionOrder={item} />,
+      attachment: item.fileUrl ? (
+        <a href={item.fileUrl} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:text-blue-700 flex justify-center">
+          <Paperclip size={20} />
+        </a>
+      ) : (
+        <span className="text-gray-300 flex justify-center">—</span>
+      ),
       collectingId: item.collectingId || "—",
+      issuer: item.issuer?.ar_name || item.issuer?.username || "—",
       collectedFrom: collectedFromTranslations[item.collectedFrom] || item.collectedFrom || "—",
       status: getStatusBadge(item.status),
       dayName: convertDayNameToArabic(item.dayName), // Always show in Arabic
@@ -135,22 +160,36 @@ const CollectionOrdersList = () => {
       receivingBankName: item.receivingBankName || "—",
       totalAmount: item.totalAmount ? `${item.totalAmount.toLocaleString()} ${t("sar")}` : "—",
       totalAmountText: item.totalAmountText || "—",
+      deductedFrom: item.deductedFrom || "—",
+      addedTo: item.addedTo || "—",
       createdAt: new Date(item.createdAt).toLocaleDateString(),
       updatedAt: new Date(item.updatedAt).toLocaleDateString(),
       edit: (
         <Link
           to={`/dashboard/collectionorders/edit/${item.id}`}
-          className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800 transition-all hover:bg-blue-100 dark:hover:bg-blue-900/50 hover:shadow-sm group font-medium"
         >
+          <Pencil size={14} className="group-hover:rotate-12 transition-transform" />
           {t("edit")}
         </Link>
       ),
     }));
 
-    const totalAmount = collectionOrderList.reduce(
+    const totalCollectionAmount = collectionOrderList.reduce(
       (sum, order) => sum + (order.totalAmount || 0),
       0
     );
+
+    const purchaseOrderList = purchaseOrders.ids.map(
+      (id) => purchaseOrders.entities[id]
+    );
+
+    const totalPurchaseAmount = purchaseOrderList.reduce(
+      (sum, order) => sum + (order.totalAmount || 0),
+      0
+    );
+
+    const balance = totalCollectionAmount - totalPurchaseAmount;
 
     return (
       <>
@@ -173,7 +212,7 @@ const CollectionOrdersList = () => {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           {/* Total Collection Orders */}
           <div className="p-4 bg-gray-200 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-md transition hover:shadow-lg">
             <p className="text-sm text-gray-600 dark:text-gray-400">
@@ -190,7 +229,7 @@ const CollectionOrdersList = () => {
               {t("total_amount_sum")}
             </p>
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-              {totalAmount.toLocaleString()} {t("sar")}
+              {totalCollectionAmount.toLocaleString()} {t("sar")}
             </h3>
           </div>
 
@@ -203,6 +242,16 @@ const CollectionOrdersList = () => {
               {sortedList.length > 0
                 ? new Date(sortedList[0].createdAt).toLocaleDateString()
                 : "—"}
+            </h3>
+          </div>
+
+          {/* Total Balance */}
+          <div className="p-4 bg-gray-200 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-md transition hover:shadow-lg">
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              {t("total_balance")}
+            </p>
+            <h3 className={`text-lg font-bold ${balance >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}>
+              {balance.toLocaleString()} {t("sar")}
             </h3>
           </div>
         </div>

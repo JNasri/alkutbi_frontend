@@ -3,25 +3,30 @@ import { useEffect } from "react";
 import { Languages } from "lucide-react";
 
 const LanguageSwitcher = () => {
-  const { i18n } = useTranslation();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   // Effect to change the document direction and font-family whenever the language changes
   useEffect(() => {
-    const direction = i18n.language === "ar" ? "rtl" : "ltr";
+    const isArabic = i18n.language?.startsWith("ar");
+    const direction = isArabic ? "rtl" : "ltr";
     document.documentElement.setAttribute("dir", direction);
-    document.documentElement.lang = i18n.language; // Also set the html lang attribute
+    document.documentElement.lang = i18n.language;
 
     // Set font-family based on selected language
-    const font =
-      i18n.language === "ar" ? "'Tajawal', sans-serif" : "'Nunito Sans', serif";
+    const font = isArabic
+      ? "'Tajawal', sans-serif"
+      : "'Nunito Sans', serif";
     document.body.style.fontFamily = font;
   }, [i18n.language]); // Re-run this effect when the language changes
 
-  const toggleLanguage = () => {
-    const newLang = i18n.language === "en" ? "ar" : "en";
+  const toggleLanguage = (e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    const currentLang = i18n.language || "en";
+    const newLang = currentLang.startsWith("ar") ? "en" : "ar";
     i18n.changeLanguage(newLang);
-    // The useEffect will handle setting 'dir' and 'lang' attributes
   };
 
   return (

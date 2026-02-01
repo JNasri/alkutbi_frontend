@@ -15,6 +15,7 @@ import Select from "react-select";
 import { numberToArabicText } from "../../utils/numberToArabicText";
 import moment from "moment-hijri";
 import ModernDatePicker from "../../components/ModernDatePicker";
+import { useCallback } from "react";
 
 const AddCollectionOrderForm = () => {
   const { t } = useTranslation();
@@ -131,8 +132,11 @@ const AddCollectionOrderForm = () => {
   const [voucherNumber, setVoucherNumber] = useState("");
   const [receivingBankName, setReceivingBankName] = useState("");
   const [collectedFrom, setCollectedFrom] = useState("");
+  const [customCollectedFrom, setCustomCollectedFrom] = useState("");
   const [totalAmount, setTotalAmount] = useState("");
   const [totalAmountText, setTotalAmountText] = useState("");
+  const [deductedFrom, setDeductedFrom] = useState("");
+  const [addedTo, setAddedTo] = useState("");
 
   // Collect method options
   const collectMethodOptions = [
@@ -140,13 +144,13 @@ const AddCollectionOrderForm = () => {
     { value: "bank_transfer", label: t("bank_transfer") },
   ];
 
+
   // Collected from options
   const collectedFromOptions = [
     { value: "umrah", label: t("umrah") },
     { value: "transport", label: t("transport") },
     { value: "hotels", label: t("hotels") },
-    { value: "others", label: t("others_external") },
-    { value: "additional", label: t("additional") },
+    { value: "others", label: t("others") },
   ];
 
   // Auto-convert number to Arabic text
@@ -235,6 +239,26 @@ const AddCollectionOrderForm = () => {
     return [...uniqueBankNames].map((val) => ({ label: val, value: val }));
   }, [collectionOrdersData, isCollectionOrdersSuccess]);
 
+  const deductedFromOptions = useMemo(() => {
+    if (!isCollectionOrdersSuccess) return [];
+    const uniqueDeductedFrom = new Set(
+      collectionOrdersData.ids
+        .map((id) => collectionOrdersData.entities[id]?.deductedFrom)
+        .filter(Boolean)
+    );
+    return [...uniqueDeductedFrom].map((val) => ({ label: val, value: val }));
+  }, [collectionOrdersData, isCollectionOrdersSuccess]);
+
+  const addedToOptions = useMemo(() => {
+    if (!isCollectionOrdersSuccess) return [];
+    const uniqueAddedTo = new Set(
+      collectionOrdersData.ids
+        .map((id) => collectionOrdersData.entities[id]?.addedTo)
+        .filter(Boolean)
+    );
+    return [...uniqueAddedTo].map((val) => ({ label: val, value: val }));
+  }, [collectionOrdersData, isCollectionOrdersSuccess]);
+
   useEffect(() => {
     if (isSuccess) {
       setDayName("");
@@ -245,8 +269,11 @@ const AddCollectionOrderForm = () => {
       setVoucherNumber("");
       setReceivingBankName("");
       setCollectedFrom("");
+      setCustomCollectedFrom("");
       setTotalAmount("");
       setTotalAmountText("");
+      setDeductedFrom("");
+      setAddedTo("");
       toast.success(t("collection_order_added_successfully"));
       navigate("/dashboard/collectionorders");
     }
@@ -270,9 +297,11 @@ const AddCollectionOrderForm = () => {
       collectMethod: collectMethod || "",
       voucherNumber: voucherNumber || "",
       receivingBankName: receivingBankName || "",
-      collectedFrom: collectedFrom || "",
+      collectedFrom: collectedFrom === "others" ? customCollectedFrom : collectedFrom || "",
       totalAmount: totalAmount ? parseFloat(totalAmount) : 0,
       totalAmountText: totalAmountText || "",
+      deductedFrom: deductedFrom || "",
+      addedTo: addedTo || "",
     };
 
     try {
@@ -329,11 +358,31 @@ const AddCollectionOrderForm = () => {
                   isClearable
                   options={collectedFromOptions}
                   value={collectedFromOptions.find((opt) => opt.value === collectedFrom)}
-                  onChange={(selected) => setCollectedFrom(selected?.value || "")}
+                  onChange={(selected) => {
+                    setCollectedFrom(selected?.value || "");
+                    if (selected?.value !== "others") setCustomCollectedFrom("");
+                  }}
                   styles={customSelectStyles}
                   placeholder={t("choose")}
                 />
               </div>
+
+              {/* Custom Collected From (conditional) */}
+              {collectedFrom === "others" && (
+                <div className="col-span-6 sm:col-span-3">
+                  <label className="text-sm font-medium text-gray-900 dark:text-white block mb-2">
+                    {t("other_source")}
+                  </label>
+                  <input
+                    type="text"
+                    value={customCollectedFrom}
+                    onChange={(e) => setCustomCollectedFrom(e.target.value)}
+                    className="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg block w-full p-2.5 dark:bg-gray-800 dark:text-white"
+                    placeholder={t("type_source")}
+                    required
+                  />
+                </div>
+              )}
 
               {/* Date AD (prefilled) */}
               <div className="col-span-6 sm:col-span-3">
@@ -474,18 +523,64 @@ const AddCollectionOrderForm = () => {
                   className="shadow-sm bg-gray-100 border border-gray-300 text-gray-900 sm:text-sm rounded-lg block w-full p-2.5 dark:bg-gray-600 dark:text-white cursor-not-allowed"
                 />
               </div>
+
+              {/* Deducted From */}
+              <div className="col-span-6 sm:col-span-3">
+                <label className="text-sm font-medium text-gray-900 dark:text-white block mb-2">
+                  {t("deducted_from")}
+                </label>
+                <CreatableSelect
+                  key={theme}
+                  placeholder={t("choose")}
+                  formatCreateLabel={(inputValue) =>
+                    `${t("click2create")} "${inputValue}"`
+                  }
+                  isClearable
+                  options={deductedFromOptions}
+                  onChange={(newValue) => setDeductedFrom(newValue?.value || "")}
+                  onCreateOption={(inputValue) => {
+                    setDeductedFrom(inputValue);
+                  }}
+                  value={
+                    deductedFrom ? { value: deductedFrom, label: deductedFrom } : null
+                  }
+                  styles={customSelectStyles}
+                />
+              </div>
+
+              {/* Added To */}
+              <div className="col-span-6 sm:col-span-3">
+                <label className="text-sm font-medium text-gray-900 dark:text-white block mb-2">
+                  {t("added_to")}
+                </label>
+                <CreatableSelect
+                  key={theme}
+                  placeholder={t("choose")}
+                  formatCreateLabel={(inputValue) =>
+                    `${t("click2create")} "${inputValue}"`
+                  }
+                  isClearable
+                  options={addedToOptions}
+                  onChange={(newValue) => setAddedTo(newValue?.value || "")}
+                  onCreateOption={(inputValue) => {
+                    setAddedTo(inputValue);
+                  }}
+                  value={addedTo ? { value: addedTo, label: addedTo } : null}
+                  styles={customSelectStyles}
+                />
+              </div>
             </div>
 
-            {/* Submit Button */}
-            <div className="pt-6">
-              <button
-                type="submit"
-                className="text-black dark:text-white bg-gray-100 dark:bg-gray-800 border dark:border-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 disabled:bg-gray-400 cursor-pointer disabled:cursor-not-allowed focus:ring-4 focus:ring-cyan-200 font-medium rounded-4xl text-sm px-5 py-2.5"
-              >
-                {t("add_collection_order")} ✅
-              </button>
-            </div>
-          </form>
+          {/* Submit Button */}
+          <div className="pt-6">
+            <button
+              type="submit"
+              className="text-black dark:text-white bg-gray-100 dark:bg-gray-800 border dark:border-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 disabled:bg-gray-400 cursor-pointer disabled:cursor-not-allowed focus:ring-4 focus:ring-cyan-200 font-medium rounded-4xl text-sm px-5 py-2.5"
+            >
+              {t("add_collection_order")} ✅
+            </button>
+          </div>
+        </form>
         </div>
       </div>
     </>
