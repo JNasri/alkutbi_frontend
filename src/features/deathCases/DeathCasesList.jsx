@@ -1,12 +1,21 @@
 import { useTranslation } from "react-i18next";
-import { useGetDeathcasesQuery } from "./deathCasesApiSlice";
+import { useState } from "react";
+import toast from "react-hot-toast";
+import { useGetDeathcasesQuery, useDeleteDeathcaseMutation } from "./deathCasesApiSlice";
 import DataTableWrapper from "../../components/DataTableWrapper";
 import LoadingSpinner from "../../components/LoadingSpinner";
 import { Link } from "react-router-dom";
-import { Plus, Pencil } from "lucide-react";
+import { Plus, Pencil, Trash2 } from "lucide-react";
+import useAuth from "../../hooks/useAuth";
+import DeleteConfirmModal from "../../components/DeleteConfirmModal";
 
 const DeathcasesList = () => {
   const { t } = useTranslation();
+  const { canEditSpecialPapers, canAddSpecialPapers, canDelete } = useAuth();
+  const [deleteDeathcase] = useDeleteDeathcaseMutation();
+
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState(null);
 
   const {
     data: deathcases,
@@ -61,9 +70,8 @@ const DeathcasesList = () => {
       { field: "attachments", header: t("attachments") },
       { field: "comment", header: t("comment") },
       { field: "createdAt", header: t("createdAt") },
-      { field: "updatedAt", header: t("updatedAt") },
       { field: "status", header: t("status") },
-      { field: "edit", header: t("edit") },
+      { field: "actions", header: t("actions") },
     ];
 
     const labelMap = {
@@ -103,7 +111,7 @@ const DeathcasesList = () => {
         updatedAt: new Date(d.updatedAt).toLocaleDateString(),
         attachments: attachmentItems.length ? attachmentItems : "—",
         status: t(d.status),
-        edit: (
+        actions: (
           <div className="flex flex-col items-center gap-3 py-2">
             <div
               className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase shadow-sm
@@ -120,13 +128,27 @@ const DeathcasesList = () => {
             >
               {t(d.status)}
             </div>
-            <Link
-              to={`/dashboard/deathcases/edit/${d.id}`}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800 transition-all hover:bg-blue-100 dark:hover:bg-blue-900/50 hover:shadow-sm group font-medium text-xs"
-            >
-              <Pencil size={12} className="group-hover:rotate-12 transition-transform" />
-              {t("edit")}
-            </Link>
+            <div className="flex items-center gap-2">
+              {canEditSpecialPapers && (
+                <Link
+                  to={`/dashboard/deathcases/edit/${d.id}`}
+                  className="inline-flex items-center gap-1.5 px-3 py-3 rounded-lg bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800 transition-all hover:bg-blue-100 dark:hover:bg-blue-900/50 hover:shadow-sm group font-medium text-xs"
+                >
+                  <Pencil size={14} className="group-hover:rotate-12 transition-transform" />
+                </Link>
+              )}
+              {canDelete && (
+                <button
+                  onClick={() => {
+                    setItemToDelete(d.id);
+                    setShowDeleteModal(true);
+                  }}
+                  className="inline-flex items-center gap-1.5 px-3 py-3 rounded-lg bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800 transition-all hover:bg-red-100 dark:hover:bg-red-900/50 hover:shadow-sm group font-medium text-xs cursor-pointer"
+                >
+                  <Trash2 size={14} className="group-hover:scale-110 transition-transform" />
+                </button>
+              )}
+            </div>
           </div>
         ),
       };
@@ -138,17 +160,19 @@ const DeathcasesList = () => {
           <h1 className="text-4xl font-bold text-gray-800 dark:text-white">
             ⚰️ {t("deathcases")}
           </h1>
-          <div className="relative group ms-auto">
-            <Link
-              to="/dashboard/deathcases/add"
-              className="mr-auto w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 border border-gray-500 hover:text-dark-900 hover:bg-gray-100 hover:text-gray-700 dark:border-white dark:bg-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white cursor-pointer"
-            >
-              <Plus size={20} />
-            </Link>
-            <div className="absolute end-full top-1/2 me-2 -translate-y-1/2 whitespace-nowrap px-3 py-1.5 text-sm text-gray-800 bg-gray-300 dark:bg-gray-200 dark:text-gray-800 rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-10 shadow-md font-medium">
-              {t("add_deathcase")}
+          {canAddSpecialPapers && (
+            <div className="relative group ms-auto">
+              <Link
+                to="/dashboard/deathcases/add"
+                className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 border border-gray-500 hover:text-dark-900 hover:bg-gray-100 hover:text-gray-700 dark:border-white dark:bg-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white cursor-pointer"
+              >
+                <Plus size={20} />
+              </Link>
+              <div className="absolute end-full top-1/2 me-2 -translate-y-1/2 whitespace-nowrap px-3 py-1.5 text-sm text-gray-800 bg-gray-300 dark:bg-gray-200 dark:text-gray-800 rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-10 shadow-md font-medium">
+                {t("add_deathcase")}
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Stats Cards */}
@@ -196,6 +220,19 @@ const DeathcasesList = () => {
           data={transformedData}
           columns={columns}
           title={t("deathcases_list")}
+        />
+
+        <DeleteConfirmModal
+          isOpen={showDeleteModal}
+          onCancel={() => setShowDeleteModal(false)}
+          onConfirm={async () => {
+            if (itemToDelete) {
+              await deleteDeathcase({ id: itemToDelete });
+              toast.success(t("deathcase_deleted_successfully"));
+              setShowDeleteModal(false);
+              setItemToDelete(null);
+            }
+          }}
         />
       </>
     );

@@ -22,7 +22,7 @@ const Sticker = lazy(() => import("./components/Sticker"));
 const UsersList = lazy(() => import("./features/users/UsersList"));
 const OutgoingsList = lazy(() => import("./features/outgoings/OutgoingsList"));
 const IncomingsList = lazy(() => import("./features/incomings/IncomingsList"));
-const DeathcasesList = lazy(() => import("./features/deathCases/deathCasesList"));
+const DeathcasesList = lazy(() => import("./features/deathCases/DeathCasesList"));
 const PrisoncasesList = lazy(() => import("./features/prisonCases/prisonCasesList"));
 const AssetsList = lazy(() => import("./features/assets/AssetsList"));
 const PurchaseOrdersList = lazy(() => import("./features/purchaseOrders/PurchaseOrdersList"));
@@ -41,7 +41,7 @@ const EditPurchaseOrderForm = lazy(() => import("./features/purchaseOrders/EditP
 const AddUserForm = lazy(() => import("./features/users/AddUserForm"));
 const AddIncomingForm = lazy(() => import("./features/incomings/AddIncomingForm"));
 const AddOutgoingForm = lazy(() => import("./features/outgoings/AddOutgoingForm"));
-const AddDeathcaseForm = lazy(() => import("./features/deathCases/AddDeathcaseForm"));
+const AddDeathcaseForm = lazy(() => import("./features/deathCases/AddDeathCaseForm"));
 const AddPrisonCaseForm = lazy(() => import("./features/prisonCases/AddPrisonCaseForm"));
 const AddAssetForm = lazy(() => import("./features/assets/AddAssetForm"));
 const AddPurchaseOrderForm = lazy(() => import("./features/purchaseOrders/AddPurchaseOrderForm"));
@@ -67,6 +67,11 @@ const addSpecialPapersRoles = [
   ROLES.Special_Papers_Employee,
 ];
 const editSpecialPapersRoles = [ROLES.Admin, ROLES.Special_Papers_Manager];
+
+// array of finance roles
+const financeRoles = [ROLES.Admin, ROLES.Finance_Admin, ROLES.Finance_Employee];
+const financeEditRoles = [ROLES.Admin, ROLES.Finance_Admin];
+const financeAddRoles = [ROLES.Admin, ROLES.Finance_Admin, ROLES.Finance_Employee];
 
 function App() {
   return (
@@ -172,25 +177,65 @@ function App() {
                       </Route>
                     </Route>
                     {/* /assets */}
-                    <Route path="assets">
-                      <Route index element={<AssetsList />} />
-                      <Route path="add" element={<AddAssetForm />} />
-                      <Route path="edit/:id" element={<EditAssetForm />} />
+                    <Route
+                      element={
+                        <RequireAuth
+                          allowedRoles={[
+                            ROLES.Admin,
+                            ROLES.Operation_Manager,
+                            ROLES.Operation_Employee,
+                            ROLES.Special_Papers_Manager,
+                            ROLES.Special_Papers_Employee,
+                          ]}
+                        />
+                      }
+                    >
+                      <Route path="assets">
+                        <Route index element={<AssetsList />} />
+                        <Route path="add" element={<AddAssetForm />} />
+                        <Route path="edit/:id" element={<EditAssetForm />} />
+                      </Route>
                     </Route>
                     {/* /purchaseorders */}
-                    <Route path="purchaseorders">
-                      <Route index element={<PurchaseOrdersList />} />
-                      <Route path="add" element={<AddPurchaseOrderForm />} />
-                      <Route path="edit/:id" element={<EditPurchaseOrderForm />} />
+                    <Route element={<RequireAuth allowedRoles={financeRoles} />}>
+                      <Route path="purchaseorders">
+                        <Route index element={<PurchaseOrdersList />} />
+                        <Route
+                          element={<RequireAuth allowedRoles={financeAddRoles} />}
+                        >
+                          <Route path="add" element={<AddPurchaseOrderForm />} />
+                        </Route>
+                        <Route
+                          element={<RequireAuth allowedRoles={financeEditRoles} />}
+                        >
+                          <Route
+                            path="edit/:id"
+                            element={<EditPurchaseOrderForm />}
+                          />
+                        </Route>
+                      </Route>
                     </Route>
                     {/* /collectionorders */}
-                    <Route path="collectionorders">
-                      <Route index element={<CollectionOrdersList />} />
-                      <Route path="add" element={<AddCollectionOrderForm />} />
-                      <Route path="edit/:id" element={<EditCollectionOrderForm />} />
+                    <Route element={<RequireAuth allowedRoles={financeRoles} />}>
+                      <Route path="collectionorders">
+                        <Route index element={<CollectionOrdersList />} />
+                        <Route
+                          element={<RequireAuth allowedRoles={financeAddRoles} />}
+                        >
+                          <Route path="add" element={<AddCollectionOrderForm />} />
+                        </Route>
+                        <Route
+                          element={<RequireAuth allowedRoles={financeEditRoles} />}
+                        >
+                          <Route
+                            path="edit/:id"
+                            element={<EditCollectionOrderForm />}
+                          />
+                        </Route>
+                      </Route>
                     </Route>
                     {/* /logs */}
-                    <Route element={<RequireAuth allowedRoles={[ROLES.Admin]} />}>
+                    <Route element={<RequireAuth allowedRoles={[ROLES.Admin,ROLES.Finance_Admin]} />}>
                       <Route path="logs">
                         <Route index element={<LogsList />} />
                       </Route>

@@ -1,14 +1,23 @@
 import { useTranslation } from "react-i18next";
-import { useGetPurchaseOrdersQuery } from "./purchaseOrdersApiSlice";
+import { useState } from "react";
+import toast from "react-hot-toast";
+import { useGetPurchaseOrdersQuery, useDeletePurchaseOrderMutation } from "./purchaseOrdersApiSlice";
 import { useGetCollectionOrdersQuery } from "../collectionOrders/collectionOrdersApiSlice";
 import DataTableWrapper from "../../components/DataTableWrapper";
 import LoadingSpinner from "../../components/LoadingSpinner";
 import { Link } from "react-router-dom";
-import { Plus, Paperclip, Pencil } from "lucide-react";
+import { Plus, Paperclip, Pencil, Trash2 } from "lucide-react";
 import PurchaseOrderPrint from "./PurchaseOrderPrint";
+import useAuth from "../../hooks/useAuth";
+import DeleteConfirmModal from "../../components/DeleteConfirmModal";
 
 const PurchaseOrdersList = () => {
   const { t } = useTranslation();
+  const { canEditFinance, canAddFinance, canDelete } = useAuth();
+  const [deletePurchaseOrder] = useDeletePurchaseOrderMutation();
+  
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState(null);
 
   const {
     data: purchaseOrders,
@@ -102,7 +111,7 @@ const PurchaseOrdersList = () => {
       { field: "addedTo", header: t("added_to") },
       { field: "createdAt", header: t("createdAt"), nowrap: true },
       { field: "updatedAt", header: t("updatedAt"), nowrap: true },
-      { field: "edit", header: t("edit"), autoWidth: true },
+      { field: "actions", header: t("actions"), autoWidth: true },
     ];
 
     const getStatusBadge = (status) => {
@@ -175,14 +184,28 @@ const PurchaseOrdersList = () => {
       addedTo: item.addedTo || "—",
       createdAt: new Date(item.createdAt).toLocaleDateString(),
       updatedAt: new Date(item.updatedAt).toLocaleDateString(),
-      edit: (
-        <Link
-          to={`/dashboard/purchaseorders/edit/${item.id}`}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800 transition-all hover:bg-blue-100 dark:hover:bg-blue-900/50 hover:shadow-sm group font-medium"
-        >
-          <Pencil size={14} className="group-hover:rotate-12 transition-transform" />
-          {t("edit")}
-        </Link>
+      actions: (
+        <div className="flex items-center gap-2">
+          {canEditFinance && (
+            <Link
+              to={`/dashboard/purchaseorders/edit/${item.id}`}
+              className="inline-flex items-center gap-1.5 px-3 py-3 rounded-lg bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800 transition-all hover:bg-blue-100 dark:hover:bg-blue-900/50 hover:shadow-sm group font-medium"
+            >
+              <Pencil size={14} className="group-hover:rotate-12 transition-transform" />
+            </Link>
+          )}
+          {canDelete && (
+            <button
+              onClick={() => {
+                setItemToDelete(item.id);
+                setShowDeleteModal(true);
+              }}
+              className="inline-flex items-center gap-1.5 px-3 py-3 rounded-lg bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800 transition-all hover:bg-red-100 dark:hover:bg-red-900/50 hover:shadow-sm group font-medium cursor-pointer"
+            >
+              <Trash2 size={14} className="group-hover:scale-110 transition-transform" />
+            </button>
+          )}
+        </div>
       ),
     }));
 
@@ -208,18 +231,19 @@ const PurchaseOrdersList = () => {
           <h1 className="text-4xl font-bold text-gray-800 dark:text-white">
             🛒 {t("purchase_orders")}
           </h1>
-          <div className="relative group ms-auto">
-            <Link
-              to="/dashboard/purchaseorders/add"
-              className="mr-auto w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 border border-gray-500 hover:text-dark-900 hover:bg-gray-100 hover:text-gray-700 dark:border-white dark:bg-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white cursor-pointer"
-              data-tooltip-target="tooltip-right"
-            >
-              <Plus size={20} />
-            </Link>
-            <div className="absolute end-full top-1/2 me-2 -translate-y-1/2 whitespace-nowrap px-3 py-1.5 text-sm text-gray-800 bg-gray-300 dark:bg-gray-200 dark:text-gray-800 rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-10 shadow-md font-medium">
-              {t("add_purchase_order")}
+          {canAddFinance && (
+            <div className="relative group ms-auto">
+              <Link
+                to="/dashboard/purchaseorders/add"
+                className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 border border-gray-500 hover:text-dark-900 hover:bg-gray-100 hover:text-gray-700 dark:border-white dark:bg-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white cursor-pointer"
+              >
+                <Plus size={20} />
+              </Link>
+              <div className="absolute end-full top-1/2 me-2 -translate-y-1/2 whitespace-nowrap px-3 py-1.5 text-sm text-gray-800 bg-gray-300 dark:bg-gray-200 dark:text-gray-800 rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-10 shadow-md font-medium">
+                {t("add_purchase_order")}
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Stats Cards */}
@@ -271,6 +295,19 @@ const PurchaseOrdersList = () => {
           data={transformedData}
           columns={columns}
           title={t("purchase_orders_list")}
+        />
+
+        <DeleteConfirmModal
+          isOpen={showDeleteModal}
+          onCancel={() => setShowDeleteModal(false)}
+          onConfirm={async () => {
+            if (itemToDelete) {
+              await deletePurchaseOrder({ id: itemToDelete });
+              toast.success(t("purchase_order_deleted_successfully"));
+              setShowDeleteModal(false);
+              setItemToDelete(null);
+            }
+          }}
         />
       </>
     );

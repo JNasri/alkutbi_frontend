@@ -183,10 +183,10 @@ const DataTableWrapper = ({ data, columns, title }) => {
                   return value;
                 }}
                 style={{
-                  minWidth: col.autoWidth ? "auto" : (col.width || (i18n.language === "ar" ? "180px" : "150px")),
+                  minWidth: col.field === "actions" ? "120px" : (col.autoWidth ? "auto" : (col.width || (i18n.language === "ar" ? "180px" : "150px"))),
                   maxWidth: col.maxWidth || "500px",
                   whiteSpace: col.nowrap ? "nowrap" : "normal",
-                  width: col.autoWidth ? "1%" : "auto", // This helps autoWidth columns stay compact
+                  width: col.field === "actions" ? "120px" : (col.autoWidth ? "1%" : "auto"),
                 }}
                 alignHeader="center"
                 headerClassName="bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white text-sm font-semibold py-3 px-4"

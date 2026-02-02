@@ -4,44 +4,61 @@ import { jwtDecode } from "jwt-decode";
 
 const useAuth = () => {
   const token = useSelector(selectCurrentToken);
-  let isAdmin = false;
-  let isOperationManager = false;
-  let isOperationEmployee = false;
-  let isSpecialPapersManager = false;
-  let isSpecialPapersEmployee = false;
-  let isAgent = false;
-  let status = "Spectator";
 
   if (token) {
     const decoded = jwtDecode(token);
-    const username = decoded.UserInfo.username;
-    const ar_name = decoded.UserInfo.ar_name;
-    const en_name = decoded.UserInfo.en_name;
-    const roles = decoded.UserInfo.roles;
+    const { username, ar_name, en_name, roles } = decoded.UserInfo;
 
-    isOperationManager = roles.includes("Operation Manager");
-    isOperationEmployee = roles.includes("Operation Employee");
-    isSpecialPapersManager = roles.includes("Special Papers Manager");
-    isSpecialPapersEmployee = roles.includes("Special Papers Employee");
-    isAgent = roles.includes("Agent");
-    isAdmin = roles.includes("Admin");
+    const isAdmin = roles.includes("Admin");
+    const isOperationManager = roles.includes("Operation Manager");
+    const isOperationEmployee = roles.includes("Operation Employee");
+    const isSpecialPapersManager = roles.includes("Special Papers Manager");
+    const isSpecialPapersEmployee = roles.includes("Special Papers Employee");
+    const isFinanceAdmin = roles.includes("Finance Admin");
+    const isFinanceEmployee = roles.includes("Finance Employee");
+    const isAgent = roles.includes("Agent");
 
-    if (isOperationManager) status = "Operation Manager";
-    if (isOperationEmployee) status = "Operation Employee";
-    if (isAgent) status = "Agent";
+    let status = "Spectator";
     if (isAdmin) status = "Admin";
-    if (isSpecialPapersManager) status = "Special Papers Manager";
-    if (isSpecialPapersEmployee) status = "Special Papers Employee";
+    else if (isOperationManager) status = "Operation Manager";
+    else if (isOperationEmployee) status = "Operation Employee";
+    else if (isSpecialPapersManager) status = "Special Papers Manager";
+    else if (isSpecialPapersEmployee) status = "Special Papers Employee";
+    else if (isFinanceAdmin) status = "Finance Admin";
+    else if (isFinanceEmployee) status = "Finance Employee";
+    else if (isAgent) status = "Agent";
+
+    const canEditSpecialPapers = isAdmin || isSpecialPapersManager;
+    const canAddSpecialPapers = isAdmin || isSpecialPapersManager || isSpecialPapersEmployee;
+    const canEditFinance = isAdmin || isFinanceAdmin;
+    const canAddFinance = isAdmin || isFinanceAdmin || isFinanceEmployee;
+    const isFinanceRole = isFinanceAdmin || isFinanceEmployee;
+    const canEditAssets = isAdmin || isSpecialPapersManager || isOperationManager;
+    const canAddAssets = isAdmin || isSpecialPapersManager || isSpecialPapersEmployee || isOperationManager || isOperationEmployee;
+    const canDelete = isAdmin;
 
     return {
       username,
       ar_name,
       en_name,
       roles,
+      status,
       isAdmin,
       isOperationManager,
       isOperationEmployee,
-      status,
+      isSpecialPapersManager,
+      isSpecialPapersEmployee,
+      isFinanceAdmin,
+      isFinanceEmployee,
+      isAgent,
+      canEditSpecialPapers,
+      canAddSpecialPapers,
+      canEditFinance,
+      canAddFinance,
+      isFinanceRole,
+      canEditAssets,
+      canAddAssets,
+      canDelete
     };
   }
 
@@ -50,9 +67,23 @@ const useAuth = () => {
     ar_name: "",
     en_name: "",
     roles: [],
-    isOperationManager,
-    isAdmin,
-    status,
+    status: "Spectator",
+    isAdmin: false,
+    isOperationManager: false,
+    isOperationEmployee: false,
+    isSpecialPapersManager: false,
+    isSpecialPapersEmployee: false,
+    isFinanceAdmin: false,
+    isFinanceEmployee: false,
+    isAgent: false,
+    canEditSpecialPapers: false,
+    canAddSpecialPapers: false,
+    canEditFinance: false,
+    canAddFinance: false,
+    isFinanceRole: false,
+    canEditAssets: false,
+    canAddAssets: false,
+    canDelete: false
   };
 };
 

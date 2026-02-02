@@ -4,7 +4,7 @@ import { apiSlice } from "../../app/api/apiSlice";
 const deathcasesAdapter = createEntityAdapter({});
 const initialState = deathcasesAdapter.getInitialState();
 
-export const deathcasesApiSlice = apiSlice.injectEndpoints({
+export const deathCasesApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     getDeathcases: builder.query({
       query: () => "/deathcases",
@@ -72,11 +72,11 @@ export const {
   useAddNewDeathcaseMutation,
   useUpdateDeathcaseMutation,
   useDeleteDeathcaseMutation,
-} = deathcasesApiSlice;
+} = deathCasesApiSlice;
 
 // Select the query result object
 export const selectDeathcasesResult =
-  deathcasesApiSlice.endpoints.getDeathcases.select();
+  deathCasesApiSlice.endpoints.getDeathcases.select();
 
 // Memoized selector
 const selectDeathcasesData = createSelector(

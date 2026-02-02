@@ -3,7 +3,7 @@ import useAuth from "../../hooks/useAuth";
 import { useGetUsersQuery } from "../users/usersApiSlice";
 import { useGetIncomingsQuery } from "../incomings/incomingsApiSlice";
 import { useGetOutgoingsQuery } from "../outgoings/outgoingsApiSlice";
-import { useGetDeathcasesQuery } from "../deathcases/deathcasesApiSlice";
+import { useGetDeathcasesQuery } from "../deathCases/deathCasesApiSlice";
 import { useGetPrisoncasesQuery } from "../prisonCases/prisonCasesApiSlice";
 import { useGetAssetsQuery } from "../assets/assetsApiSlice";
 import { useGetPurchaseOrdersQuery } from "../purchaseOrders/purchaseOrdersApiSlice";

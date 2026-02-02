@@ -1,14 +1,21 @@
-import { useGetUsersQuery } from "./usersApiSlice";
-import DataTableWrapper from "../../components/DataTableWrapper";
-import LoadingSpinner from "../../components/LoadingSpinner";
+import { Plus, Pencil, Trash2 } from "lucide-react";
+import useAuth from "../../hooks/useAuth";
+import { useGetUsersQuery, useDeleteUserMutation } from "./usersApiSlice";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
-import { Plus, Pencil } from "lucide-react";
-import { Tooltip } from "primereact/tooltip";
+import { useState } from "react";
+import toast from "react-hot-toast";
+import DataTableWrapper from "../../components/DataTableWrapper";
+import LoadingSpinner from "../../components/LoadingSpinner";
+import DeleteConfirmModal from "../../components/DeleteConfirmModal";
 
 const UsersList = () => {
-  // translate
   const { t } = useTranslation();
+  const { canDelete } = useAuth();
+  const [deleteUser] = useDeleteUserMutation();
+
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState(null);
 
   const {
     data: users,
@@ -56,7 +63,7 @@ const UsersList = () => {
       { field: "ar_name", header: t("ar_name") + " ㅤ" },
       { field: "createdAt", header: t("createdAt") + " ㅤ" },
       { field: "updatedAt", header: t("updatedAt") + " ㅤ" },
-      { field: "edit", header: t("edit") + " ㅤ" },
+      { field: "actions", header: t("actions") + " ㅤ" },
     ];
 
     // Convert arrays or dates if needed
@@ -65,14 +72,26 @@ const UsersList = () => {
       roles: user.roles.join(", "),
       createdAt: new Date(user.createdAt).toLocaleDateString(),
       updatedAt: new Date(user.updatedAt).toLocaleDateString(),
-      edit: (
-        <Link
-          to={`/dashboard/users/edit/${user.id}`}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800 transition-all hover:bg-blue-100 dark:hover:bg-blue-900/50 hover:shadow-sm group font-medium"
-        >
-          <Pencil size={14} className="group-hover:rotate-12 transition-transform" />
-          {t("edit")}
-        </Link>
+      actions: (
+        <div className="flex items-center gap-2">
+          <Link
+            to={`/dashboard/users/edit/${user.id}`}
+            className="inline-flex items-center gap-1.5 px-3 py-3 rounded-lg bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800 transition-all hover:bg-blue-100 dark:hover:bg-blue-900/50 hover:shadow-sm group font-medium"
+          >
+            <Pencil size={14} className="group-hover:rotate-12 transition-transform" />
+          </Link>
+          {canDelete && (
+            <button
+              onClick={() => {
+                setItemToDelete(user.id);
+                setShowDeleteModal(true);
+              }}
+              className="inline-flex items-center gap-1.5 px-3 py-3 rounded-lg bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800 transition-all hover:bg-red-100 dark:hover:bg-red-900/50 hover:shadow-sm group font-medium cursor-pointer"
+            >
+              <Trash2 size={14} className="group-hover:scale-110 transition-transform" />
+            </button>
+          )}
+        </div>
       ),
     }));
 
@@ -101,6 +120,19 @@ const UsersList = () => {
           data={transformedData}
           columns={columns}
           title={t("users_list")}
+        />
+
+        <DeleteConfirmModal
+          isOpen={showDeleteModal}
+          onCancel={() => setShowDeleteModal(false)}
+          onConfirm={async () => {
+            if (itemToDelete) {
+              await deleteUser({ id: itemToDelete });
+              toast.success(t("user_deleted_successfully"));
+              setShowDeleteModal(false);
+              setItemToDelete(null);
+            }
+          }}
         />
       </>
     );

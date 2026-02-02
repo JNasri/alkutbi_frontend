@@ -33,6 +33,7 @@ const LogsList = () => {
   if (isSuccess && audits) {
     const formattedLogs = audits.map((audit) => ({
       ...audit,
+      id: audit._id || audit.id,
       displayName: (currentLang.startsWith("ar") ? audit.ar_name : audit.en_name) || audit.user,
       translatedAction: t(audit.action),
       translatedResource: t(audit.resource),

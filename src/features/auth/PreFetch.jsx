@@ -3,7 +3,7 @@ import { vouchersApiSlice } from "../vouchers/vouchersApiSlice";
 import { usersApiSlice } from "../users/usersApiSlice";
 import { incomingsApiSlice } from "../incomings/incomingsApiSlice";
 import { outgoingsApiSlice } from "../outgoings/outgoingsApiSlice";
-import { deathcasesApiSlice } from "../deathcases/deathcasesApiSlice";
+import { deathCasesApiSlice } from "../deathCases/deathCasesApiSlice";
 import { prisoncasesApiSlice } from "../prisonCases/prisonCasesApiSlice";
 import { assetsApiSlice } from "../assets/assetsApiSlice";
 import { useEffect } from "react";
@@ -30,7 +30,7 @@ const PreFetch = () => {
       })
     );
     store.dispatch(
-      deathcasesApiSlice.util.prefetch("getDeathcases", "deathcasesList", {
+      deathCasesApiSlice.util.prefetch("getDeathcases", "deathcasesList", {
         force: true,
       })
     );

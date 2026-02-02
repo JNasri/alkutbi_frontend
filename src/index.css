@@ -59,6 +59,13 @@ html[lang="ar"] body {
   font-weight: 600;
   border: none !important;
   text-align: center !important;
+  /* Ensure no gap between frozen column and header */
+  position: relative;
+}
+
+.custom-table {
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
 }
 
 .custom-table .p-datatable-tbody > tr {
@@ -112,52 +119,76 @@ html[lang="ar"] body {
 }
 
 /* Frozen column styling */
+/* Added solid background and refined borders to prevent "gap" and transparency issues */
 .custom-table .p-frozen-column {
   position: sticky !important;
-  background: var(--surface-b) !important;
-  z-index: 1 !important;
+  z-index: 10 !important;
   border-inline-start: 1px solid var(--surface-c) !important;
+  /* Ensure it overlaps perfectly */
+  margin: 0 !important;
 }
 
-/* Add a subtle shadow to indicate the column is floating */
-html[dir="rtl"] .custom-table .p-frozen-column {
-  box-shadow: 4px 0 10px -5px rgba(0, 0, 0, 0.1) !important;
-}
-html[dir="ltr"] .custom-table .p-frozen-column {
-  box-shadow: -4px 0 10px -5px rgba(0, 0, 0, 0.1) !important;
-}
-
+/* Specific background for header vs body */
 .custom-table .p-datatable-thead > tr > th.p-frozen-column {
-  position: sticky !important;
-  background: var(--surface-c) !important;
-  z-index: 2 !important;
+  background-color: var(--surface-c) !important;
+  z-index: 11 !important;
 }
 
 .custom-table .p-datatable-tbody > tr > td.p-frozen-column {
-  position: sticky !important;
-  background: inherit !important;
-  z-index: 1 !important;
+  background-color: var(--surface-b) !important;
+  z-index: 10 !important;
 }
 
-/* Dark mode frozen columns */
+/* Ensure alternating row colors handle the frozen column background */
+.custom-table .p-datatable-tbody > tr:nth-child(even) > td.p-frozen-column {
+  background-color: var(--surface-a) !important;
+}
+
+/* Ensure hover state handles frozen column background */
+.custom-table .p-datatable-tbody > tr:hover > td.p-frozen-column {
+  background-color: var(--surface-a) !important;
+}
+
+/* Add a more prominent shadow to the inner side of the frozen column */
+html[dir="rtl"] .custom-table .p-frozen-column {
+  box-shadow: 6px 0 12px -4px rgba(0, 0, 0, 0.15) !important;
+}
+html[dir="ltr"] .custom-table .p-frozen-column {
+  box-shadow: -6px 0 12px -4px rgba(0, 0, 0, 0.15) !important;
+}
+
+/* Ensure frozen column cells have no horizontal margin */
+.custom-table .p-frozen-column {
+  padding-left: 0.5rem !important;
+  padding-right: 0.5rem !important;
+}
+
+/* Removed redundant/conflicting inheritance rules */
+
+/* Dark mode frozen columns - Enhanced for stability and contrast */
 .dark .custom-table .p-frozen-column {
-  background: #1f2937 !important;
+  background-color: #1f2937 !important;
+  border-inline-start-color: #374151 !important;
 }
 
 .dark .custom-table .p-datatable-thead > tr > th.p-frozen-column {
-  background: #374151 !important;
+  background-color: #374151 !important;
 }
 
 .dark .custom-table .p-datatable-tbody > tr > td.p-frozen-column {
-  background: #1f2937 !important;
+  background-color: #1f2937 !important;
 }
 
 .dark .custom-table .p-datatable-tbody > tr:nth-child(even) > td.p-frozen-column {
-  background: #111827 !important;
+  background-color: #111827 !important;
 }
 
 .dark .custom-table .p-datatable-tbody > tr:hover > td.p-frozen-column {
-  background: #374151 !important;
+  background-color: #374151 !important;
+}
+
+.dark .custom-table .p-frozen-column {
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.4) !important;
 }
 
 /* Dark mode for PrimeReact Dropdown */

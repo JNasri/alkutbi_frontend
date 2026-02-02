@@ -1,17 +1,23 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useGetOutgoingsQuery } from "./outgoingsApiSlice";
+import toast from "react-hot-toast";
+import { useGetOutgoingsQuery, useDeleteOutgoingMutation } from "./outgoingsApiSlice";
 import DataTableWrapper from "../../components/DataTableWrapper";
 import LoadingSpinner from "../../components/LoadingSpinner";
 import { Link } from "react-router-dom";
-import { Plus, Pencil } from "lucide-react";
+import { Plus, Pencil, Trash2 } from "lucide-react";
 import useAuth from "../../hooks/useAuth";
+import DeleteConfirmModal from "../../components/DeleteConfirmModal";
 
 const OutgoingsList = () => {
   const { t } = useTranslation();
-  const { roles } = useAuth(); // 👈 get roles array from token
+  const { roles, isAdmin, canEditSpecialPapers, canAddSpecialPapers, canDelete } = useAuth(); // 👈 get roles
+  const [deleteOutgoing] = useDeleteOutgoingMutation();
+
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState(null);
   const canViewAttachment =
-    roles.includes("Admin") || roles.includes("Special Papers Manager");
+    isAdmin || roles.includes("Special Papers Manager");
 
   const {
     data: outgoings,
@@ -58,7 +64,7 @@ const OutgoingsList = () => {
       { field: "createdAt", header: t("createdAt") },
       { field: "updatedAt", header: t("updatedAt") },
       { field: "sticker", header: t("sticker") },
-      { field: "edit", header: t("edit") },
+      { field: "actions", header: t("actions") },
     ];
 
     const transformedData = sortedList.map((item) => ({
@@ -92,14 +98,28 @@ const OutgoingsList = () => {
           {t("print_sticker")}
         </a>
       ),
-      edit: (
-        <Link
-          to={`/dashboard/outgoings/edit/${item.id}`}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800 transition-all hover:bg-blue-100 dark:hover:bg-blue-900/50 hover:shadow-sm group font-medium"
-        >
-          <Pencil size={14} className="group-hover:rotate-12 transition-transform" />
-          {t("edit")}
-        </Link>
+      actions: (
+        <div className="flex items-center gap-2">
+          {canEditSpecialPapers && (
+            <Link
+              to={`/dashboard/outgoings/edit/${item.id}`}
+              className="inline-flex items-center gap-1.5 px-3 py-3 rounded-lg bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800 transition-all hover:bg-blue-100 dark:hover:bg-blue-900/50 hover:shadow-sm group font-medium"
+            >
+              <Pencil size={14} className="group-hover:rotate-12 transition-transform" />
+            </Link>
+          )}
+          {canDelete && (
+            <button
+              onClick={() => {
+                setItemToDelete(item.id);
+                setShowDeleteModal(true);
+              }}
+              className="inline-flex items-center gap-1.5 px-3 py-3 rounded-lg bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800 transition-all hover:bg-red-100 dark:hover:bg-red-900/50 hover:shadow-sm group font-medium cursor-pointer"
+            >
+              <Trash2 size={14} className="group-hover:scale-110 transition-transform" />
+            </button>
+          )}
+        </div>
       ),
     }));
 
@@ -109,19 +129,20 @@ const OutgoingsList = () => {
           <h1 className="text-4xl font-bold text-gray-800 dark:text-white">
             📨 {t("outgoings")}
           </h1>
-          <div className="relative group ms-auto">
-            <Link
-              to="/dashboard/outgoings/add"
-              className="mr-auto w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 border border-gray-500 hover:text-dark-900 hover:bg-gray-100 hover:text-gray-700 dark:border-white dark:bg-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white cursor-pointer"
-              data-tooltip-target="tooltip-right"
-            >
-              <Plus size={20} />
-            </Link>
-            {/* Tooltip */}
-            <div className="absolute end-full top-1/2 me-2 -translate-y-1/2 whitespace-nowrap px-3 py-1.5 text-sm text-gray-800 bg-gray-300 dark:bg-gray-200 dark:text-gray-800 rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-10 shadow-md font-medium">
-              {t("add_outgoing")}
+          {canAddSpecialPapers && (
+            <div className="relative group ms-auto">
+              <Link
+                to="/dashboard/outgoings/add"
+                className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 border border-gray-500 hover:text-dark-900 hover:bg-gray-100 hover:text-gray-700 dark:border-white dark:bg-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white cursor-pointer"
+              >
+                <Plus size={20} />
+              </Link>
+              {/* Tooltip */}
+              <div className="absolute end-full top-1/2 me-2 -translate-y-1/2 whitespace-nowrap px-3 py-1.5 text-sm text-gray-800 bg-gray-300 dark:bg-gray-200 dark:text-gray-800 rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-10 shadow-md font-medium">
+                {t("add_outgoing")}
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Stats Cards */}
@@ -173,6 +194,19 @@ const OutgoingsList = () => {
           data={transformedData}
           columns={columns}
           title={t("outgoings_list")}
+        />
+
+        <DeleteConfirmModal
+          isOpen={showDeleteModal}
+          onCancel={() => setShowDeleteModal(false)}
+          onConfirm={async () => {
+            if (itemToDelete) {
+              await deleteOutgoing({ id: itemToDelete });
+              toast.success(t("outgoing_deleted_successfully"));
+              setShowDeleteModal(false);
+              setItemToDelete(null);
+            }
+          }}
         />
       </>
     );
