@@ -12,6 +12,7 @@ import toast from "react-hot-toast";
 import LoadingSpinner from "../../components/LoadingSpinner";
 import { useDropzone } from "react-dropzone";
 import { ExternalLink } from "lucide-react";
+import useAuth from "../../hooks/useAuth";
 import CreatableSelect from "react-select/creatable";
 import Select from "react-select";
 import { numberToArabicText } from "../../utils/numberToArabicText";
@@ -22,6 +23,7 @@ const EditCollectionOrderForm = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const { isFinanceEmployee, isFinanceAdmin, isAdmin, username } = useAuth();
 
   const {
     data: collectionOrdersData,
@@ -67,13 +69,21 @@ const EditCollectionOrderForm = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
 
-  // Status options with colors
-  const statusOptions = [
-    { value: "new", label: t("status_new"), color: "blue" },
-    { value: "audited", label: t("status_audited"), color: "orange" },
-    { value: "authorized", label: t("status_authorized"), color: "yellow" },
-    { value: "finalized", label: t("status_finalized"), color: "green" },
-  ];
+  // Status options with roles restriction
+  const statusOptions = useMemo(() => {
+    const options = [
+      { value: "new", label: t("status_new"), color: "blue" },
+      { value: "audited", label: t("status_audited"), color: "orange" },
+      { value: "authorized", label: t("status_authorized"), color: "yellow" },
+      { value: "finalized", label: t("status_finalized"), color: "green" },
+    ];
+
+    // Finance employees cannot set status to finalized
+    if (isFinanceEmployee && !isFinanceAdmin && !isAdmin) {
+      return options.filter(opt => opt.value !== "finalized");
+    }
+    return options;
+  }, [t, isFinanceEmployee, isFinanceAdmin, isAdmin]);
 
   const collectMethodOptions = [
     { value: "cash", label: t("cash") },
@@ -112,6 +122,16 @@ const EditCollectionOrderForm = () => {
 
   useEffect(() => {
     if (collectionOrder) {
+      // Permission check - only creator or admin can edit
+      const orderCreator = collectionOrder.issuer?.username;
+      const canEdit = isAdmin || isFinanceAdmin || (isFinanceEmployee && orderCreator === username);
+      
+      if (!isInitialLoad && !canEdit) {
+        toast.error(t("no_permission_to_edit_this_order"));
+        navigate("/dashboard/collectionorders");
+        return;
+      }
+
       setStatus(collectionOrder.status || "new");
       setDayName(collectionOrder.dayName || "");
       setDateHijri(collectionOrder.dateHijri || "");
@@ -138,7 +158,7 @@ const EditCollectionOrderForm = () => {
       setExistingFileUrl(collectionOrder.fileUrl || "");
       setIsInitialLoad(false);
     }
-  }, [collectionOrder]);
+  }, [collectionOrder, isAdmin, isFinanceAdmin, isFinanceEmployee, username, navigate, t]);
 
   // Auto-convert number to Arabic text
   useEffect(() => {
@@ -335,10 +355,11 @@ const EditCollectionOrderForm = () => {
       return toast.error(t("required_fields_missing"));
     }
 
-    // Mandatory document upload for finalized status
-    if (status === "finalized" && !file && !existingFileUrl) {
-      return toast.error(t("document_upload_required_to_finalize"));
+    // Role-based status validation
+    if (status === "finalized" && isFinanceEmployee && !isFinanceAdmin && !isAdmin) {
+      return toast.error(t("no_permission_to_finalize_order"));
     }
+
 
     const collectionOrderData = {
       id,
@@ -388,7 +409,7 @@ const EditCollectionOrderForm = () => {
           )}
         </button>
         <h1 className="text-4xl font-bold text-gray-800 dark:text-white">
-          {t("edit_collection_order")} : {collectionOrder.ticket}
+          {t("edit_collection_order")} : {collectionOrder.collectingId}
         </h1>
       </div>
       <div className="bg-white dark:bg-gray-700 border-gray-500 rounded-3xl shadow p-6 space-y-6">
@@ -650,66 +671,62 @@ const EditCollectionOrderForm = () => {
               />
             </div>
 
-            {/* Document Upload - ONLY show when status is finalized */}
-            {status === "finalized" && (
-              <div className="col-span-6">
-                <label className="text-sm font-medium text-gray-900 dark:text-white block mb-2">
-                  {t("Voucher.file")} <span className="text-red-500">*</span>
-                </label>
-                
-                {/* Show existing file if any */}
-                {existingFileUrl && (
-                  <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-blue-700 dark:text-blue-300">
-                      <ExternalLink size={18} />
-                      <span className="text-sm font-medium">Existing Document:</span>
-                    </div>
-                    <a 
-                      href={existingFileUrl} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="text-sm text-blue-600 dark:text-blue-400 hover:underline font-bold"
+            {/* Document Upload - Optional */}
+            <div className="col-span-6">
+              <label className="text-sm font-medium text-gray-900 dark:text-white block mb-2">
+                {t("Voucher.file")} ({t("optional")})
+              </label>
+              
+              {/* Show existing file if any */}
+              {existingFileUrl && (
+                <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-blue-700 dark:text-blue-300">
+                    <ExternalLink size={18} />
+                    <span className="text-sm font-medium">Existing Document:</span>
+                  </div>
+                  <a 
+                    href={existingFileUrl} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-sm text-blue-600 dark:text-blue-400 hover:underline font-bold"
+                  >
+                    View File 📄
+                  </a>
+                </div>
+              )}
+
+              <div
+                {...getRootProps()}
+                className={`flex cursor-pointer appearance-none justify-center rounded-lg border border-dashed border-gray-300 dark:border-gray-500 bg-gray-50 dark:bg-gray-800 p-6 text-sm transition hover:border-gray-400 dark:hover:border-gray-400 focus:outline-none`}
+              >
+                <input {...getInputProps()} />
+                {file ? (
+                  <div className="text-center">
+                    <p className="text-gray-700 dark:text-gray-300 font-medium">New File Selected:</p>
+                    <p className="text-blue-600 dark:text-blue-400">{file.name}</p>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setFile(null);
+                      }}
+                      className="mt-2 text-sm text-red-600 dark:text-red-400 font-bold hover:underline"
                     >
-                      View File 📄
-                    </a>
+                      {t("Delete")} 🗑️
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center gap-2">
+                    <svg className="h-8 w-8 text-gray-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 15a4 4 0 004 4h10a4 4 0 004-4m-7-3l-3-3m0 0l-3 3m3-3v12" />
+                    </svg>
+                    <p className="text-gray-600 dark:text-gray-400 text-center">
+                      {existingFileUrl ? "Click or drag to replace the current file" : `${t("Voucher.file")} - ${i18n.language === "ar" ? "اضغط هنا لاختيار ملف" : "Click or drag file to upload"}`}
+                    </p>
                   </div>
                 )}
-
-                <div
-                  {...getRootProps()}
-                  className={`flex cursor-pointer appearance-none justify-center rounded-lg border border-dashed border-gray-300 dark:border-gray-500 bg-gray-50 dark:bg-gray-800 p-6 text-sm transition hover:border-gray-400 dark:hover:border-gray-400 focus:outline-none ${
-                      !file && !existingFileUrl ? "border-red-500 dark:border-red-400" : ""
-                  }`}
-                >
-                  <input {...getInputProps()} />
-                  {file ? (
-                    <div className="text-center">
-                      <p className="text-gray-700 dark:text-gray-300 font-medium">New File Selected:</p>
-                      <p className="text-blue-600 dark:text-blue-400">{file.name}</p>
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setFile(null);
-                        }}
-                        className="mt-2 text-sm text-red-600 dark:text-red-400 font-bold hover:underline"
-                      >
-                        {t("Delete")} 🗑️
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="flex flex-col items-center gap-2">
-                      <svg className="h-8 w-8 text-gray-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M3 15a4 4 0 004 4h10a4 4 0 004-4m-7-3l-3-3m0 0l-3 3m3-3v12" />
-                      </svg>
-                      <p className="text-gray-600 dark:text-gray-400 text-center">
-                        {existingFileUrl ? "Click or drag to replace the current file" : `${t("Voucher.file")} - ${i18n.language === "ar" ? "اضغط هنا لاختيار ملف" : "Click or drag file to upload"}`}
-                      </p>
-                    </div>
-                  )}
-                </div>
               </div>
-            )}
+            </div>
           </div>
 
           {/* Action Buttons */}

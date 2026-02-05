@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import toast from "react-hot-toast";
 import { useGetCollectionOrdersQuery, useDeleteCollectionOrderMutation } from "./collectionOrdersApiSlice";
 import { useGetPurchaseOrdersQuery } from "../purchaseOrders/purchaseOrdersApiSlice";
@@ -13,7 +13,7 @@ import DeleteConfirmModal from "../../components/DeleteConfirmModal";
 
 const CollectionOrdersList = () => {
   const { t } = useTranslation();
-  const { canEditFinance, canAddFinance, canDelete } = useAuth();
+  const { canEditFinance, canAddFinance, canDeleteFinance, isFinanceEmployee, username } = useAuth();
   const [deleteCollectionOrder] = useDeleteCollectionOrderMutation();
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -25,8 +25,9 @@ const CollectionOrdersList = () => {
     isSuccess: isSuccessCO,
     isError: isErrorCO,
     error: errorCO,
+    refetch: refetchCO,
   } = useGetCollectionOrdersQuery("collectionOrdersList", {
-    pollingInterval: 60000,
+    pollingInterval: 30000,
     refetchOnFocus: true,
     refetchOnMountOrArgChange: true,
   });
@@ -37,11 +38,18 @@ const CollectionOrdersList = () => {
     isSuccess: isSuccessPO,
     isError: isErrorPO,
     error: errorPO,
+    refetch: refetchPO,
   } = useGetPurchaseOrdersQuery("purchaseOrdersList", {
-    pollingInterval: 60000,
+    pollingInterval: 30000,
     refetchOnFocus: true,
     refetchOnMountOrArgChange: true,
   });
+
+  // Force refetch on mount to ensure status changes from edit forms are visible
+  useEffect(() => {
+    refetchCO();
+    refetchPO();
+  }, [refetchCO, refetchPO]);
 
   if (isLoadingCO || isLoadingPO) return <LoadingSpinner />;
 
@@ -175,7 +183,7 @@ const CollectionOrdersList = () => {
       updatedAt: new Date(item.updatedAt).toLocaleDateString(),
       actions: (
         <div className="flex items-center gap-2">
-          {canEditFinance && (
+          {(canEditFinance || (isFinanceEmployee && item.issuer?.username === username)) && (
             <Link
               to={`/dashboard/collectionorders/edit/${item.id}`}
               className="inline-flex items-center gap-1.5 px-3 py-3 rounded-lg bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800 transition-all hover:bg-blue-100 dark:hover:bg-blue-900/50 hover:shadow-sm group font-medium"
@@ -183,7 +191,7 @@ const CollectionOrdersList = () => {
               <Pencil size={14} className="group-hover:rotate-12 transition-transform" />
             </Link>
           )}
-          {canDelete && (
+          {(canDeleteFinance || (isFinanceEmployee && item.issuer?.username === username)) && (
             <button
               onClick={() => {
                 setItemToDelete(item.id);

@@ -16,6 +16,8 @@ import { numberToArabicText } from "../../utils/numberToArabicText";
 import moment from "moment-hijri";
 import ModernDatePicker from "../../components/ModernDatePicker";
 import { useCallback } from "react";
+import { useDropzone } from "react-dropzone";
+import { Paperclip, ExternalLink } from "lucide-react";
 
 const AddCollectionOrderForm = () => {
   const { t } = useTranslation();
@@ -137,6 +139,7 @@ const AddCollectionOrderForm = () => {
   const [totalAmountText, setTotalAmountText] = useState("");
   const [deductedFrom, setDeductedFrom] = useState("");
   const [addedTo, setAddedTo] = useState("");
+  const [file, setFile] = useState(null);
 
   // Collect method options
   const collectMethodOptions = [
@@ -152,6 +155,17 @@ const AddCollectionOrderForm = () => {
     { value: "hotels", label: t("hotels") },
     { value: "others", label: t("others") },
   ];
+
+  // Dropzone configuration
+  const onDrop = (acceptedFiles) => {
+    setFile(acceptedFiles[0]);
+  };
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop,
+    multiple: false,
+    maxFiles: 1,
+  });
 
   // Auto-convert number to Arabic text
   useEffect(() => {
@@ -302,6 +316,7 @@ const AddCollectionOrderForm = () => {
       totalAmountText: totalAmountText || "",
       deductedFrom: deductedFrom || "",
       addedTo: addedTo || "",
+      file,
     };
 
     try {
@@ -568,6 +583,43 @@ const AddCollectionOrderForm = () => {
                   value={addedTo ? { value: addedTo, label: addedTo } : null}
                   styles={customSelectStyles}
                 />
+              </div>
+
+              {/* Document Upload - Optional */}
+              <div className="col-span-6">
+                <label className="text-sm font-medium text-gray-900 dark:text-white block mb-2">
+                  {t("Voucher.file")} ({t("optional")})
+                </label>
+                
+                <div
+                  {...getRootProps()}
+                  className={`flex cursor-pointer appearance-none justify-center rounded-lg border border-dashed border-gray-300 dark:border-gray-500 bg-gray-50 dark:bg-gray-800 p-6 text-sm transition hover:border-gray-400 dark:hover:border-gray-400 focus:outline-none`}
+                >
+                  <input {...getInputProps()} />
+                  {file ? (
+                    <div className="text-center">
+                      <p className="text-gray-700 dark:text-gray-300 font-medium">File Selected:</p>
+                      <p className="text-blue-600 dark:text-blue-400">{file.name}</p>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setFile(null);
+                        }}
+                        className="mt-2 text-sm text-red-600 dark:text-red-400 font-bold hover:underline"
+                      >
+                        {t("Delete")} 🗑️
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center gap-2">
+                      <Paperclip className="h-8 w-8 text-gray-400" />
+                      <p className="text-gray-600 dark:text-gray-400 text-center">
+                        {i18n.language === "ar" ? "اضغط هنا لاختيار ملف" : "Click or drag file to upload"}
+                      </p>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 

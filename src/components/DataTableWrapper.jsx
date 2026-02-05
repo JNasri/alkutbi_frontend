@@ -16,7 +16,7 @@ import "primereact/resources/themes/lara-light-indigo/theme.css";
 import "primereact/resources/primereact.min.css";
 import "primeicons/primeicons.css";
 
-const DataTableWrapper = ({ data, columns, title }) => {
+const DataTableWrapper = ({ data, columns, title, freezeLastColumn = true }) => {
   const { i18n, t } = useTranslation();
   const isRTL = i18n.dir() === "rtl";
   const [globalFilter, setGlobalFilter] = useState("");
@@ -191,9 +191,9 @@ const DataTableWrapper = ({ data, columns, title }) => {
                 alignHeader="center"
                 headerClassName="bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white text-sm font-semibold py-3 px-4"
                 bodyClassName="text-sm text-gray-800 dark:text-gray-100 text-center py-2 px-4 border-b border-gray-200 dark:border-gray-700"
-                frozen={i === columns.length - 1}
+                frozen={freezeLastColumn && i === columns.length - 1}
                 alignFrozen={
-                  i === columns.length - 1
+                  freezeLastColumn && i === columns.length - 1
                     ? isRTL
                       ? "left"
                       : "right"

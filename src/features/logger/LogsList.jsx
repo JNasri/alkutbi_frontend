@@ -62,6 +62,7 @@ const LogsList = () => {
           data={formattedLogs}
           columns={columns}
           title={t("SystemAudits")}
+          freezeLastColumn={false}
         />
       </>
     );

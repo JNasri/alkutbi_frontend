@@ -70,7 +70,7 @@ const editSpecialPapersRoles = [ROLES.Admin, ROLES.Special_Papers_Manager];
 
 // array of finance roles
 const financeRoles = [ROLES.Admin, ROLES.Finance_Admin, ROLES.Finance_Employee];
-const financeEditRoles = [ROLES.Admin, ROLES.Finance_Admin];
+const financeEditRoles = [ROLES.Admin, ROLES.Finance_Admin, ROLES.Finance_Employee];
 const financeAddRoles = [ROLES.Admin, ROLES.Finance_Admin, ROLES.Finance_Employee];
 
 function App() {

@@ -35,6 +35,7 @@ const useAuth = () => {
     const isFinanceRole = isFinanceAdmin || isFinanceEmployee;
     const canEditAssets = isAdmin || isSpecialPapersManager || isOperationManager;
     const canAddAssets = isAdmin || isSpecialPapersManager || isSpecialPapersEmployee || isOperationManager || isOperationEmployee;
+    const canDeleteFinance = isAdmin || isFinanceAdmin;
     const canDelete = isAdmin;
 
     return {
@@ -55,6 +56,7 @@ const useAuth = () => {
       canAddSpecialPapers,
       canEditFinance,
       canAddFinance,
+      canDeleteFinance,
       isFinanceRole,
       canEditAssets,
       canAddAssets,
@@ -80,6 +82,7 @@ const useAuth = () => {
     canAddSpecialPapers: false,
     canEditFinance: false,
     canAddFinance: false,
+    canDeleteFinance: false,
     isFinanceRole: false,
     canEditAssets: false,
     canAddAssets: false,
