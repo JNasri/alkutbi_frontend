@@ -309,7 +309,7 @@ const PurchaseOrderPrint = ({ purchaseOrder }) => {
     <table class="data-table">
       ${order.transactionType ? `
       <tr>
-        <td><strong>نوع المعاملة:</strong></td>
+        <td><strong>نوع المعاملة</strong></td>
         <td>${transactionTypeArabic[order.transactionType] || order.transactionType}</td>
       </tr>
       ` : ""}
@@ -350,7 +350,7 @@ const PurchaseOrderPrint = ({ purchaseOrder }) => {
       ${order.totalAmount ? `
       <tr>
         <td>المبلغ الإجمالي</td>
-        <td>${order.totalAmount.toLocaleString()} ريال سعودي</td>
+        <td><span class="english-numbers">${toEnglishNumbers(order.totalAmount.toLocaleString())}</span> ريال سعودي</td>
       </tr>
       ` : ""}
       ${order.totalAmountText ? `
@@ -382,7 +382,7 @@ const PurchaseOrderPrint = ({ purchaseOrder }) => {
         أمجاد با شماخ / ................................................
       </div>
       <div class="signature-line">
-        <strong>التعميد/</strong> أعتمد تنفيذ أمر الشراء أعلاه
+        <strong>التعميد/</strong> تم اعتماد أمر الشراء أعلاه
       </div>
       <div class="signature-line">
         بلال محمد/ ................................................

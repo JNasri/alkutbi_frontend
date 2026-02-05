@@ -394,10 +394,6 @@ const AddPurchaseOrderForm = () => {
     }
 
 
-    if ((paymentMethod === "bank_transfer" || paymentMethod === "sadad") && (!bankNameFrom || !ibanNumberFrom || !bankNameTo || !ibanNumberTo)) {
-      toast.error(t("bank_details_required"));
-      return;
-    }
 
     const purchaseOrderData = {
       status,

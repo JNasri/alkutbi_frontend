@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
 import { InputText } from "primereact/inputtext";
@@ -16,7 +16,7 @@ import "primereact/resources/themes/lara-light-indigo/theme.css";
 import "primereact/resources/primereact.min.css";
 import "primeicons/primeicons.css";
 
-const DataTableWrapper = ({ data, columns, title, freezeLastColumn = true }) => {
+const DataTableWrapper = ({ data, columns, title, freezeLastColumn = true, sumField = null }) => {
   const { i18n, t } = useTranslation();
   const isRTL = i18n.dir() === "rtl";
   const [globalFilter, setGlobalFilter] = useState("");
@@ -24,7 +24,24 @@ const DataTableWrapper = ({ data, columns, title, freezeLastColumn = true }) => 
   const [loading, setLoading] = useState(false);
   const [first, setFirst] = useState(0);
   const [rows, setRows] = useState(10);
+  const [visibleData, setVisibleData] = useState(data);
   const dt = useRef(null);
+
+  // Update visible data when source data changes
+  useEffect(() => {
+    setVisibleData(data);
+  }, [data]);
+
+  // Calculate sum of sumField in the current visible (filtered) data
+  const totalSum = useMemo(() => {
+    if (!sumField) return 0;
+    return visibleData.reduce((acc, row) => {
+      // Get raw value, handle potential string/formatting
+      const val = row[sumField];
+      const numericVal = typeof val === 'number' ? val : parseFloat(String(val).replace(/[^0-9.-]+/g, ""));
+      return acc + (numericVal || 0);
+    }, 0);
+  }, [visibleData, sumField]);
 
   // Row options for pagination
   const rowsPerPageOptions = [5, 10, 25, 50];
@@ -82,6 +99,17 @@ const DataTableWrapper = ({ data, columns, title, freezeLastColumn = true }) => 
       </h2>
 
       <div className="flex flex-col lg:flex-row items-center gap-4 w-full lg:w-auto">
+        {sumField && (
+          <div className="bg-blue-50/50 dark:bg-blue-900/20 px-6 py-2 rounded-xl flex items-center gap-3 border-2 border-blue-500 dark:border-blue-400 animate-in fade-in slide-in-from-top-4 duration-500 backdrop-blur-sm">
+            <span className="text-blue-700 dark:text-blue-400 text-xs font-bold uppercase tracking-wider">
+              {t("total_amount_sum")}:
+            </span>
+            <span className="text-blue-800 dark:text-blue-300 text-xl font-black">
+              {totalSum.toLocaleString()} {t("sar")}
+            </span>
+          </div>
+        )}
+
         {/* Modern Search Field */}
         <div className="relative w-full lg:w-80 group">
           <Search
@@ -150,6 +178,7 @@ const DataTableWrapper = ({ data, columns, title, freezeLastColumn = true }) => 
             rowsPerPageOptions={rowsPerPageOptions}
             paginatorTemplate="RowsPerPageDropdown FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink"
             globalFilter={globalFilter}
+            onValueChange={(e) => setVisibleData(e)}
             emptyMessage={t("No records found")}
             stripedRows
             showGridlines

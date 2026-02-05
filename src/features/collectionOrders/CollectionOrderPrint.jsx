@@ -308,7 +308,7 @@ const CollectionOrderPrint = ({ collectionOrder }) => {
     <table class="data-table">
       ${order.collectedFrom ? `
       <tr>
-        <td><strong>مجال التحصيل:</strong></td>
+        <td><strong>مجال التحصيل</strong></td>
         <td>${collectedFromArabic[order.collectedFrom] || order.collectedFrom}</td>
       </tr>
       ` : ""}
@@ -331,7 +331,7 @@ const CollectionOrderPrint = ({ collectionOrder }) => {
       ${order.totalAmount ? `
       <tr>
         <td>المبلغ الإجمالي</td>
-        <td>${order.totalAmount.toLocaleString()} ريال سعودي</td>
+        <td><span class="english-numbers">${toEnglishNumbers(order.totalAmount.toLocaleString())}</span> ريال سعودي</td>
       </tr>
       ` : ""}
       ${order.totalAmountText ? `
@@ -363,7 +363,7 @@ const CollectionOrderPrint = ({ collectionOrder }) => {
         أمجاد با شماخ / ................................................
       </div>
       <div class="signature-line">
-        <strong>التعميد/</strong> أعتمد تنفيذ أمر التحصيل أعلاه
+        <strong>التعميد/</strong> تم اعتماد أمر التحصيل أعلاه
       </div>
       <div class="signature-line">
         بلال محمد/ ................................................

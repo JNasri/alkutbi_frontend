@@ -15,6 +15,7 @@ const useAuth = () => {
     const isSpecialPapersManager = roles.includes("Special Papers Manager");
     const isSpecialPapersEmployee = roles.includes("Special Papers Employee");
     const isFinanceAdmin = roles.includes("Finance Admin");
+    const isFinanceSubAdmin = roles.includes("Finance Sub-Admin");
     const isFinanceEmployee = roles.includes("Finance Employee");
     const isAgent = roles.includes("Agent");
 
@@ -25,14 +26,15 @@ const useAuth = () => {
     else if (isSpecialPapersManager) status = "Special Papers Manager";
     else if (isSpecialPapersEmployee) status = "Special Papers Employee";
     else if (isFinanceAdmin) status = "Finance Admin";
+    else if (isFinanceSubAdmin) status = "Finance Sub-Admin";
     else if (isFinanceEmployee) status = "Finance Employee";
     else if (isAgent) status = "Agent";
 
     const canEditSpecialPapers = isAdmin || isSpecialPapersManager;
     const canAddSpecialPapers = isAdmin || isSpecialPapersManager || isSpecialPapersEmployee;
-    const canEditFinance = isAdmin || isFinanceAdmin;
-    const canAddFinance = isAdmin || isFinanceAdmin || isFinanceEmployee;
-    const isFinanceRole = isFinanceAdmin || isFinanceEmployee;
+    const canEditFinance = isAdmin || isFinanceAdmin || isFinanceSubAdmin;
+    const canAddFinance = isAdmin || isFinanceAdmin || isFinanceSubAdmin || isFinanceEmployee;
+    const isFinanceRole = isFinanceAdmin || isFinanceSubAdmin || isFinanceEmployee;
     const canEditAssets = isAdmin || isSpecialPapersManager || isOperationManager;
     const canAddAssets = isAdmin || isSpecialPapersManager || isSpecialPapersEmployee || isOperationManager || isOperationEmployee;
     const canDeleteFinance = isAdmin || isFinanceAdmin;
@@ -50,6 +52,7 @@ const useAuth = () => {
       isSpecialPapersManager,
       isSpecialPapersEmployee,
       isFinanceAdmin,
+      isFinanceSubAdmin,
       isFinanceEmployee,
       isAgent,
       canEditSpecialPapers,
@@ -76,6 +79,7 @@ const useAuth = () => {
     isSpecialPapersManager: false,
     isSpecialPapersEmployee: false,
     isFinanceAdmin: false,
+    isFinanceSubAdmin: false,
     isFinanceEmployee: false,
     isAgent: false,
     canEditSpecialPapers: false,

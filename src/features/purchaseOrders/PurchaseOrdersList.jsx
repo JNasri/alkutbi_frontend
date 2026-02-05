@@ -13,7 +13,7 @@ import DeleteConfirmModal from "../../components/DeleteConfirmModal";
 
 const PurchaseOrdersList = () => {
   const { t } = useTranslation();
-  const { canEditFinance, canAddFinance, canDeleteFinance, isFinanceEmployee, username } = useAuth();
+  const { canEditFinance, canAddFinance, canDeleteFinance, isFinanceEmployee, isFinanceSubAdmin, username } = useAuth();
   const [deletePurchaseOrder] = useDeletePurchaseOrderMutation();
   
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -113,7 +113,12 @@ const PurchaseOrdersList = () => {
       { field: "managementName", header: t("management_name") },
       { field: "supplier", header: t("supplier") },
       { field: "item", header: t("item") },
-      { field: "totalAmount", header: t("total_amount"), nowrap: true },
+      { 
+        field: "totalAmount", 
+        header: t("total_amount"), 
+        nowrap: true,
+        body: (item) => item.totalAmount ? `${item.totalAmount.toLocaleString()} ${t("sar")}` : "—"
+      },
       { field: "totalAmountText", header: t("total_amount_text") },
       { field: "deductedFrom", header: t("deducted_from") },
       { field: "addedTo", header: t("added_to") },
@@ -186,7 +191,7 @@ const PurchaseOrdersList = () => {
       managementName: item.managementName || "—",
       supplier: item.supplier || "—",
       item: item.item || "—",
-      totalAmount: item.totalAmount ? `${item.totalAmount.toLocaleString()} ${t("sar")}` : "—",
+      totalAmount: item.totalAmount || 0,
       totalAmountText: item.totalAmountText || "—",
       deductedFrom: item.deductedFrom || "—",
       addedTo: item.addedTo || "—",
@@ -194,7 +199,7 @@ const PurchaseOrdersList = () => {
       updatedAt: new Date(item.updatedAt).toLocaleDateString(),
       actions: (
         <div className="flex items-center gap-2">
-          {(canEditFinance || (isFinanceEmployee && item.issuer?.username === username)) && (
+          {(canEditFinance || ((isFinanceEmployee || isFinanceSubAdmin) && item.issuer?.username === username)) && (
             <Link
               to={`/dashboard/purchaseorders/edit/${item.id}`}
               className="inline-flex items-center gap-1.5 px-3 py-3 rounded-lg bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800 transition-all hover:bg-blue-100 dark:hover:bg-blue-900/50 hover:shadow-sm group font-medium"
@@ -202,7 +207,7 @@ const PurchaseOrdersList = () => {
               <Pencil size={14} className="group-hover:rotate-12 transition-transform" />
             </Link>
           )}
-          {(canDeleteFinance || (isFinanceEmployee && item.issuer?.username === username)) && (
+          {(canDeleteFinance || ((isFinanceEmployee || isFinanceSubAdmin) && item.issuer?.username === username)) && (
             <button
               onClick={() => {
                 setItemToDelete(item.id);
@@ -303,6 +308,7 @@ const PurchaseOrdersList = () => {
           data={transformedData}
           columns={columns}
           title={t("purchase_orders_list")}
+          sumField="totalAmount"
         />
 
         <DeleteConfirmModal

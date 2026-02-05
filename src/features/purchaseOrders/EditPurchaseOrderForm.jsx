@@ -22,7 +22,7 @@ const EditPurchaseOrderForm = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const { isFinanceEmployee, isFinanceAdmin, isAdmin, username } = useAuth();
+  const { isFinanceEmployee, isFinanceSubAdmin, isFinanceAdmin, isAdmin, username } = useAuth();
 
   const {
     data: purchaseOrdersData,
@@ -83,8 +83,8 @@ const EditPurchaseOrderForm = () => {
       { value: "finalized", label: t("status_finalized"), color: "green" },
     ];
 
-    // Finance employees cannot set status to finalized
-    if (isFinanceEmployee && !isFinanceAdmin && !isAdmin) {
+    // Finance employees and sub-admins cannot set status to finalized
+    if ((isFinanceEmployee || isFinanceSubAdmin) && !isFinanceAdmin && !isAdmin) {
       return options.filter(opt => opt.value !== "finalized");
     }
     return options;
@@ -411,17 +411,11 @@ const EditPurchaseOrderForm = () => {
     }
 
     // Role-based status validation
-    if (status === "finalized" && isFinanceEmployee && !isFinanceAdmin && !isAdmin) {
+    if (status === "finalized" && (isFinanceEmployee || isFinanceSubAdmin) && !isFinanceAdmin && !isAdmin) {
       return toast.error(t("no_permission_to_finalize_order"));
     }
 
 
-    if (
-      (paymentMethod === "bank_transfer" || paymentMethod === "sadad") &&
-      (!bankNameFrom || !ibanNumberFrom || !bankNameTo || !ibanNumberTo)
-    ) {
-      return toast.error(t("bank_details_required"));
-    }
 
     const purchaseOrderData = {
       id,
