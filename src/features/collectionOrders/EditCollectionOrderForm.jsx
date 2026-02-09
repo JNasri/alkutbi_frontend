@@ -73,7 +73,6 @@ const EditCollectionOrderForm = () => {
   const statusOptions = useMemo(() => {
     const options = [
       { value: "new", label: t("status_new"), color: "blue" },
-      { value: "audited", label: t("status_audited"), color: "orange" },
       { value: "authorized", label: t("status_authorized"), color: "yellow" },
       { value: "finalized", label: t("status_finalized"), color: "green" },
     ];
@@ -408,9 +407,16 @@ const EditCollectionOrderForm = () => {
             <ArrowLeft size={20} />
           )}
         </button>
-        <h1 className="text-4xl font-bold text-gray-800 dark:text-white">
-          {t("edit_collection_order")} : {collectionOrder.collectingId}
-        </h1>
+         <label htmlFor="collectingId" className="text-4xl font-bold text-gray-800 dark:text-white">
+          {t("edit_collection_order")}
+         </label>
+         <input
+           type="text"
+           id="collectingId"
+           value={collectingId}
+           onChange={(e) => setCollectingId(e.target.value)}
+           className="text-xl sm:text-3xl font-bold bg-transparent border-b border-gray-400 dark:border-gray-500 focus:outline-none focus:border-black dark:focus:border-white text-gray-900 dark:text-white"
+         />
       </div>
       <div className="bg-white dark:bg-gray-700 border-gray-500 rounded-3xl shadow p-6 space-y-6">
         <form onSubmit={onSaveClicked}>
@@ -517,19 +523,7 @@ const EditCollectionOrderForm = () => {
               />
             </div>
 
-            {/* Collecting ID */}
-            <div className="col-span-6 sm:col-span-3">
-              <label className="text-sm font-medium text-gray-900 dark:text-white block mb-2">
-                {t("collecting_id")}
-              </label>
-              <input
-                type="text"
-                value={collectingId}
-                onChange={(e) => setCollectingId(e.target.value)}
-                className="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg block w-full p-2.5 dark:bg-gray-800 dark:text-white"
-                required
-              />
-            </div>
+            {/* Collecting ID moved to header */}
 
             {/* Collect Method */}
             <div className="col-span-6 sm:col-span-3">

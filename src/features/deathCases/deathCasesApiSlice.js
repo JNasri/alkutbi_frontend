@@ -49,6 +49,7 @@ export const deathCasesApiSlice = apiSlice.injectEndpoints({
       }),
       invalidatesTags: (result, error, arg) => [
         { type: "Deathcase", id: arg.id },
+        { type: "Deathcase", id: "LIST" },
       ],
     }),
 

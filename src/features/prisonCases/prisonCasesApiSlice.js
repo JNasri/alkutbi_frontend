@@ -48,6 +48,7 @@ export const prisoncasesApiSlice = apiSlice.injectEndpoints({
       }),
       invalidatesTags: (result, error, arg) => [
         { type: "PrisonCase", id: arg.id },
+        { type: "PrisonCase", id: "LIST" },
       ],
     }),
 

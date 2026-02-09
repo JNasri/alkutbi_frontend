@@ -50,6 +50,7 @@ export const incomingsApiSlice = apiSlice.injectEndpoints({
       }),
       invalidatesTags: (result, error, arg) => [
         { type: "Incoming", id: arg.id },
+        { type: "Incoming", id: "LIST" },
       ],
     }),
 

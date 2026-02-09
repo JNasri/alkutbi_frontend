@@ -6,7 +6,7 @@ import { useGetPurchaseOrdersQuery } from "../purchaseOrders/purchaseOrdersApiSl
 import DataTableWrapper from "../../components/DataTableWrapper";
 import LoadingSpinner from "../../components/LoadingSpinner";
 import { Link } from "react-router-dom";
-import { Plus, Paperclip, Pencil, Trash2 } from "lucide-react";
+import { Plus, Paperclip, Pencil, Trash2, RefreshCw } from "lucide-react";
 import CollectionOrderPrint from "./CollectionOrderPrint";
 import useAuth from "../../hooks/useAuth";
 import DeleteConfirmModal from "../../components/DeleteConfirmModal";
@@ -18,6 +18,8 @@ const CollectionOrdersList = () => {
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
+  const [isInitialSync, setIsInitialSync] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const {
     data: collectionOrders,
@@ -26,6 +28,7 @@ const CollectionOrdersList = () => {
     isError: isErrorCO,
     error: errorCO,
     refetch: refetchCO,
+    isFetching: isFetchingCO,
   } = useGetCollectionOrdersQuery("collectionOrdersList", {
     pollingInterval: 30000,
     refetchOnFocus: true,
@@ -39,6 +42,7 @@ const CollectionOrdersList = () => {
     isError: isErrorPO,
     error: errorPO,
     refetch: refetchPO,
+    isFetching: isFetchingPO,
   } = useGetPurchaseOrdersQuery("purchaseOrdersList", {
     pollingInterval: 30000,
     refetchOnFocus: true,
@@ -47,11 +51,14 @@ const CollectionOrdersList = () => {
 
   // Force refetch on mount to ensure status changes from edit forms are visible
   useEffect(() => {
-    refetchCO();
-    refetchPO();
+    const syncData = async () => {
+      await Promise.all([refetchCO(), refetchPO()]);
+      setIsInitialSync(false);
+    };
+    syncData();
   }, [refetchCO, refetchPO]);
 
-  if (isLoadingCO || isLoadingPO) return <LoadingSpinner />;
+  if (isInitialSync || (isLoadingCO && !collectionOrders) || (isLoadingPO && !purchaseOrders)) return <LoadingSpinner />;
 
   if (isErrorCO || isErrorPO) {
     return (
@@ -233,19 +240,37 @@ const CollectionOrdersList = () => {
           <h1 className="text-4xl font-bold text-gray-800 dark:text-white">
             💰 {t("collection_orders")}
           </h1>
-          {canAddFinance && (
-            <div className="relative group ms-auto">
-              <Link
-                to="/dashboard/collectionorders/add"
-                className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 border border-gray-500 hover:text-dark-900 hover:bg-gray-100 hover:text-gray-700 dark:border-white dark:bg-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white cursor-pointer"
+          <div className="flex items-center gap-2 ms-auto">
+            <div className="relative group">
+              <button
+                onClick={async () => {
+                  setIsRefreshing(true);
+                  await Promise.all([refetchCO(), refetchPO()]);
+                  setIsRefreshing(false);
+                }}
+                className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 border border-gray-500 hover:text-dark-900 hover:bg-gray-100 hover:text-gray-700 dark:border-white dark:bg-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white cursor-pointer transition-all active:scale-95"
               >
-                <Plus size={20} />
-              </Link>
+                <RefreshCw size={20} className={`${(isFetchingCO || isFetchingPO) ? "animate-spin" : ""}`} />
+              </button>
               <div className="absolute end-full top-1/2 me-2 -translate-y-1/2 whitespace-nowrap px-3 py-1.5 text-sm text-gray-800 bg-gray-300 dark:bg-gray-200 dark:text-gray-800 rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-10 shadow-md font-medium">
-                {t("add_collection_order")}
+                {t("refresh")}
               </div>
             </div>
-          )}
+
+            {canAddFinance && (
+              <div className="relative group">
+                <Link
+                  to="/dashboard/collectionorders/add"
+                  className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 border border-gray-500 hover:text-dark-900 hover:bg-gray-100 hover:text-gray-700 dark:border-white dark:bg-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white cursor-pointer"
+                >
+                  <Plus size={20} />
+                </Link>
+                <div className="absolute end-full top-1/2 me-2 -translate-y-1/2 whitespace-nowrap px-3 py-1.5 text-sm text-gray-800 bg-gray-300 dark:bg-gray-200 dark:text-gray-800 rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-10 shadow-md font-medium">
+                  {t("add_collection_order")}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Stats Cards */}
@@ -312,6 +337,7 @@ const CollectionOrdersList = () => {
             }
           }}
         />
+        {isRefreshing && <LoadingSpinner />}
       </>
     );
   }

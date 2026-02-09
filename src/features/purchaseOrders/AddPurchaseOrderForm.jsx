@@ -169,7 +169,6 @@ const AddPurchaseOrderForm = () => {
   // Status options with colors
   const statusOptions = [
     { value: "new", label: t("status_new"), color: "blue" },
-    { value: "audited", label: t("status_audited"), color: "orange" },
     { value: "authorized", label: t("status_authorized"), color: "yellow" },
   ];
 
@@ -233,38 +232,7 @@ const AddPurchaseOrderForm = () => {
     }
   }, [dateAD]);
 
-  // Auto-generate purchasingId when purchase orders data is available
-  useEffect(() => {
-    if (isPurchaseOrdersSuccess && purchaseOrdersData) {
-      const now = new Date();
-      const year = now.getFullYear().toString().slice(-2);
-      const month = String(now.getMonth() + 1).padStart(2, "0");
-      const prefix = `PO-${year}-${month}-`;
-      
-      // Get all orders from current month and extract their numbers
-      const currentMonthNumbers = purchaseOrdersData.ids
-        .map(id => purchaseOrdersData.entities[id])
-        .filter(order => {
-          if (!order || !order.purchasingId) return false;
-          // Check if purchasingId matches current month pattern
-          return order.purchasingId.startsWith(prefix);
-        })
-        .map(order => {
-          // Extract the number part (e.g., "001" from "PO-26-01-001")
-          const parts = order.purchasingId.split('-');
-          return parseInt(parts[3] || '0', 10);
-        })
-        .filter(num => !isNaN(num));
-      
-      // Find the highest number and add 1
-      const maxNumber = currentMonthNumbers.length > 0 
-        ? Math.max(...currentMonthNumbers) 
-        : 0;
-      
-      const nextNumber = String(maxNumber + 1).padStart(3, "0");
-      setPurchasingId(`${prefix}${nextNumber}`);
-    }
-  }, [isPurchaseOrdersSuccess, purchaseOrdersData]);
+
 
   // Create options from existing data
   const managementOptions = useMemo(() => {
@@ -387,8 +355,8 @@ const AddPurchaseOrderForm = () => {
   const onSavePurchaseOrderClicked = async (e) => {
     e.preventDefault();
 
-    // Validation - only status, dates, dayName, and purchasingId are required
-    if (!status || !dayName || !dateHijri || !dateAD || !purchasingId) {
+    // Validation - only status, dates, and dayName are required
+    if (!status || !dayName || !dateHijri || !dateAD) {
       toast.error(t("required_fields_missing"));
       return;
     }
@@ -516,19 +484,7 @@ const AddPurchaseOrderForm = () => {
                 />
               </div>
 
-              {/* Purchasing ID */}
-              <div className="col-span-6 sm:col-span-3">
-                <label className="text-sm font-medium text-gray-900 dark:text-white block mb-2">
-                  {t("purchasing_id")}
-                </label>
-                <input
-                  type="text"
-                  value={purchasingId}
-                  onChange={(e) => setPurchasingId(e.target.value)}
-                  className="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg block w-full p-2.5 dark:bg-gray-800 dark:text-white"
-                  required
-                />
-              </div>
+              {/* Purchasing ID auto-generated */}
 
               {/* Payment Method */}
               <div className="col-span-6 sm:col-span-3">

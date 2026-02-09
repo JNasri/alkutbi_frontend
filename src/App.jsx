@@ -51,15 +51,6 @@ const CollectionOrdersList = lazy(() => import("./features/collectionOrders/Coll
 const AddCollectionOrderForm = lazy(() => import("./features/collectionOrders/AddCollectionOrderForm"));
 const EditCollectionOrderForm = lazy(() => import("./features/collectionOrders/EditCollectionOrderForm"));
 
-//
-// // PrimeReact core styles
-// import "primereact/resources/themes/lara-light-indigo/theme.css"; // or sakai theme if you get it
-// import "primereact/resources/primereact.min.css";
-// // PrimeIcons
-// import "primeicons/primeicons.css";
-// // PrimeFlex utility classes
-// import "primeflex/primeflex.css";
-
 // array of special papers [admin,special_papers_manager,special_papers_employee]
 const addSpecialPapersRoles = [
   ROLES.Admin,
@@ -69,9 +60,9 @@ const addSpecialPapersRoles = [
 const editSpecialPapersRoles = [ROLES.Admin, ROLES.Special_Papers_Manager];
 
 // array of finance roles
-const financeRoles = [ROLES.Admin, ROLES.Finance_Admin, ROLES.Finance_Sub_Admin, ROLES.Finance_Employee];
-const financeEditRoles = [ROLES.Admin, ROLES.Finance_Admin, ROLES.Finance_Sub_Admin, ROLES.Finance_Employee];
-const financeAddRoles = [ROLES.Admin, ROLES.Finance_Admin, ROLES.Finance_Sub_Admin, ROLES.Finance_Employee];
+const financeRoles = [ROLES.Admin, ROLES.Finance_Admin, ROLES.Finance_Sub_Admin, ROLES.Finance_Employee, ROLES.Special_Papers_Manager];
+const financeEditRoles = [ROLES.Admin, ROLES.Finance_Admin, ROLES.Finance_Sub_Admin, ROLES.Finance_Employee,ROLES.Special_Papers_Manager];
+const financeAddRoles = [ROLES.Admin, ROLES.Finance_Admin, ROLES.Finance_Sub_Admin, ROLES.Finance_Employee,ROLES.Special_Papers_Manager];
 
 function App() {
   return (
@@ -235,7 +226,7 @@ function App() {
                       </Route>
                     </Route>
                     {/* /logs */}
-                    <Route element={<RequireAuth allowedRoles={[ROLES.Admin, ROLES.Finance_Admin, ROLES.Finance_Sub_Admin]} />}>
+                    <Route element={<RequireAuth allowedRoles={[ROLES.Admin, ROLES.Finance_Admin]} />}>
                       <Route path="logs">
                         <Route index element={<LogsList />} />
                       </Route>

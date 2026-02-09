@@ -49,6 +49,7 @@ export const outgoingsApiSlice = apiSlice.injectEndpoints({
       }),
       invalidatesTags: (result, error, arg) => [
         { type: "Outgoing", id: arg.id },
+        { type: "Outgoing", id: "LIST" },
       ],
     }),
     deleteOutgoing: builder.mutation({

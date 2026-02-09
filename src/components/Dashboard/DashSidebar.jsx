@@ -22,7 +22,16 @@ const DashSidebar = () => {
   const [isOpen, setIsOpen] = useState(true);
   const { t, i18n } = useTranslation();
   const location = useLocation();
-  const { isAdmin, isFinanceAdmin, isFinanceEmployee, isSpecialPapersManager, isSpecialPapersEmployee, isOperationManager, isOperationEmployee } = useAuth();
+  const { 
+    isAdmin, 
+    isFinanceAdmin, 
+    isFinanceSubAdmin, 
+    isFinanceEmployee, 
+    isSpecialPapersManager, 
+    isSpecialPapersEmployee, 
+    isOperationManager, 
+    isOperationEmployee 
+  } = useAuth();
 
   const isArabic = i18n.language === "ar";
 
@@ -34,20 +43,21 @@ const DashSidebar = () => {
   const isActive = (path) =>
     location.pathname === path || location.pathname.startsWith(path + "/");
 
-  const isFinanceRole = isFinanceAdmin || isFinanceEmployee;
-  const isSpecialPapersRole = isAdmin || isSpecialPapersManager || isSpecialPapersEmployee;
-  const isAssetsRole = !isFinanceRole; // Finance roles don't see assets
+  // Visibility logic
+  const showSpecialPapers = isAdmin || isSpecialPapersManager || isSpecialPapersEmployee || isOperationManager || isOperationEmployee;
+  const showFinance = isAdmin || isFinanceAdmin || isFinanceSubAdmin || isFinanceEmployee || isSpecialPapersManager;
+  const showAssets = isAdmin || isOperationManager || isOperationEmployee || isSpecialPapersManager || isSpecialPapersEmployee;
 
   const navItems = [
     { to: "/dashboard", icon: Home, label: t("home"), show: true, exact: true },
     { to: "/dashboard/users", icon: Users, label: t("users"), show: isAdmin },
-    { to: "/dashboard/incomings", icon: FileText, label: t("incomings"), show: !isFinanceRole },
-    { to: "/dashboard/outgoings", icon: FileText, label: t("outgoings"), show: !isFinanceRole },
-    { to: "/dashboard/purchaseorders", icon: ShoppingCart, label: t("purchase_orders"), show: true },
-    { to: "/dashboard/collectionorders", icon: Coins, label: t("collection_orders"), show: true },
-    { to: "/dashboard/deathcases", icon: Skull, label: t("death_cases"), show: !isFinanceRole },
-    { to: "/dashboard/prisoncases", icon: ShieldAlert, label: t("prison_cases"), show: !isFinanceRole },
-    { to: "/dashboard/assets", icon: Package, label: t("assets"), show: isAssetsRole },
+    { to: "/dashboard/incomings", icon: FileText, label: t("incomings"), show: showSpecialPapers },
+    { to: "/dashboard/outgoings", icon: FileText, label: t("outgoings"), show: showSpecialPapers },
+    { to: "/dashboard/purchaseorders", icon: ShoppingCart, label: t("purchase_orders"), show: showFinance },
+    { to: "/dashboard/collectionorders", icon: Coins, label: t("collection_orders"), show: showFinance },
+    { to: "/dashboard/deathcases", icon: Skull, label: t("death_cases"), show: showSpecialPapers },
+    { to: "/dashboard/prisoncases", icon: ShieldAlert, label: t("prison_cases"), show: showSpecialPapers },
+    { to: "/dashboard/assets", icon: Package, label: t("assets"), show: showAssets },
     { to: "/dashboard/logs", icon: Scroll, label: t("logs"), show: isAdmin || isFinanceAdmin},
   ];
 

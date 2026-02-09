@@ -50,7 +50,10 @@ export const assetsApiSlice = apiSlice.injectEndpoints({
         method: "PATCH",
         body: data,
       }),
-      invalidatesTags: (result, error, arg) => [{ type: "Asset", id: arg.id }],
+      invalidatesTags: (result, error, arg) => [
+        { type: "Asset", id: arg.id },
+        { type: "Asset", id: "LIST" },
+      ],
     }),
     deleteAsset: builder.mutation({
       query: ({ id }) => ({

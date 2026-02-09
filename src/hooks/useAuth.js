@@ -32,12 +32,13 @@ const useAuth = () => {
 
     const canEditSpecialPapers = isAdmin || isSpecialPapersManager;
     const canAddSpecialPapers = isAdmin || isSpecialPapersManager || isSpecialPapersEmployee;
-    const canEditFinance = isAdmin || isFinanceAdmin || isFinanceSubAdmin;
-    const canAddFinance = isAdmin || isFinanceAdmin || isFinanceSubAdmin || isFinanceEmployee;
-    const isFinanceRole = isFinanceAdmin || isFinanceSubAdmin || isFinanceEmployee;
+    const canEditFinance = isAdmin || isFinanceAdmin || isFinanceSubAdmin || isSpecialPapersManager;
+    const canAddFinance = isAdmin || isFinanceAdmin || isFinanceSubAdmin || isFinanceEmployee || isSpecialPapersManager;
+    const isFinanceRole = isFinanceAdmin || isFinanceSubAdmin || isFinanceEmployee || isSpecialPapersManager;
     const canEditAssets = isAdmin || isSpecialPapersManager || isOperationManager;
     const canAddAssets = isAdmin || isSpecialPapersManager || isSpecialPapersEmployee || isOperationManager || isOperationEmployee;
     const canDeleteFinance = isAdmin || isFinanceAdmin;
+    const canDeleteSpecialPapers = isAdmin || isSpecialPapersManager;
     const canDelete = isAdmin;
 
     return {
@@ -59,10 +60,11 @@ const useAuth = () => {
       canAddSpecialPapers,
       canEditFinance,
       canAddFinance,
-      canDeleteFinance,
       isFinanceRole,
       canEditAssets,
       canAddAssets,
+      canDeleteFinance,
+      canDeleteSpecialPapers,
       canDelete
     };
   }
@@ -90,6 +92,8 @@ const useAuth = () => {
     isFinanceRole: false,
     canEditAssets: false,
     canAddAssets: false,
+    canDeleteFinance: false,
+    canDeleteSpecialPapers: false,
     canDelete: false
   };
 };

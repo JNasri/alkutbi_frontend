@@ -199,38 +199,7 @@ const AddCollectionOrderForm = () => {
     }
   }, [dateAD]);
 
-  // Auto-generate collectingId when collection orders data is available
-  useEffect(() => {
-    if (isCollectionOrdersSuccess && collectionOrdersData) {
-      const now = new Date();
-      const year = now.getFullYear().toString().slice(-2);
-      const month = String(now.getMonth() + 1).padStart(2, "0");
-      const prefix = `CO-${year}-${month}-`;
-      
-      // Get all orders from current month and extract their numbers
-      const currentMonthNumbers = collectionOrdersData.ids
-        .map(id => collectionOrdersData.entities[id])
-        .filter(order => {
-          if (!order || !order.collectingId) return false;
-          // Check if collectingId matches current month pattern
-          return order.collectingId.startsWith(prefix);
-        })
-        .map(order => {
-          // Extract the number part (e.g., "001" from "CO-26-01-001")
-          const parts = order.collectingId.split('-');
-          return parseInt(parts[3] || '0', 10);
-        })
-        .filter(num => !isNaN(num));
-      
-      // Find the highest number and add 1
-      const maxNumber = currentMonthNumbers.length > 0 
-        ? Math.max(...currentMonthNumbers) 
-        : 0;
-      
-      const nextNumber = String(maxNumber + 1).padStart(3, "0");
-      setCollectingId(`${prefix}${nextNumber}`);
-    }
-  }, [isCollectionOrdersSuccess, collectionOrdersData]);
+
 
   // Create options from existing data
   const voucherNumberOptions = useMemo(() => {
@@ -296,8 +265,8 @@ const AddCollectionOrderForm = () => {
   const onSaveCollectionOrderClicked = async (e) => {
     e.preventDefault();
 
-    // Validation - only dates, dayName, and collectingId are required
-    if (!dayName || !dateHijri || !dateAD || !collectingId) {
+    // Validation - only dates, and dayName are required
+    if (!dayName || !dateHijri || !dateAD) {
       toast.error(t("required_fields_missing"));
       return;
     }
@@ -435,19 +404,7 @@ const AddCollectionOrderForm = () => {
                 />
               </div>
 
-              {/* Collecting ID */}
-              <div className="col-span-6 sm:col-span-3">
-                <label className="text-sm font-medium text-gray-900 dark:text-white block mb-2">
-                  {t("collecting_id")}
-                </label>
-                <input
-                  type="text"
-                  value={collectingId}
-                  onChange={(e) => setCollectingId(e.target.value)}
-                  className="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg block w-full p-2.5 dark:bg-gray-800 dark:text-white"
-                  required
-                />
-              </div>
+              {/* Collecting ID auto-generated */}
 
               {/* Collect Method */}
               <div className="col-span-6 sm:col-span-3">

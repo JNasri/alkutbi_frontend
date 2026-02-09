@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import toast from "react-hot-toast";
 import { useGetAssetsQuery, useDeleteAssetMutation } from "./assetsApiSlice";
 import DataTableWrapper from "../../components/DataTableWrapper";
 import LoadingSpinner from "../../components/LoadingSpinner";
 import { Link } from "react-router-dom";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Plus, Pencil, Trash2, RefreshCw } from "lucide-react";
 import useAuth from "../../hooks/useAuth";
 import DeleteConfirmModal from "../../components/DeleteConfirmModal";
 
@@ -16,6 +16,8 @@ const AssetsList = () => {
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
+  const [isInitialSync, setIsInitialSync] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const {
     data: assetsData,
@@ -23,13 +25,23 @@ const AssetsList = () => {
     isSuccess,
     isError,
     error,
+    refetch,
+    isFetching,
   } = useGetAssetsQuery("assetsList", {
     pollingInterval: 60000,
     refetchOnFocus: true,
     refetchOnMountOrArgChange: true,
   });
 
-  if (isLoading) return <LoadingSpinner />;
+  useEffect(() => {
+    const syncData = async () => {
+      await refetch();
+      setIsInitialSync(false);
+    };
+    syncData();
+  }, [refetch]);
+
+  if (isInitialSync || (isLoading && !assetsData)) return <LoadingSpinner />;
 
   if (isError)
     return (
@@ -91,19 +103,37 @@ const AssetsList = () => {
           <h1 className="text-4xl font-bold text-gray-800 dark:text-white">
             🗂️ {t("assets")}
           </h1>
-          {canAddAssets && (
-            <div className="relative group ms-auto">
-              <Link
-                to="/dashboard/assets/add"
-                className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 border border-gray-500 hover:text-dark-900 hover:bg-gray-100 hover:text-gray-700 dark:border-white dark:bg-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white cursor-pointer"
+          <div className="flex items-center gap-2 ms-auto">
+            <div className="relative group">
+              <button
+                onClick={async () => {
+                  setIsRefreshing(true);
+                  await refetch();
+                  setIsRefreshing(false);
+                }}
+                className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 border border-gray-500 hover:text-dark-900 hover:bg-gray-100 hover:text-gray-700 dark:border-white dark:bg-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white cursor-pointer transition-all active:scale-95"
               >
-                <Plus size={20} />
-              </Link>
+                <RefreshCw size={20} className={`${isFetching ? "animate-spin" : ""}`} />
+              </button>
               <div className="absolute end-full top-1/2 me-2 -translate-y-1/2 whitespace-nowrap px-3 py-1.5 text-sm text-gray-800 bg-gray-300 dark:bg-gray-200 dark:text-gray-800 rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-10 shadow-md font-medium">
-                {t("add_asset")}
+                {t("refresh")}
               </div>
             </div>
-          )}
+
+            {canAddAssets && (
+              <div className="relative group">
+                <Link
+                  to="/dashboard/assets/add"
+                  className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 border border-gray-500 hover:text-dark-900 hover:bg-gray-100 hover:text-gray-700 dark:border-white dark:bg-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white cursor-pointer"
+                >
+                  <Plus size={20} />
+                </Link>
+                <div className="absolute end-full top-1/2 me-2 -translate-y-1/2 whitespace-nowrap px-3 py-1.5 text-sm text-gray-800 bg-gray-300 dark:bg-gray-200 dark:text-gray-800 rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-10 shadow-md font-medium">
+                  {t("add_asset")}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         <DataTableWrapper
@@ -124,6 +154,7 @@ const AssetsList = () => {
             }
           }}
         />
+        {isRefreshing && <LoadingSpinner />}
       </>
     );
   }
