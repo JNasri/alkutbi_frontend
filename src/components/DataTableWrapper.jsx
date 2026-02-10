@@ -93,7 +93,7 @@ const DataTableWrapper = ({ data, columns, title, freezeLastColumn = true, sumFi
 
   // Header template with search and export buttons
   const header = (
-    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-6">
+    <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
       <h2 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">
         {title}
       </h2>

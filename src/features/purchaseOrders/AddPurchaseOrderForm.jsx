@@ -164,7 +164,9 @@ const AddPurchaseOrderForm = () => {
   const [totalAmountText, setTotalAmountText] = useState("");
   const [deductedFrom, setDeductedFrom] = useState("");
   const [addedTo, setAddedTo] = useState("");
-  const [file, setFile] = useState(null);
+  const [notes, setNotes] = useState("");
+  const [receiptFile, setReceiptFile] = useState(null);
+  const [orderPrintFile, setOrderPrintFile] = useState(null);
 
   // Status options with colors
   const statusOptions = [
@@ -186,15 +188,19 @@ const AddPurchaseOrderForm = () => {
     { value: "receivables", label: t("receivables") },
     { value: "custody", label: t("custody") },
     { value: "advance", label: t("advance") },
+    { value: "payments", label: t("payments") },
   ];
 
-  // Dropzone configuration
-  const onDrop = (acceptedFiles) => {
-    setFile(acceptedFiles[0]);
-  };
+  // Dropzone configuration for Receipt
+  const { getRootProps: getReceiptRootProps, getInputProps: getReceiptInputProps } = useDropzone({
+    onDrop: (acceptedFiles) => setReceiptFile(acceptedFiles[0]),
+    multiple: false,
+    maxFiles: 1,
+  });
 
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop,
+  // Dropzone configuration for Order Print
+  const { getRootProps: getOrderPrintRootProps, getInputProps: getOrderPrintInputProps } = useDropzone({
+    onDrop: (acceptedFiles) => setOrderPrintFile(acceptedFiles[0]),
     multiple: false,
     maxFiles: 1,
   });
@@ -347,6 +353,9 @@ const AddPurchaseOrderForm = () => {
       setTotalAmountText("");
       setDeductedFrom("");
       setAddedTo("");
+      setNotes("");
+      setReceiptFile(null);
+      setOrderPrintFile(null);
       toast.success(t("purchase_order_added_successfully"));
       navigate("/dashboard/purchaseorders");
     }
@@ -384,7 +393,9 @@ const AddPurchaseOrderForm = () => {
       totalAmountText: totalAmountText || "",
       deductedFrom: deductedFrom || "",
       addedTo: addedTo || "",
-      file,
+      notes: notes || "",
+      receipt: receiptFile,
+      orderPrint: orderPrintFile,
     };
 
     try {
@@ -737,26 +748,39 @@ const AddPurchaseOrderForm = () => {
                 />
               </div>
 
-              {/* Document Upload - Optional */}
+              {/* Notes */}
               <div className="col-span-6">
                 <label className="text-sm font-medium text-gray-900 dark:text-white block mb-2">
-                  {t("Voucher.file")} ({t("optional")})
+                  {t("notes")}
+                </label>
+                <textarea
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  rows={3}
+                  className="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg block w-full p-2.5 dark:bg-gray-800 dark:text-white"
+                />
+              </div>
+
+              {/* Receipt Upload */}
+              <div className="col-span-6 sm:col-span-3">
+                <label className="text-sm font-medium text-gray-900 dark:text-white block mb-2">
+                  {t("receipt")} ({t("optional")})
                 </label>
                 
                 <div
-                  {...getRootProps()}
+                  {...getReceiptRootProps()}
                   className={`flex cursor-pointer appearance-none justify-center rounded-lg border border-dashed border-gray-300 dark:border-gray-500 bg-gray-50 dark:bg-gray-800 p-6 text-sm transition hover:border-gray-400 dark:hover:border-gray-400 focus:outline-none`}
                 >
-                  <input {...getInputProps()} />
-                  {file ? (
+                  <input {...getReceiptInputProps()} />
+                  {receiptFile ? (
                     <div className="text-center">
                       <p className="text-gray-700 dark:text-gray-300 font-medium">File Selected:</p>
-                      <p className="text-blue-600 dark:text-blue-400">{file.name}</p>
+                      <p className="text-blue-600 dark:text-blue-400 truncate max-w-xs">{receiptFile.name}</p>
                       <button
                         type="button"
                         onClick={(e) => {
                           e.stopPropagation();
-                          setFile(null);
+                          setReceiptFile(null);
                         }}
                         className="mt-2 text-sm text-red-600 dark:text-red-400 font-bold hover:underline"
                       >
@@ -767,7 +791,44 @@ const AddPurchaseOrderForm = () => {
                     <div className="flex flex-col items-center gap-2">
                       <Paperclip className="h-8 w-8 text-gray-400" />
                       <p className="text-gray-600 dark:text-gray-400 text-center">
-                        {i18n.language === "ar" ? "اضغط هنا لاختيار ملف" : "Click or drag file to upload"}
+                        {t("receipt")}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Order Print Upload */}
+              <div className="col-span-6 sm:col-span-3">
+                <label className="text-sm font-medium text-gray-900 dark:text-white block mb-2">
+                  {t("order_print")} ({t("optional")})
+                </label>
+                
+                <div
+                  {...getOrderPrintRootProps()}
+                  className={`flex cursor-pointer appearance-none justify-center rounded-lg border border-dashed border-gray-300 dark:border-gray-500 bg-gray-50 dark:bg-gray-800 p-6 text-sm transition hover:border-gray-400 dark:hover:border-gray-400 focus:outline-none`}
+                >
+                  <input {...getOrderPrintInputProps()} />
+                  {orderPrintFile ? (
+                    <div className="text-center">
+                      <p className="text-gray-700 dark:text-gray-300 font-medium">File Selected:</p>
+                      <p className="text-blue-600 dark:text-blue-400 truncate max-w-xs">{orderPrintFile.name}</p>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setOrderPrintFile(null);
+                        }}
+                        className="mt-2 text-sm text-red-600 dark:text-red-400 font-bold hover:underline"
+                      >
+                        {t("Delete")} 🗑️
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center gap-2">
+                      <Paperclip className="h-8 w-8 text-gray-400" />
+                      <p className="text-gray-600 dark:text-gray-400 text-center">
+                        {t("order_print")}
                       </p>
                     </div>
                   )}

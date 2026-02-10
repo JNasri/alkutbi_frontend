@@ -103,7 +103,7 @@ const CollectionOrdersList = () => {
 
     const columns = [
       { field: "print", header: t("print"), autoWidth: true },
-      { field: "attachment", header: t("Voucher.file"), autoWidth: true },
+      { field: "attachments", header: t("attachments"), autoWidth: true },
       { field: "collectingId", header: t("collecting_id"), nowrap: true },
       { field: "issuer", header: t("issuer_collection"), nowrap: true },
       { field: "collectedFrom", header: t("collected_from") },
@@ -123,6 +123,7 @@ const CollectionOrdersList = () => {
       { field: "totalAmountText", header: t("total_amount_text") },
       { field: "deductedFrom", header: t("deducted_from") },
       { field: "addedTo", header: t("added_to") },
+      { field: "notes", header: t("notes") },
       { field: "createdAt", header: t("createdAt"), nowrap: true },
       { field: "updatedAt", header: t("updatedAt"), nowrap: true },
       { field: "actions", header: t("actions"), autoWidth: true },
@@ -172,13 +173,30 @@ const CollectionOrdersList = () => {
     const transformedData = sortedList.map((item) => ({
       ...item,
       print: <CollectionOrderPrint collectionOrder={item} />,
-      attachment: item.fileUrl ? (
-        <a href={item.fileUrl} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:text-blue-700 flex justify-center">
-          <Paperclip size={20} />
-        </a>
-      ) : (
-        <span className="text-gray-300 flex justify-center">—</span>
+      attachments: (
+        <div className="flex items-center justify-center gap-2">
+          {item.receiptUrl ? (
+            <a href={item.receiptUrl} target="_blank" rel="noopener noreferrer" title={t("receipt")} className="text-blue-500 hover:text-blue-700">
+              <Paperclip size={20} />
+            </a>
+          ) : item.fileUrl ? (
+            <a href={item.fileUrl} target="_blank" rel="noopener noreferrer" title={t("attachment")} className="text-blue-500 hover:text-blue-700">
+              <Paperclip size={20} />
+            </a>
+          ) : null}
+          {item.orderPrintUrl ? (
+            <a href={item.orderPrintUrl} target="_blank" rel="noopener noreferrer" title={t("order_print")} className="text-green-500 hover:text-green-700">
+              <Paperclip size={20} />
+            </a>
+          ) : null}
+          {!item.receiptUrl && !item.orderPrintUrl && !item.fileUrl && <span className="text-gray-300">—</span>}
+        </div>
       ),
+      notes: item.notes ? (
+        <div className="max-w-[150px] truncate" title={item.notes}>
+          {item.notes}
+        </div>
+      ) : "—",
       collectingId: item.collectingId || "—",
       issuer: item.issuer?.ar_name || item.issuer?.username || "—",
       collectedFrom: collectedFromTranslations[item.collectedFrom] || item.collectedFrom || "—",
