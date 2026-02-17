@@ -101,13 +101,53 @@ const CollectionOrdersList = () => {
       additional: t("additional"),
     };
 
+    const truncateWords = (text, maxWords) => {
+      if (!text) return "—";
+      const words = text.split(/\s+/);
+      if (words.length <= maxWords) return text;
+      return words.slice(0, maxWords).join(" ") + " ...";
+    };
+
     const columns = [
-      { field: "print", header: t("print"), autoWidth: true },
-      { field: "attachments", header: t("attachments"), autoWidth: true },
+      { 
+        field: "print", 
+        header: t("print"), 
+        autoWidth: true,
+        body: (item) => <CollectionOrderPrint collectionOrder={item} />
+      },
+      { 
+        field: "attachments", 
+        header: t("attachments"), 
+        autoWidth: true,
+        body: (item) => (
+          <div className="flex items-center justify-center gap-2">
+            {item.receiptUrl ? (
+              <a href={item.receiptUrl} target="_blank" rel="noopener noreferrer" title={t("receipt")} className="text-blue-500 hover:text-blue-700">
+                <Paperclip size={20} />
+              </a>
+            ) : item.fileUrl ? (
+              <a href={item.fileUrl} target="_blank" rel="noopener noreferrer" title={t("attachment")} className="text-blue-500 hover:text-blue-700">
+                <Paperclip size={20} />
+              </a>
+            ) : null}
+            {item.orderPrintUrl ? (
+              <a href={item.orderPrintUrl} target="_blank" rel="noopener noreferrer" title={t("order_print")} className="text-green-500 hover:text-green-700">
+                <Paperclip size={20} />
+              </a>
+            ) : null}
+            {!item.receiptUrl && !item.orderPrintUrl && !item.fileUrl && <span className="text-gray-300">—</span>}
+          </div>
+        )
+      },
       { field: "collectingId", header: t("collecting_id"), nowrap: true },
       { field: "issuer", header: t("issuer_collection"), nowrap: true },
       { field: "collectedFrom", header: t("collected_from") },
-      { field: "status", header: t("status"), nowrap: true },
+      { 
+        field: "status", 
+        header: t("status"), 
+        nowrap: true,
+        body: (item) => getStatusBadge(item.statusKey)
+      },
       { field: "dayName", header: t("day_name"), nowrap: true },
       { field: "dateHijri", header: t("date_hijri"), nowrap: true },
       { field: "dateAD", header: t("date_ad"), nowrap: true },
@@ -123,7 +163,15 @@ const CollectionOrdersList = () => {
       { field: "totalAmountText", header: t("total_amount_text") },
       { field: "deductedFrom", header: t("deducted_from") },
       { field: "addedTo", header: t("added_to") },
-      { field: "notes", header: t("notes") },
+      { 
+        field: "notes", 
+        header: t("notes"),
+        body: (rowData) => (
+          <div title={rowData.notes}>
+            {truncateWords(rowData.notes, 20)}
+          </div>
+        )
+      },
       { field: "createdAt", header: t("createdAt"), nowrap: true },
       { field: "updatedAt", header: t("updatedAt"), nowrap: true },
       { field: "actions", header: t("actions"), autoWidth: true },
@@ -172,43 +220,18 @@ const CollectionOrdersList = () => {
 
     const transformedData = sortedList.map((item) => ({
       ...item,
-      print: <CollectionOrderPrint collectionOrder={item} />,
-      attachments: (
-        <div className="flex items-center justify-center gap-2">
-          {item.receiptUrl ? (
-            <a href={item.receiptUrl} target="_blank" rel="noopener noreferrer" title={t("receipt")} className="text-blue-500 hover:text-blue-700">
-              <Paperclip size={20} />
-            </a>
-          ) : item.fileUrl ? (
-            <a href={item.fileUrl} target="_blank" rel="noopener noreferrer" title={t("attachment")} className="text-blue-500 hover:text-blue-700">
-              <Paperclip size={20} />
-            </a>
-          ) : null}
-          {item.orderPrintUrl ? (
-            <a href={item.orderPrintUrl} target="_blank" rel="noopener noreferrer" title={t("order_print")} className="text-green-500 hover:text-green-700">
-              <Paperclip size={20} />
-            </a>
-          ) : null}
-          {!item.receiptUrl && !item.orderPrintUrl && !item.fileUrl && <span className="text-gray-300">—</span>}
-        </div>
-      ),
-      notes: item.notes ? (
-        <div className="max-w-[150px] truncate" title={item.notes}>
-          {item.notes}
-        </div>
-      ) : "—",
-      collectingId: item.collectingId || "—",
+      // Searchable fields (strings)
       issuer: item.issuer?.ar_name || item.issuer?.username || "—",
       collectedFrom: collectedFromTranslations[item.collectedFrom] || item.collectedFrom || "—",
-      status: getStatusBadge(item.status),
-      dayName: convertDayNameToArabic(item.dayName), // Always show in Arabic
+      status: (Object.values({
+        new: t("status_new"),
+        audited: t("status_audited"),
+        authorized: t("status_authorized"),
+        finalized: t("status_finalized"),
+      })[Object.keys({new:1,audited:1,authorized:1,finalized:1}).indexOf(item.status)] || item.status || "—"),
+      statusKey: item.status, // Used for Badge rendering logic
+      dayName: convertDayNameToArabic(item.dayName),
       collectMethod: collectMethodTranslations[item.collectMethod] || item.collectMethod || "—",
-      voucherNumber: item.voucherNumber || "—",
-      receivingBankName: item.receivingBankName || "—",
-      totalAmount: item.totalAmount || 0,
-      totalAmountText: item.totalAmountText || "—",
-      deductedFrom: item.deductedFrom || "—",
-      addedTo: item.addedTo || "—",
       createdAt: new Date(item.createdAt).toLocaleDateString(),
       updatedAt: new Date(item.updatedAt).toLocaleDateString(),
       actions: (

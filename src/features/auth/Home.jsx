@@ -57,6 +57,14 @@ const Home = () => {
   const totalPurchaseAmount = isPOSuccess && purchaseOrders?.ids 
     ? purchaseOrders.ids.reduce((sum, id) => sum + (purchaseOrders.entities[id].totalAmount || 0), 0)
     : 0;
+
+  // Total Purchase Amount but without the purchase orders that are made by visa
+  const totalPurchaseAmountWithoutVisa = isPOSuccess && purchaseOrders?.ids 
+    ? purchaseOrders.ids.reduce((sum, id) => {
+        const order = purchaseOrders.entities[id];
+        return order.paymentMethod !== 'visa' ? sum + (order.totalAmount || 0) : sum;
+      }, 0)
+    : 0;
   
   const totalCollectionAmount = isCOSuccess && collectionOrders?.ids
     ? collectionOrders.ids.reduce((sum, id) => sum + (collectionOrders.entities[id].totalAmount || 0), 0)
@@ -102,7 +110,7 @@ const Home = () => {
 
   const poCards = [
     { label: t("total_purchase_orders"), value: isPOSuccess ? purchaseOrders.ids.length : 0, icon: ShoppingCart },
-    { label: t("purchase_orders"), value: `${totalPurchaseAmount.toLocaleString()} ${t("sar")}`, color: "text-red-600 dark:text-red-400", icon: TrendingDown },
+    { label: t("purchase_orders_without_visa"), value: `${totalPurchaseAmountWithoutVisa.toLocaleString()} ${t("sar")}`, color: "text-red-600 dark:text-red-400", icon: TrendingDown },
     { label: t("purchase_cash_total"), value: `${purchaseCashTotal.toLocaleString()} ${t("sar")}`, color: "text-red-500", icon: Wallet },
     { label: t("purchase_non_cash_total"), value: `${purchaseNonCashTotal.toLocaleString()} ${t("sar")}`, color: "text-red-500", icon: CreditCard },
   ];

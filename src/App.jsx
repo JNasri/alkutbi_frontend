@@ -14,6 +14,8 @@ import RequireAuth from "./features/auth/RequireAuth";
 // Lazy load all other components
 const Welcome = lazy(() => import("./pages/Welcome"));
 const Login = lazy(() => import("./pages/Login"));
+const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const Home = lazy(() => import("./features/auth/Home"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const Sticker = lazy(() => import("./components/Sticker"));
@@ -75,6 +77,8 @@ function App() {
             {/* welcome page + login */}
             <Route index element={<Welcome />} />
             <Route path="login" element={<Login />} />
+            <Route path="forgot-password" element={<ForgotPassword />} />
+            <Route path="reset-password/:resetToken" element={<ResetPassword />} />
 
             {/* PRIVATE */}
             <Route element={<PresistLogin />}>

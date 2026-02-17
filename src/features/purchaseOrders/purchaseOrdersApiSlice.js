@@ -51,6 +51,15 @@ export const purchaseOrdersApiSlice = apiSlice.injectEndpoints({
       invalidatesTags: [{ type: "PurchaseOrder", id: "LIST" }],
     }),
 
+    addBulkPurchaseOrders: builder.mutation({
+      query: (orders) => ({
+        url: "/purchaseorders/bulk",
+        method: "POST",
+        body: { orders },
+      }),
+      invalidatesTags: [{ type: "PurchaseOrder", id: "LIST" }],
+    }),
+
     updatePurchaseOrder: builder.mutation({
       query: (updatedData) => {
         const formData = new FormData();
@@ -91,6 +100,7 @@ export const {
   useGetPurchaseOrdersQuery,
   useGetPurchaseOrderQuery,
   useAddNewPurchaseOrderMutation,
+  useAddBulkPurchaseOrdersMutation,
   useUpdatePurchaseOrderMutation,
   useDeletePurchaseOrderMutation,
 } = purchaseOrdersApiSlice;

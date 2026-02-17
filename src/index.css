@@ -239,9 +239,53 @@ html[dir="ltr"] .custom-table .p-frozen-column {
   color: white !important;
 }
 
-/* Dark mode for sort icons */
-.dark .p-sortable-column-icon {
+/* Enhanced Sort Icons */
+.custom-table .p-sortable-column .p-sortable-column-icon {
+  margin-inline-start: 0.5rem !important;
+  width: 1.4rem !important;
+  height: 1.4rem !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: 9999px !important;
+  background: var(--surface-b) !important;
+  font-size: 0.6rem !important;
+  transition: all 0.2s ease-in-out !important;
+  color: var(--text-color) !important;
+  opacity: 0.5;
+  border: 1px solid var(--surface-c) !important;
+}
+
+.custom-table .p-sortable-column:hover .p-sortable-column-icon {
+  background: var(--surface-a) !important;
+  opacity: 1;
+  color: var(--primary-color) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.custom-table .p-sortable-column.p-highlight .p-sortable-column-icon {
+  background: var(--primary-color) !important;
+  color: white !important;
+  opacity: 1;
+  border-color: var(--primary-color) !important;
+}
+
+.dark .custom-table .p-sortable-column .p-sortable-column-icon {
+  background: #111827 !important;
+  border-color: #374151 !important;
   color: #9ca3af !important;
+}
+
+.dark .custom-table .p-sortable-column:hover .p-sortable-column-icon {
+  background: #374151 !important;
+  color: #60a5fa !important;
+}
+
+.dark .custom-table .p-sortable-column.p-highlight .p-sortable-column-icon {
+  background: #3b82f6 !important;
+  color: white !important;
+  border-color: #3b82f6 !important;
 }
 
 /* Dark mode for filter menu */
