@@ -84,6 +84,15 @@ export const collectionOrdersApiSlice = apiSlice.injectEndpoints({
         { type: "CollectionOrder", id: "LIST" },
       ],
     }),
+
+    addBulkCollectionOrders: builder.mutation({
+      query: (orders) => ({
+        url: "/collectionorders/bulk",
+        method: "POST",
+        body: { orders },
+      }),
+      invalidatesTags: [{ type: "CollectionOrder", id: "LIST" }],
+    }),
   }),
 });
 
@@ -93,6 +102,7 @@ export const {
   useAddNewCollectionOrderMutation,
   useUpdateCollectionOrderMutation,
   useDeleteCollectionOrderMutation,
+  useAddBulkCollectionOrdersMutation,
 } = collectionOrdersApiSlice;
 
 // Select the query result object

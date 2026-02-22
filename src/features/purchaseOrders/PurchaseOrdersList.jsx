@@ -150,7 +150,7 @@ const PurchaseOrdersList = () => {
         )
       },
       { field: "purchasingId", header: t("purchasing_id"), nowrap: true },
-      { field: "issuer", header: t("issuer_purchase"), nowrap: true },
+      { field: "issuerName", header: t("issuer_purchase"), nowrap: true },
       { field: "transactionType", header: t("transaction_type") },
       { 
         field: "status", 
@@ -244,7 +244,7 @@ const PurchaseOrdersList = () => {
     const transformedData = sortedList.map((item) => ({
       ...item,
       // Store the translated/formatted strings for searching
-      issuer: item.issuer?.ar_name || item.issuer?.username || "—",
+      issuerName: item.issuer?.ar_name || item.issuer?.username || "—",
       transactionType: transactionTypeTranslations[item.transactionType] || item.transactionType || "—",
       // Searchable fields (strings)
       status: (Object.values({

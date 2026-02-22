@@ -1,20 +1,24 @@
 import { useTranslation } from "react-i18next";
 import { useState, useEffect } from "react";
 import toast from "react-hot-toast";
-import { useGetCollectionOrdersQuery, useDeleteCollectionOrderMutation } from "./collectionOrdersApiSlice";
+import { useGetCollectionOrdersQuery, useDeleteCollectionOrderMutation, useAddBulkCollectionOrdersMutation } from "./collectionOrdersApiSlice";
 import { useGetPurchaseOrdersQuery } from "../purchaseOrders/purchaseOrdersApiSlice";
 import DataTableWrapper from "../../components/DataTableWrapper";
 import LoadingSpinner from "../../components/LoadingSpinner";
 import { Link } from "react-router-dom";
-import { Plus, Paperclip, Pencil, Trash2, RefreshCw } from "lucide-react";
+import { Plus, Paperclip, Pencil, Trash2, RefreshCw, Upload } from "lucide-react";
 import CollectionOrderPrint from "./CollectionOrderPrint";
 import useAuth from "../../hooks/useAuth";
 import DeleteConfirmModal from "../../components/DeleteConfirmModal";
+import * as XLSX from "xlsx";
+import moment from "moment-hijri";
+import { numberToArabicText } from "../../utils/numberToArabicText";
 
 const CollectionOrdersList = () => {
   const { t } = useTranslation();
   const { canEditFinance, canAddFinance, canDeleteFinance, isFinanceEmployee, isFinanceSubAdmin, username } = useAuth();
   const [deleteCollectionOrder] = useDeleteCollectionOrderMutation();
+  const [addBulkCollectionOrders, { isLoading: isImporting }] = useAddBulkCollectionOrdersMutation();
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
@@ -140,7 +144,7 @@ const CollectionOrdersList = () => {
         )
       },
       { field: "collectingId", header: t("collecting_id"), nowrap: true },
-      { field: "issuer", header: t("issuer_collection"), nowrap: true },
+      { field: "issuerName", header: t("issuer_collection"), nowrap: true },
       { field: "collectedFrom", header: t("collected_from") },
       { 
         field: "status", 
@@ -221,7 +225,7 @@ const CollectionOrdersList = () => {
     const transformedData = sortedList.map((item) => ({
       ...item,
       // Searchable fields (strings)
-      issuer: item.issuer?.ar_name || item.issuer?.username || "—",
+      issuerName: item.issuer?.ar_name || item.issuer?.username || "—",
       collectedFrom: collectedFromTranslations[item.collectedFrom] || item.collectedFrom || "—",
       status: (Object.values({
         new: t("status_new"),
@@ -275,6 +279,86 @@ const CollectionOrdersList = () => {
 
     const balance = totalCollectionAmount - totalPurchaseAmount;
 
+    const handleExcelImport = async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = async (evt) => {
+        try {
+          const bstr = evt.target.result;
+          const wb = XLSX.read(bstr, { type: "binary" });
+          const wsname = wb.SheetNames[0];
+          const ws = wb.Sheets[wsname];
+          const rawData = XLSX.utils.sheet_to_json(ws);
+
+          if (rawData.length === 0) {
+            toast.error(t("excel_empty"));
+            return;
+          }
+
+          const formattedOrders = rawData.map((row) => {
+            const adDate = row["AD Date"] || row["AD date"] || row["Date"] || row["التاريخ"];
+            const totalAmount = row["Total Amount"] || row["total amount"] || row["Amount"] || row["المبلغ"];
+            const notes = row["Notes"] || row["notes"] || row["الملاحظات"];
+
+            if (!adDate || !totalAmount) return null;
+
+            // Convert Excel date to JS Date
+            let jsDate;
+            if (typeof adDate === "number") {
+              // Excel stores dates as serial numbers
+              jsDate = new Date((adDate - 25569) * 86400 * 1000);
+            } else {
+              jsDate = new Date(adDate);
+            }
+
+            if (isNaN(jsDate.getTime())) return null;
+
+            const year = jsDate.getFullYear();
+            const month = String(jsDate.getMonth() + 1).padStart(2, "0");
+            const day = String(jsDate.getDate()).padStart(2, "0");
+            const dateAD = `${year}-${month}-${day}`;
+
+            const days = [
+              "الأحد", "الإثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"
+            ];
+            const dayName = days[jsDate.getDay()];
+            const dateHijri = moment(jsDate).format("iYYYY/iM/iD");
+
+            const amountValue = typeof totalAmount === "string" 
+              ? parseFloat(totalAmount.replace(/,/g, "")) 
+              : parseFloat(totalAmount);
+
+            return {
+              dateAD,
+              dayName,
+              dateHijri,
+              totalAmount: amountValue,
+              totalAmountText: numberToArabicText(amountValue),
+              collectedFrom: "umrah",
+              collectMethod: "cash",
+              notes: notes || "",
+              status: "new"
+            };
+          }).filter(Boolean);
+
+          if (formattedOrders.length === 0) {
+            toast.error(t("no_valid_data_found"));
+            return;
+          }
+
+          await addBulkCollectionOrders(formattedOrders).unwrap();
+          toast.success(t("bulk_import_success", { count: formattedOrders.length }));
+          e.target.value = ""; // Reset file input
+        } catch (error) {
+          console.error("Excel import error:", error);
+          toast.error(t("bulk_import_error"));
+        }
+      };
+      reader.readAsBinaryString(file);
+    };
+
     return (
       <>
         <div className="flex items-center mb-2 p-1">
@@ -299,7 +383,29 @@ const CollectionOrdersList = () => {
             </div>
 
             {canAddFinance && (
-              <div className="relative group">
+              <>
+                {(username === "Saleh" || username === "nasri") && (
+                  <div className="relative group">
+                    <button
+                      onClick={() => document.getElementById("excel-bulk-import").click()}
+                      disabled={isImporting}
+                      className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 border border-gray-500 hover:text-dark-900 hover:bg-gray-100 hover:text-gray-700 dark:border-white dark:bg-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white cursor-pointer transition-all active:scale-95 disabled:opacity-50"
+                    >
+                      {isImporting ? <RefreshCw className="animate-spin" size={20} /> : <Upload size={20} />}
+                    </button>
+                    <input
+                      type="file"
+                      id="excel-bulk-import"
+                      className="hidden"
+                      accept=".xlsx, .xls"
+                      onChange={handleExcelImport}
+                    />
+                    <div className="absolute end-full top-1/2 me-2 -translate-y-1/2 whitespace-nowrap px-3 py-1.5 text-sm text-gray-800 bg-gray-300 dark:bg-gray-200 dark:text-gray-800 rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-10 shadow-md font-medium">
+                      {t("import_from_excel")}
+                    </div>
+                  </div>
+                )}
+                <div className="relative group">
                 <Link
                   to="/dashboard/collectionorders/add"
                   className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 border border-gray-500 hover:text-dark-900 hover:bg-gray-100 hover:text-gray-700 dark:border-white dark:bg-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white cursor-pointer"
@@ -310,6 +416,7 @@ const CollectionOrdersList = () => {
                   {t("add_collection_order")}
                 </div>
               </div>
+            </>
             )}
           </div>
         </div>
