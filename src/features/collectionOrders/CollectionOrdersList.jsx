@@ -80,8 +80,8 @@ const CollectionOrdersList = () => {
       (id) => collectionOrders.entities[id]
     );
 
-    const sortedList = [...collectionOrderList].sort(
-      (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+    const sortedList = [...collectionOrderList].sort((a, b) => 
+      (b.collectingId || "").localeCompare(a.collectingId || "")
     );
 
     if (!collectionOrderList || collectionOrderList.length === 0) {

@@ -84,8 +84,8 @@ const PurchaseOrdersList = () => {
       (id) => purchaseOrders.entities[id]
     );
 
-    const sortedList = [...purchaseOrderList].sort(
-      (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+    const sortedList = [...purchaseOrderList].sort((a, b) => 
+      (b.purchasingId || "").localeCompare(a.purchasingId || "")
     );
 
     if (!purchaseOrderList || purchaseOrderList.length === 0) {
