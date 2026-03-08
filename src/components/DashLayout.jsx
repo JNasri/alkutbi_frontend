@@ -4,7 +4,7 @@ import DashSidebar from "./Dashboard/DashSidebar";
 import useInactivityLogout from "../hooks/useInactivityLogout";
 
 const DashLayout = () => {
-  useInactivityLogout(600000); // 10 minutes
+  useInactivityLogout(1800000); // 30 minutes
   return (
     <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-200">
       {/* Header */}

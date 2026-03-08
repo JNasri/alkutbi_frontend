@@ -17,6 +17,7 @@ import moment from "moment-hijri";
 import ModernDatePicker from "../../components/ModernDatePicker";
 import { useDropzone } from "react-dropzone";
 import { Paperclip, ExternalLink } from "lucide-react";
+import DuplicateConfirmModal from "../../components/DuplicateConfirmModal";
 
 const AddPurchaseOrderForm = () => {
   const { t } = useTranslation();
@@ -27,6 +28,9 @@ const AddPurchaseOrderForm = () => {
 
   const { data: purchaseOrdersData, isSuccess: isPurchaseOrdersSuccess } =
     useGetPurchaseOrdersQuery("purchaseOrdersList");
+
+  const [showDuplicateModal, setShowDuplicateModal] = useState(false);
+  const [duplicateRecords, setDuplicateRecords] = useState([]);
 
   const customSelectStyles = {
     control: (provided, state) => ({
@@ -401,6 +405,50 @@ const AddPurchaseOrderForm = () => {
     try {
       await addNewPurchaseOrder(purchaseOrderData).unwrap();
     } catch (err) {
+      if (err?.status === 409 && err?.data?.duplicates) {
+        setDuplicateRecords(err.data.duplicates);
+        setShowDuplicateModal(true);
+      } else {
+        toast.error(
+          t("error_adding_purchase_order") +
+            (err?.data?.message ? `: ${err.data.message}` : "")
+        );
+      }
+    }
+  };
+
+  const handleAddAnyway = async () => {
+    setShowDuplicateModal(false);
+    const purchaseOrderData = {
+      status,
+      dayName,
+      dateHijri,
+      dateAD,
+      purchasingId,
+      paymentMethod: paymentMethod || "",
+      bankName: bankName || "",
+      ibanNumber: ibanNumber || "",
+      bankNameFrom: bankNameFrom || "",
+      ibanNumberFrom: ibanNumberFrom || "",
+      bankNameTo: bankNameTo || "",
+      ibanNumberTo: ibanNumberTo || "",
+      transactionType: transactionType || "",
+      managementName: managementName || "",
+      supplier: supplier || "",
+      item: item || "",
+      totalAmount: totalAmount ? parseFloat(totalAmount) : 0,
+      totalAmountText: totalAmountText || "",
+      deductedFrom: deductedFrom || "",
+      addedTo: addedTo || "",
+      notes: notes || "",
+      receipt: receiptFile,
+      orderPrint: orderPrintFile,
+      ignoreDuplicate: true,
+    };
+
+    try {
+      await addNewPurchaseOrder(purchaseOrderData).unwrap();
+    } catch (err) {
       toast.error(
         t("error_adding_purchase_order") +
           (err?.data?.message ? `: ${err.data.message}` : "")
@@ -408,7 +456,7 @@ const AddPurchaseOrderForm = () => {
     }
   };
 
-  const errClass = isError ? "errmsg" : "offscreen";
+  const errClass = isError && !showDuplicateModal ? "errmsg" : "offscreen";
 
   const showBankFields = paymentMethod === "bank_transfer" || paymentMethod === "sadad";
 
@@ -416,6 +464,13 @@ const AddPurchaseOrderForm = () => {
     <>
       {isLoading && <LoadingSpinner />}
       <p className={errClass}>{error?.data?.message}</p>
+      <DuplicateConfirmModal
+        isOpen={showDuplicateModal}
+        onCancel={() => setShowDuplicateModal(false)}
+        onConfirm={handleAddAnyway}
+        duplicates={duplicateRecords}
+        type="purchase"
+      />
       <div className="flex items-center gap-4 mb-4 p-1">
         {/* Back Button */}
         <div className="relative group">

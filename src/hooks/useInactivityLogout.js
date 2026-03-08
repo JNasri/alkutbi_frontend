@@ -4,7 +4,7 @@ import { logout } from '../features/auth/authSlice';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 
-const useInactivityLogout = (timeoutMs = 600000) => { // 10 minutes default
+const useInactivityLogout = (timeoutMs = 1800000) => { // 30 minutes default
     const dispatch = useDispatch();
     const navigate = useNavigate();
     const timerRef = useRef(null);

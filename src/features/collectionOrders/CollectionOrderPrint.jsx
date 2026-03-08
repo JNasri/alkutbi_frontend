@@ -322,6 +322,12 @@ const CollectionOrderPrint = ({ collectionOrder }) => {
         <td>${order.voucherNumber}</td>
       </tr>
       ` : ""}
+      ${order.item ? `
+      <tr>
+        <td>الصنف</td>
+        <td>${order.item}</td>
+      </tr>
+      ` : ""}
       ${order.receivingBankName ? `
       <tr>
         <td>اسم البنك المستقبل</td>
@@ -350,6 +356,12 @@ const CollectionOrderPrint = ({ collectionOrder }) => {
       <tr>
         <td>يضاف إلى</td>
         <td>${order.addedTo}</td>
+      </tr>
+      ` : ""}
+      ${order.notes ? `
+      <tr>
+        <td>ملاحظات</td>
+        <td>${order.notes}</td>
       </tr>
       ` : ""}
     </table>

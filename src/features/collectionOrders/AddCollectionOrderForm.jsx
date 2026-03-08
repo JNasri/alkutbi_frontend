@@ -18,6 +18,7 @@ import ModernDatePicker from "../../components/ModernDatePicker";
 import { useCallback } from "react";
 import { useDropzone } from "react-dropzone";
 import { Paperclip, ExternalLink } from "lucide-react";
+import DuplicateConfirmModal from "../../components/DuplicateConfirmModal";
 
 const AddCollectionOrderForm = () => {
   const { t } = useTranslation();
@@ -28,6 +29,9 @@ const AddCollectionOrderForm = () => {
 
   const { data: collectionOrdersData, isSuccess: isCollectionOrdersSuccess } =
     useGetCollectionOrdersQuery("collectionOrdersList");
+
+  const [showDuplicateModal, setShowDuplicateModal] = useState(false);
+  const [duplicateRecords, setDuplicateRecords] = useState([]);
 
   const customSelectStyles = {
     control: (provided, state) => ({
@@ -132,6 +136,7 @@ const AddCollectionOrderForm = () => {
   const [collectingId, setCollectingId] = useState("");
   const [collectMethod, setCollectMethod] = useState("cash");
   const [voucherNumber, setVoucherNumber] = useState("");
+  const [item, setItem] = useState("");
   const [receivingBankName, setReceivingBankName] = useState("");
   const [collectedFrom, setCollectedFrom] = useState("");
   const [customCollectedFrom, setCustomCollectedFrom] = useState("");
@@ -217,6 +222,16 @@ const AddCollectionOrderForm = () => {
     return [...uniqueVoucherNumbers].map((val) => ({ label: val, value: val }));
   }, [collectionOrdersData, isCollectionOrdersSuccess]);
 
+  const itemOptions = useMemo(() => {
+    if (!isCollectionOrdersSuccess) return [];
+    const uniqueItems = new Set(
+      collectionOrdersData.ids
+        .map((id) => collectionOrdersData.entities[id]?.item)
+        .filter(Boolean)
+    );
+    return [...uniqueItems].map((val) => ({ label: val, value: val }));
+  }, [collectionOrdersData, isCollectionOrdersSuccess]);
+
   const receivingBankNameOptions = useMemo(() => {
     if (!isCollectionOrdersSuccess) return [];
     const uniqueBankNames = new Set(
@@ -255,6 +270,7 @@ const AddCollectionOrderForm = () => {
       setCollectingId("");
       setCollectMethod("cash");
       setVoucherNumber("");
+      setItem("");
       setReceivingBankName("");
       setCollectedFrom("");
       setCustomCollectedFrom("");
@@ -287,6 +303,7 @@ const AddCollectionOrderForm = () => {
       collectingId,
       collectMethod: collectMethod || "",
       voucherNumber: voucherNumber || "",
+      item: item || "",
       receivingBankName: receivingBankName || "",
       collectedFrom: collectedFrom === "others" ? customCollectedFrom : collectedFrom || "",
       totalAmount: totalAmount ? parseFloat(totalAmount) : 0,
@@ -301,6 +318,44 @@ const AddCollectionOrderForm = () => {
     try {
       await addNewCollectionOrder(collectionOrderData).unwrap();
     } catch (err) {
+      if (err?.status === 409 && err?.data?.duplicates) {
+        setDuplicateRecords(err.data.duplicates);
+        setShowDuplicateModal(true);
+      } else {
+        toast.error(
+          t("error_adding_collection_order") +
+            (err?.data?.message ? `: ${err.data.message}` : "")
+        );
+      }
+    }
+  };
+
+  const handleAddAnyway = async () => {
+    setShowDuplicateModal(false);
+    const collectionOrderData = {
+      status: "new",
+      dayName,
+      dateHijri,
+      dateAD,
+      collectingId,
+      collectMethod: collectMethod || "",
+      voucherNumber: voucherNumber || "",
+      item: item || "",
+      receivingBankName: receivingBankName || "",
+      collectedFrom: collectedFrom === "others" ? customCollectedFrom : collectedFrom || "",
+      totalAmount: totalAmount ? parseFloat(totalAmount) : 0,
+      totalAmountText: totalAmountText || "",
+      deductedFrom: deductedFrom || "",
+      addedTo: addedTo || "",
+      notes: notes || "",
+      receipt: receiptFile,
+      orderPrint: orderPrintFile,
+      ignoreDuplicate: true,
+    };
+
+    try {
+      await addNewCollectionOrder(collectionOrderData).unwrap();
+    } catch (err) {
       toast.error(
         t("error_adding_collection_order") +
           (err?.data?.message ? `: ${err.data.message}` : "")
@@ -308,7 +363,7 @@ const AddCollectionOrderForm = () => {
     }
   };
 
-  const errClass = isError ? "errmsg" : "offscreen";
+  const errClass = isError && !showDuplicateModal ? "errmsg" : "offscreen";
 
   const showVoucherNumber = collectMethod === "cash";
   const showReceivingBankName = collectMethod === "bank_transfer";
@@ -317,6 +372,13 @@ const AddCollectionOrderForm = () => {
     <>
       {isLoading && <LoadingSpinner />}
       <p className={errClass}>{error?.data?.message}</p>
+      <DuplicateConfirmModal
+        isOpen={showDuplicateModal}
+        onCancel={() => setShowDuplicateModal(false)}
+        onConfirm={handleAddAnyway}
+        duplicates={duplicateRecords}
+        type="collection"
+      />
       <div className="flex items-center gap-4 mb-4 p-1">
         {/* Back Button */}
         <div className="relative group">
@@ -453,6 +515,28 @@ const AddCollectionOrderForm = () => {
                   />
                 </div>
               )}
+
+              {/* Item */}
+              <div className="col-span-6 sm:col-span-3">
+                <label className="text-sm font-medium text-gray-900 dark:text-white block mb-2">
+                  {t("item")}
+                </label>
+                <CreatableSelect
+                  key={theme}
+                  placeholder={t("choose")}
+                  formatCreateLabel={(inputValue) =>
+                    `${t("click2create")} "${inputValue}"`
+                  }
+                  isClearable
+                  options={itemOptions}
+                  onChange={(newValue) => setItem(newValue?.value || "")}
+                  onCreateOption={(inputValue) => {
+                    setItem(inputValue);
+                  }}
+                  value={item ? { value: item, label: item } : null}
+                  styles={customSelectStyles}
+                />
+              </div>
 
               {/* Receiving Bank Name (conditional - for bank transfer) */}
               {showReceivingBankName && (

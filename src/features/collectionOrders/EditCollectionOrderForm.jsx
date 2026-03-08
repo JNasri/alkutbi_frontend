@@ -56,6 +56,7 @@ const EditCollectionOrderForm = () => {
   const [collectingId, setCollectingId] = useState("");
   const [collectMethod, setCollectMethod] = useState("cash");
   const [voucherNumber, setVoucherNumber] = useState("");
+  const [item, setItem] = useState("");
   const [receivingBankName, setReceivingBankName] = useState("");
   const [collectedFrom, setCollectedFrom] = useState("");
   const [customCollectedFrom, setCustomCollectedFrom] = useState("");
@@ -98,6 +99,8 @@ const EditCollectionOrderForm = () => {
     { value: "hotels", label: t("hotels") },
     { value: "others", label: t("others") },
   ];
+
+  
 
   // Dropzone configuration for Receipt
   const { getRootProps: getReceiptRootProps, getInputProps: getReceiptInputProps } = useDropzone({
@@ -144,6 +147,7 @@ const EditCollectionOrderForm = () => {
       setCollectingId(collectionOrder.collectingId || "");
       setCollectMethod(collectionOrder.collectMethod || "cash");
       setVoucherNumber(collectionOrder.voucherNumber || "");
+      setItem(collectionOrder.item || "");
       setReceivingBankName(collectionOrder.receivingBankName || "");
       
       const cfValue = collectionOrder.collectedFrom || "";
@@ -334,6 +338,16 @@ const EditCollectionOrderForm = () => {
     return [...uniqueBankNames].map((val) => ({ label: val, value: val }));
   }, [collectionOrdersData, isCollectionOrdersSuccess]);
 
+  const itemOptions = useMemo(() => {
+    if (!isCollectionOrdersSuccess) return [];
+    const uniqueItems = new Set(
+      collectionOrdersData.ids
+        .map((id) => collectionOrdersData.entities[id]?.item)
+        .filter(Boolean)
+    );
+    return [...uniqueItems].map((val) => ({ label: val, value: val }));
+  }, [collectionOrdersData, isCollectionOrdersSuccess]);
+
   const deductedFromOptions = useMemo(() => {
     if (!isCollectionOrdersSuccess) return [];
     const uniqueDeductedFrom = new Set(
@@ -377,6 +391,7 @@ const EditCollectionOrderForm = () => {
       collectingId,
       collectMethod: collectMethod || "",
       voucherNumber: voucherNumber || "",
+      item: item || "",
       receivingBankName: receivingBankName || "",
       collectedFrom: collectedFrom === "others" ? customCollectedFrom : collectedFrom || "",
       totalAmount: totalAmount ? parseFloat(totalAmount) : 0,
@@ -576,6 +591,28 @@ const EditCollectionOrderForm = () => {
                 />
               </div>
             )}
+
+            {/* Item */}
+            <div className="col-span-6 sm:col-span-3">
+              <label className="text-sm font-medium text-gray-900 dark:text-white block mb-2">
+                {t("item")}
+              </label>
+              <CreatableSelect
+                key={theme}
+                placeholder={t("choose")}
+                formatCreateLabel={(inputValue) =>
+                  `${t("click2create")} "${inputValue}"`
+                }
+                isClearable
+                options={itemOptions}
+                onChange={(newValue) => setItem(newValue?.value || "")}
+                onCreateOption={(inputValue) => {
+                  setItem(inputValue);
+                }}
+                value={item ? { value: item, label: item } : null}
+                styles={customSelectStyles}
+              />
+            </div>
 
             {/* Receiving Bank Name (conditional - for bank transfer) */}
             {showReceivingBankName && (

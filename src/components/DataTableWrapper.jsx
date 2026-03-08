@@ -196,7 +196,14 @@ const DataTableWrapper = ({ data, columns, title, freezeLastColumn = true, sumFi
               <Column
                 key={i}
                 field={col.field}
-                header={col.header}
+                header={
+                  <div 
+                    onClick={(e) => e.stopPropagation()} 
+                    className="flex-1 flex items-center justify-center cursor-default select-none"
+                  >
+                    {col.header}
+                  </div>
+                }
                 sortable={col.sortable !== false}
                 body={(rowData) => {
                   if (col.body) return col.body(rowData);

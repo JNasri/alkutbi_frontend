@@ -157,6 +157,7 @@ const CollectionOrdersList = () => {
       { field: "dateAD", header: t("date_ad"), nowrap: true },
       { field: "collectMethod", header: t("collect_method") },
       { field: "voucherNumber", header: t("voucher_number") },
+      { field: "item", header: t("item") },
       { field: "receivingBankName", header: t("receiving_bank_name") },
       { 
         field: "totalAmount", 
@@ -300,6 +301,8 @@ const CollectionOrdersList = () => {
           const formattedOrders = rawData.map((row) => {
             const adDate = row["AD Date"] || row["AD date"] || row["Date"] || row["التاريخ"];
             const totalAmount = row["Total Amount"] || row["total amount"] || row["Amount"] || row["المبلغ"];
+            const voucherNumber = row["Voucher Number"] || row["voucher number"] || row["VoucherNumber"] || row["رقم السند"];
+            const item = row["Item"] || row["item"] || row["الصنف"];
             const notes = row["Notes"] || row["notes"] || row["الملاحظات"];
 
             if (!adDate || !totalAmount) return null;
@@ -338,6 +341,8 @@ const CollectionOrdersList = () => {
               totalAmountText: numberToArabicText(amountValue),
               collectedFrom: "umrah",
               collectMethod: "cash",
+              voucherNumber: voucherNumber || "",
+              item: item || "",
               notes: notes || "",
               status: "new"
             };

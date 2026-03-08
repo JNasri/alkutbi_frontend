@@ -371,6 +371,12 @@ const PurchaseOrderPrint = ({ purchaseOrder }) => {
         <td>${order.addedTo}</td>
       </tr>
       ` : ""}
+      ${order.notes ? `
+      <tr>
+        <td>ملاحظات</td>
+        <td>${order.notes}</td>
+      </tr>
+      ` : ""}
     </table>
     
     <!-- Signatures Section -->

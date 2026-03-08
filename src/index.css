@@ -254,9 +254,22 @@ html[dir="ltr"] .custom-table .p-frozen-column {
   color: var(--text-color) !important;
   opacity: 0.5;
   border: 1px solid var(--surface-c) !important;
+  cursor: pointer !important;
+  pointer-events: auto !important;
 }
 
-.custom-table .p-sortable-column:hover .p-sortable-column-icon {
+.custom-table .p-sortable-column {
+  cursor: default !important;
+  pointer-events: none !important;
+}
+
+.custom-table .p-column-resizer,
+.custom-table .p-column-filter-menu-button,
+.custom-table .p-sortable-column-icon {
+  pointer-events: auto !important;
+}
+
+.custom-table .p-sortable-column-icon:hover {
   background: var(--surface-a) !important;
   opacity: 1;
   color: var(--primary-color) !important;
@@ -277,7 +290,7 @@ html[dir="ltr"] .custom-table .p-frozen-column {
   color: #9ca3af !important;
 }
 
-.dark .custom-table .p-sortable-column:hover .p-sortable-column-icon {
+.dark .custom-table .p-sortable-column-icon:hover {
   background: #374151 !important;
   color: #60a5fa !important;
 }
