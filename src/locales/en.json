@@ -329,5 +329,7 @@
   "duplicate_check_title": "Duplicate Alert",
   "duplicate_check_message": "The information you tried to enter looks like something that was added today, do you still want to add anyway?",
   "duplicate_records": "Duplicate Records",
-  "add_anyway": "Add Anyway"
+  "add_anyway": "Add Anyway",
+  "Apply": "Apply",
+  "Filter": "Filter"
 }

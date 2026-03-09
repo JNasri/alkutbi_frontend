@@ -1,24 +1,45 @@
 import { useTranslation } from "react-i18next";
-import { useState, useRef, useEffect, useMemo } from "react";
+import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
 import { InputText } from "primereact/inputtext";
 import { Button } from "primereact/button";
 import { Dropdown } from "primereact/dropdown";
+import { OverlayPanel } from "primereact/overlaypanel";
+import { Calendar } from "primereact/calendar";
 import LoadingSpinner from "./LoadingSpinner";
 import i18n from "../../i18n";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
-import { FileText, FileSpreadsheet, Download, Pencil, Search, FilterX } from "lucide-react";
+import { FileSpreadsheet, Search, FilterX, ListFilter } from "lucide-react";
 
 // PrimeReact imports
 import "primereact/resources/themes/lara-light-indigo/theme.css";
 import "primereact/resources/primereact.min.css";
 import "primeicons/primeicons.css";
 
-const DataTableWrapper = ({ data, columns, title, freezeLastColumn = true, sumField = null }) => {
+// Fields that should never have a column filter
+const NO_FILTER_FIELDS = new Set([
+  "attachment", "attachments", "actions", "edit", "print",
+]);
+
+// ── Shared button styles matching the site design ─────────────────────────
+const BTN_APPLY =
+  "flex-1 py-2 text-sm font-semibold bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white rounded-lg transition-colors shadow-sm cursor-pointer";
+const BTN_CLEAR =
+  "flex-1 py-2 text-sm font-semibold bg-orange-50 dark:bg-orange-900/20 hover:bg-orange-100 dark:hover:bg-orange-900/40 text-orange-600 dark:text-orange-400 border border-orange-200 dark:border-orange-800 rounded-lg transition-colors cursor-pointer";
+
+const DataTableWrapper = ({
+  data,
+  columns,
+  title,
+  freezeLastColumn = true,
+  sumField = null,
+}) => {
   const { i18n, t } = useTranslation();
   const isRTL = i18n.dir() === "rtl";
+
+  // ── Core table state ──────────────────────────────────────────────────────
   const [globalFilter, setGlobalFilter] = useState("");
   const [selectedRows, setSelectedRows] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -27,58 +48,330 @@ const DataTableWrapper = ({ data, columns, title, freezeLastColumn = true, sumFi
   const [visibleData, setVisibleData] = useState(data);
   const dt = useRef(null);
 
-  // Update visible data when source data changes
-  useEffect(() => {
-    setVisibleData(data);
-  }, [data]);
+  // ── Column filter state ───────────────────────────────────────────────────
+  const [columnFilters, setColumnFilters] = useState({});
+  const [searchDraft, setSearchDraft] = useState({});
+  const [dateDraft, setDateDraft] = useState({});
+  const filterPanelRefs = useRef({});
 
-  // Calculate sum of sumField in the current visible (filtered) data
+  useEffect(() => { setVisibleData(data); }, [data]);
+
+  // Close all filter panels when language changes
+  useEffect(() => {
+    Object.values(filterPanelRefs.current).forEach((panel) => panel?.hide());
+  }, [i18n.language]);
+
+  // ── Filter type detection ─────────────────────────────────────────────────
+  const filterTypeMap = useMemo(() => {
+    const map = {};
+    columns.forEach((col) => {
+      if (NO_FILTER_FIELDS.has(col.field)) { map[col.field] = null; return; }
+      if (col.filterType === null)          { map[col.field] = null; return; }
+      if (col.filterType)                   { map[col.field] = col.filterType; return; }
+
+      const fl = col.field.toLowerCase();
+      if (fl.includes("date") || fl.endsWith("_at") || fl.endsWith("time")) {
+        map[col.field] = "date"; return;
+      }
+
+      const primitiveVals = data
+        .map((row) => row[col.field])
+        .filter((v) => v != null && v !== "" && typeof v !== "object" && typeof v !== "function");
+      const unique = new Set(primitiveVals.map(String));
+      if (unique.size === 0) { map[col.field] = null; return; }
+      map[col.field] = unique.size < 10 ? "select" : "search";
+    });
+    return map;
+  }, [columns, data]);
+
+  // ── Select options ────────────────────────────────────────────────────────
+  const selectOptionsMap = useMemo(() => {
+    const map = {};
+    columns.forEach((col) => {
+      if (filterTypeMap[col.field] !== "select") return;
+      if (col.filterOptions) { map[col.field] = col.filterOptions; return; }
+      const vals = data
+        .map((row) => row[col.field])
+        .filter((v) => v != null && v !== "" && typeof v !== "object" && typeof v !== "function");
+      map[col.field] = [...new Set(vals.map(String))].sort().map((v) => ({ label: v, value: v }));
+    });
+    return map;
+  }, [columns, data, filterTypeMap]);
+
+  // ── Active filter helpers ─────────────────────────────────────────────────
+  const hasActiveFilter = useCallback(
+    (field) => {
+      const f = columnFilters[field];
+      if (!f) return false;
+      if (f.type === "search") return !!f.value;
+      if (f.type === "select") return f.value?.length > 0;
+      if (f.type === "date")   return !!(f.from || f.to);
+      return false;
+    },
+    [columnFilters]
+  );
+
+  const activeFilterCount = useMemo(
+    () => columns.filter((c) => hasActiveFilter(c.field)).length,
+    [columns, hasActiveFilter]
+  );
+
+  // ── Column filtering ──────────────────────────────────────────────────────
+  const columnFilteredData = useMemo(() => {
+    const activeEntries = Object.entries(columnFilters).filter(([, f]) => f);
+    if (activeEntries.length === 0) return data;
+
+    return data.filter((row) =>
+      activeEntries.every(([field, filter]) => {
+        if (filter.type === "search" && filter.value) {
+          return String(row[field] ?? "").toLowerCase().includes(filter.value.toLowerCase());
+        }
+        if (filter.type === "select" && filter.value?.length > 0) {
+          return filter.value.includes(String(row[field] ?? ""));
+        }
+        if (filter.type === "date" && (filter.from || filter.to)) {
+          const d = new Date(row[field]);
+          if (isNaN(d.getTime())) return false;
+          if (filter.from) {
+            const from = new Date(filter.from); from.setHours(0, 0, 0, 0);
+            if (d < from) return false;
+          }
+          if (filter.to) {
+            const to = new Date(filter.to); to.setHours(23, 59, 59, 999);
+            if (d > to) return false;
+          }
+          return true;
+        }
+        return true;
+      })
+    );
+  }, [data, columnFilters]);
+
+  // ── Sum ───────────────────────────────────────────────────────────────────
   const totalSum = useMemo(() => {
     if (!sumField) return 0;
     return visibleData.reduce((acc, row) => {
-      // Get raw value, handle potential string/formatting
       const val = row[sumField];
-      const numericVal = typeof val === 'number' ? val : parseFloat(String(val).replace(/[^0-9.-]+/g, ""));
-      return acc + (numericVal || 0);
+      const n = typeof val === "number" ? val : parseFloat(String(val).replace(/[^0-9.-]+/g, ""));
+      return acc + (n || 0);
     }, 0);
   }, [visibleData, sumField]);
 
-  // Row options for pagination
   const rowsPerPageOptions = [5, 10, 25, 50];
 
-  // Excel export
+  // ── Single-panel toggle: close all others before opening ─────────────────
+  const toggleFilterPanel = useCallback((e, field) => {
+    e.stopPropagation();
+    Object.entries(filterPanelRefs.current).forEach(([f, panel]) => {
+      if (f !== field) panel?.hide();
+    });
+    filterPanelRefs.current[field]?.toggle(e);
+  }, []);
+
+  // ── Filter actions ────────────────────────────────────────────────────────
+  const applySearchFilter = (field) => {
+    const val = searchDraft[field] ?? "";
+    setColumnFilters((prev) => ({ ...prev, [field]: { type: "search", value: val } }));
+    filterPanelRefs.current[field]?.hide();
+  };
+
+  const applySelectFilter = (field) => {
+    // Values are already applied live; just close the panel
+    filterPanelRefs.current[field]?.hide();
+  };
+
+  const applyDateFilter = (field) => {
+    const draft = dateDraft[field] || {};
+    setColumnFilters((prev) => ({
+      ...prev,
+      [field]: { type: "date", from: draft.from || null, to: draft.to || null },
+    }));
+    filterPanelRefs.current[field]?.hide();
+  };
+
+  const clearColumnFilter = (field) => {
+    setColumnFilters((prev) => { const n = { ...prev }; delete n[field]; return n; });
+    setSearchDraft((prev)  => { const n = { ...prev }; delete n[field]; return n; });
+    setDateDraft((prev)    => { const n = { ...prev }; delete n[field]; return n; });
+    filterPanelRefs.current[field]?.hide();
+  };
+
+  const clearAllFilters = () => {
+    setGlobalFilter("");
+    setSelectedRows([]);
+    setColumnFilters({});
+    setSearchDraft({});
+    setDateDraft({});
+  };
+
+  // ── Filter popup content ──────────────────────────────────────────────────
+  const renderFilterContent = (col, filterType) => {
+    const { field } = col;
+
+    // Shared wrapper — sets dir so RTL works correctly inside portals
+    const Wrap = ({ children, width = "w-64" }) => (
+      <div
+        className={`${width} bg-white dark:bg-gray-800`}
+        dir={isRTL ? "rtl" : "ltr"}
+      >
+        <div className="px-4 pt-4 pb-1">
+          <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-3">
+            {col.header}
+          </p>
+          {children}
+        </div>
+      </div>
+    );
+
+    /* ── SEARCH ── */
+    if (filterType === "search") {
+      return (
+        <Wrap>
+          <input
+            type="text"
+            value={searchDraft[field] ?? ""}
+            onChange={(e) => setSearchDraft((prev) => ({ ...prev, [field]: e.target.value }))}
+            onKeyDown={(e) => { if (e.key === "Enter") applySearchFilter(field); }}
+            placeholder={t("search...")}
+            autoFocus
+            className="w-full px-3 py-2 mb-3 text-sm bg-gray-50 dark:bg-gray-900/60 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+          />
+          <div className="flex gap-2 pb-4">
+            <button onClick={() => clearColumnFilter(field)} className={BTN_CLEAR}>{t("Clear")}</button>
+            <button onClick={() => applySearchFilter(field)} className={BTN_APPLY}>{t("Apply")}</button>
+          </div>
+        </Wrap>
+      );
+    }
+
+    /* ── MULTI-SELECT CHECKBOXES ── */
+    if (filterType === "select") {
+      const options = selectOptionsMap[field] || [];
+      const currentVal = columnFilters[field]?.value || [];
+      return (
+        <Wrap width="w-52">
+          <div className="flex flex-col gap-0.5 mb-3 max-h-52 overflow-y-auto -mx-1 px-1">
+            {options.map((opt) => (
+              <label
+                key={opt.value}
+                className="flex items-center gap-2.5 px-2 py-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/60 cursor-pointer transition-colors group"
+              >
+                <input
+                  type="checkbox"
+                  checked={currentVal.includes(opt.value)}
+                  onChange={(e) => {
+                    const newVal = e.target.checked
+                      ? [...currentVal, opt.value]
+                      : currentVal.filter((v) => v !== opt.value);
+                    setColumnFilters((prev) => ({ ...prev, [field]: { type: "select", value: newVal } }));
+                  }}
+                  className="w-4 h-4 rounded accent-blue-500 cursor-pointer flex-shrink-0"
+                />
+                <span className="text-sm text-gray-700 dark:text-gray-200 group-hover:text-gray-900 dark:group-hover:text-white transition-colors">
+                  {opt.label}
+                </span>
+              </label>
+            ))}
+          </div>
+          <div className="flex gap-2 pb-4">
+            <button onClick={() => clearColumnFilter(field)} className={BTN_CLEAR}>{t("Clear")}</button>
+            <button onClick={() => applySelectFilter(field)} className={BTN_APPLY}>{t("Apply")}</button>
+          </div>
+        </Wrap>
+      );
+    }
+
+    /* ── DATE RANGE ── */
+    if (filterType === "date") {
+      const draft = dateDraft[field] || {};
+      return (
+        <Wrap width="w-72">
+          <div className="mb-3">
+            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">
+              {t("from")}
+            </label>
+            {/* dir="ltr" keeps input-then-icon order correct in RTL layouts.
+                The calendar panel still inherits the document dir for Arabic month names. */}
+            <div dir="ltr">
+              <Calendar
+                value={draft.from || null}
+                onChange={(e) =>
+                  setDateDraft((prev) => ({ ...prev, [field]: { ...(prev[field] || {}), from: e.value } }))
+                }
+                dateFormat="yy-mm-dd"
+                showIcon
+                showButtonBar
+                className="w-full"
+                inputClassName="w-full text-sm"
+              />
+            </div>
+          </div>
+          <div className="mb-4">
+            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">
+              {t("to")}
+            </label>
+            <div dir="ltr">
+              <Calendar
+                value={draft.to || null}
+                onChange={(e) =>
+                  setDateDraft((prev) => ({ ...prev, [field]: { ...(prev[field] || {}), to: e.value } }))
+                }
+                dateFormat="yy-mm-dd"
+                showIcon
+                showButtonBar
+                minDate={draft.from || undefined}
+                className="w-full"
+                inputClassName="w-full text-sm"
+              />
+            </div>
+          </div>
+          <div className="flex gap-2 pb-4">
+            <button onClick={() => clearColumnFilter(field)} className={BTN_CLEAR}>{t("Clear")}</button>
+            <button onClick={() => applyDateFilter(field)}  className={BTN_APPLY}>{t("Apply")}</button>
+          </div>
+        </Wrap>
+      );
+    }
+
+    return null;
+  };
+
+  // ── Excel export ──────────────────────────────────────────────────────────
   const exportExcel = () => {
     setLoading(true);
     setTimeout(() => {
       try {
-        const worksheetData = data.map((row) => {
+        // Start from column-filtered data, then apply global filter manually
+        let exportData = columnFilteredData;
+        if (globalFilter) {
+          const lower = globalFilter.toLowerCase();
+          exportData = exportData.filter((row) =>
+            columns.some((col) => {
+              const val = row[col.field];
+              return val != null && String(val).toLowerCase().includes(lower);
+            })
+          );
+        }
+
+        const worksheetData = exportData.map((row) => {
           const obj = {};
           columns.forEach((col) => {
-            // Handle JSX elements by extracting text content
             const value = row[col.field];
-            if (typeof value === 'object' && value !== null && value.props) {
-              // It's a React element, try to extract text
-              obj[col.header] = value.props.children || value.props.title || '';
+            if (typeof value === "object" && value !== null && value.props) {
+              obj[col.header] = value.props.children || value.props.title || "";
             } else {
               obj[col.header] = value;
             }
           });
           return obj;
         });
-
         const worksheet = XLSX.utils.json_to_sheet(worksheetData);
-        const workbook = XLSX.utils.book_new();
+        const workbook  = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(workbook, worksheet, title || "Sheet1");
-
-        const excelBuffer = XLSX.write(workbook, {
-          bookType: "xlsx",
-          type: "array",
-        });
-
+        const excelBuffer = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
         const dataBlob = new Blob([excelBuffer], {
           type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8",
         });
-
         saveAs(dataBlob, `${title || "data"}.xlsx`);
       } finally {
         setLoading(false);
@@ -86,12 +379,9 @@ const DataTableWrapper = ({ data, columns, title, freezeLastColumn = true, sumFi
     }, 100);
   };
 
-  // CSV export
-  const exportCSV = () => {
-    dt.current.exportCSV();
-  };
+  const exportCSV = () => dt.current.exportCSV();
 
-  // Header template with search and export buttons
+  // ── Table header ──────────────────────────────────────────────────────────
   const header = (
     <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
       <h2 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">
@@ -110,11 +400,11 @@ const DataTableWrapper = ({ data, columns, title, freezeLastColumn = true, sumFi
           </div>
         )}
 
-        {/* Modern Search Field */}
+        {/* Global Search */}
         <div className="relative w-full lg:w-80 group">
           <Search
             size={18}
-            className={`absolute top-1/2 transform -translate-y-1/2 text-gray-400 group-focus-within:text-blue-500 transition-colors pointer-events-none ${
+            className={`absolute top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-blue-500 transition-colors pointer-events-none ${
               i18n.language === "ar" ? "left-4" : "right-4"
             }`}
           />
@@ -132,14 +422,16 @@ const DataTableWrapper = ({ data, columns, title, freezeLastColumn = true, sumFi
         {/* Action Buttons */}
         <div className="flex items-center gap-3 w-full sm:w-auto justify-center">
           <button
-            onClick={() => {
-              setGlobalFilter("");
-              setSelectedRows([]);
-            }}
+            onClick={clearAllFilters}
             className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400 border border-orange-200 dark:border-orange-800 transition-all hover:bg-orange-100 dark:hover:bg-orange-900/40 hover:shadow-md font-semibold text-sm cursor-pointer whitespace-nowrap group"
           >
             <FilterX size={18} className="group-hover:-rotate-6 transition-transform" />
             {t("Clear")}
+            {activeFilterCount > 0 && (
+              <span className="inline-flex items-center justify-center w-5 h-5 text-xs font-bold bg-orange-500 text-white rounded-full">
+                {activeFilterCount}
+              </span>
+            )}
           </button>
 
           <button
@@ -154,27 +446,40 @@ const DataTableWrapper = ({ data, columns, title, freezeLastColumn = true, sumFi
     </div>
   );
 
+  // ── Render ────────────────────────────────────────────────────────────────
   return (
     <>
       {loading && <LoadingSpinner />}
+
+      {/* OverlayPanels at root level — avoids z-index / table overflow issues */}
+      {columns.map((col) => {
+        const filterType = filterTypeMap[col.field];
+        if (!filterType) return null;
+        return (
+          <OverlayPanel
+            key={`fp-${col.field}`}
+            ref={(el) => { filterPanelRefs.current[col.field] = el; }}
+            dismissable
+            className="col-filter-panel"
+          >
+            {renderFilterContent(col, filterType)}
+          </OverlayPanel>
+        );
+      })}
+
       <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-lg transition-all duration-300">
         {header}
-
         <hr className="my-4 border-gray-300 dark:border-gray-700" />
 
-        {/* DataTable */}
         <div className="custom-datatable-wrapper rounded-lg overflow-hidden">
           <DataTable
             ref={dt}
-            value={data}
+            value={columnFilteredData}
             dataKey="id"
             paginator
             rows={rows}
             first={first}
-            onPage={(e) => {
-              setFirst(e.first);
-              setRows(e.rows);
-            }}
+            onPage={(e) => { setFirst(e.first); setRows(e.rows); }}
             rowsPerPageOptions={rowsPerPageOptions}
             paginatorTemplate="RowsPerPageDropdown FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink"
             globalFilter={globalFilter}
@@ -191,52 +496,64 @@ const DataTableWrapper = ({ data, columns, title, freezeLastColumn = true, sumFi
             scrollHeight="flex"
             className="custom-table p-datatable-sm"
           >
+            {columns.map((col, i) => {
+              const filterType = filterTypeMap[col.field];
+              const isActive   = hasActiveFilter(col.field);
 
-            {columns.map((col, i) => (
-              <Column
-                key={i}
-                field={col.field}
-                header={
-                  <div 
-                    onClick={(e) => e.stopPropagation()} 
-                    className="flex-1 flex items-center justify-center cursor-default select-none"
-                  >
-                    {col.header}
-                  </div>
-                }
-                sortable={col.sortable !== false}
-                body={(rowData) => {
-                  if (col.body) return col.body(rowData);
-                  const value = rowData[col.field];
-                  
-                  if (col.field === "edit" || col.field === "actions" || col.field === "print" || col.field === "attachment") {
-                    return (
-                      <div className="flex justify-center">
-                         {value}
+              return (
+                <Column
+                  key={i}
+                  field={col.field}
+                  header={
+                    <div className="flex items-center gap-1 w-full">
+                      {/* Column label */}
+                      <div
+                        onClick={(e) => e.stopPropagation()}
+                        className="flex-1 flex items-center justify-center cursor-default select-none"
+                      >
+                        {col.header}
                       </div>
-                    );
+
+                      {/* Filter icon — same size/style as sort icon via CSS */}
+                      {filterType && (
+                        <button
+                          onClick={(e) => toggleFilterPanel(e, col.field)}
+                          title={t("Filter")}
+                          className={`col-filter-btn${isActive ? " is-active" : ""}`}
+                        >
+                          <ListFilter size={13} strokeWidth={2} />
+                          {isActive && <span className="col-filter-dot" />}
+                        </button>
+                      )}
+                    </div>
                   }
-                  return value;
-                }}
-                style={{
-                  minWidth: col.field === "actions" ? "120px" : (col.autoWidth ? "auto" : (col.width || (i18n.language === "ar" ? "180px" : "150px"))),
-                  maxWidth: col.maxWidth || "500px",
-                  whiteSpace: col.nowrap ? "nowrap" : "normal",
-                  width: col.field === "actions" ? "120px" : (col.autoWidth ? "1%" : "auto"),
-                }}
-                alignHeader="center"
-                headerClassName="bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white text-sm font-semibold py-3 px-4"
-                bodyClassName="text-sm text-gray-800 dark:text-gray-100 text-center py-2 px-4 border-b border-gray-200 dark:border-gray-700"
-                frozen={freezeLastColumn && i === columns.length - 1}
-                alignFrozen={
-                  freezeLastColumn && i === columns.length - 1
-                    ? isRTL
-                      ? "left"
-                      : "right"
-                    : undefined
-                }
-              />
-            ))}
+                  sortable={col.sortable !== false}
+                  body={(rowData) => {
+                    if (col.body) return col.body(rowData);
+                    const value = rowData[col.field];
+                    if (["edit", "actions", "print", "attachment"].includes(col.field)) {
+                      return <div className="flex justify-center">{value}</div>;
+                    }
+                    return value;
+                  }}
+                  style={{
+                    minWidth: col.field === "actions" ? "120px" : col.autoWidth ? "auto" : col.width || (i18n.language === "ar" ? "180px" : "150px"),
+                    maxWidth: col.maxWidth || "500px",
+                    whiteSpace: col.nowrap ? "nowrap" : "normal",
+                    width: col.field === "actions" ? "120px" : col.autoWidth ? "1%" : "auto",
+                  }}
+                  alignHeader="center"
+                  headerClassName="bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white text-sm font-semibold py-3 px-4"
+                  bodyClassName="text-sm text-gray-800 dark:text-gray-100 text-center py-2 px-4 border-b border-gray-200 dark:border-gray-700"
+                  frozen={freezeLastColumn && i === columns.length - 1}
+                  alignFrozen={
+                    freezeLastColumn && i === columns.length - 1
+                      ? isRTL ? "left" : "right"
+                      : undefined
+                  }
+                />
+              );
+            })}
           </DataTable>
         </div>
       </div>

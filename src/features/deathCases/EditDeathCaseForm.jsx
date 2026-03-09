@@ -11,6 +11,7 @@ import i18n from "../../../i18n";
 import toast from "react-hot-toast";
 import { useDropzone } from "react-dropzone";
 import LoadingSpinner from "../../components/LoadingSpinner";
+import { dropzoneAccept } from "../../config/dropzoneConfig";
 
 const attachmentFields = [
   { key: "entryStamp", labelKey: "entryStamp" },
@@ -158,11 +159,7 @@ const EditDeathcaseForm = () => {
     acc[key] = useDropzone({
       onDrop: makeDrop(key),
       multiple: false,
-      accept: {
-        "application/pdf": [".pdf"],
-        "application/msword": [".doc", ".docx"],
-        "image/*": [".jpg", ".jpeg", ".png"],
-      },
+      accept: dropzoneAccept,
     });
     return acc;
   }, {});

@@ -239,23 +239,28 @@ html[dir="ltr"] .custom-table .p-frozen-column {
   color: white !important;
 }
 
-/* Enhanced Sort Icons */
+/* ── Sort Icons ───────────────────────────────────────────────────────────── */
 .custom-table .p-sortable-column .p-sortable-column-icon {
-  margin-inline-start: 0.5rem !important;
-  width: 1.4rem !important;
-  height: 1.4rem !important;
+  margin-inline-start: 0.25rem !important;
+  width: 1rem !important;
+  height: 1rem !important;
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
-  border-radius: 9999px !important;
-  background: var(--surface-b) !important;
-  font-size: 0.6rem !important;
-  transition: all 0.2s ease-in-out !important;
-  color: var(--text-color) !important;
-  opacity: 0.5;
-  border: 1px solid var(--surface-c) !important;
+  border-radius: 6px !important;
+  background: transparent !important;
+  border: none !important;
+  color: #1f2937 !important;
+  opacity: 0.45;
+  transition: opacity 0.15s ease, background 0.15s ease, color 0.15s ease !important;
   cursor: pointer !important;
   pointer-events: auto !important;
+}
+
+/* Target the SVG rendered by PrimeReact v9+ for proper icon sizing */
+.custom-table .p-sortable-column .p-sortable-column-icon svg {
+  width: 0.75rem !important;
+  height: 0.75rem !important;
 }
 
 .custom-table .p-sortable-column {
@@ -270,35 +275,31 @@ html[dir="ltr"] .custom-table .p-frozen-column {
 }
 
 .custom-table .p-sortable-column-icon:hover {
-  background: var(--surface-a) !important;
-  opacity: 1;
-  color: var(--primary-color) !important;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  background: #e0e7ff !important;
+  color: #4f46e5 !important;
+  opacity: 1 !important;
 }
 
 .custom-table .p-sortable-column.p-highlight .p-sortable-column-icon {
-  background: var(--primary-color) !important;
-  color: white !important;
-  opacity: 1;
-  border-color: var(--primary-color) !important;
+  background: #eff6ff !important;
+  color: #2563eb !important;
+  border: 1px solid #bfdbfe !important;
+  opacity: 1 !important;
 }
 
 .dark .custom-table .p-sortable-column .p-sortable-column-icon {
-  background: #111827 !important;
-  border-color: #374151 !important;
-  color: #9ca3af !important;
+  color: #ffffff !important;
 }
 
 .dark .custom-table .p-sortable-column-icon:hover {
-  background: #374151 !important;
-  color: #60a5fa !important;
+  background: #312e81 !important;
+  color: #a5b4fc !important;
 }
 
 .dark .custom-table .p-sortable-column.p-highlight .p-sortable-column-icon {
-  background: #3b82f6 !important;
-  color: white !important;
-  border-color: #3b82f6 !important;
+  background: #1e3a5f !important;
+  color: #60a5fa !important;
+  border-color: #1d4ed8 !important;
 }
 
 /* Dark mode for filter menu */
@@ -527,4 +528,192 @@ html[dir="rtl"] .p-paginator .p-paginator-next .p-paginator-icon {
   transition-property: background-color, border-color, color;
   transition-duration: 200ms;
   transition-timing-function: ease-in-out;
+}
+
+/* ── Column Filter Button ────────────────────────────────────────────────── */
+.custom-table .col-filter-btn {
+  position: relative;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 1.5rem !important;
+  height: 1.5rem !important;
+  border-radius: 6px !important;
+  background: transparent !important;
+  border: none !important;
+  color: #1f2937 !important;
+  opacity: 0.45;
+  transition: opacity 0.15s ease, background 0.15s ease, color 0.15s ease !important;
+  pointer-events: auto !important;
+  cursor: pointer !important;
+  flex-shrink: 0;
+}
+
+.custom-table .col-filter-btn:hover {
+  background: #e0e7ff !important;
+  color: #4f46e5 !important;
+  opacity: 1 !important;
+}
+
+.custom-table .col-filter-btn.is-active {
+  background: #eff6ff !important;
+  color: #2563eb !important;
+  border: 1px solid #bfdbfe !important;
+  opacity: 1 !important;
+}
+
+/* Active-state dot indicator */
+.col-filter-dot {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #2563eb;
+  border: 1.5px solid white;
+  pointer-events: none;
+}
+
+/* ── Dark mode ────────────────────────────────────────────────────────────── */
+.dark .custom-table .col-filter-btn {
+  color: #ffffff !important;
+}
+
+.dark .custom-table .col-filter-btn:hover {
+  background: #312e81 !important;
+  color: #a5b4fc !important;
+}
+
+.dark .custom-table .col-filter-btn.is-active {
+  background: #1e3a5f !important;
+  color: #60a5fa !important;
+  border-color: #1d4ed8 !important;
+}
+
+.dark .col-filter-dot {
+  background: #60a5fa;
+  border-color: #1f2937;
+}
+
+/* ── Column Filter Overlay Panel ────────────────────────────────────────── */
+.col-filter-panel.p-overlaypanel {
+  padding: 0 !important;
+  border-radius: 0.75rem !important;
+  overflow: hidden !important;
+  border: 1px solid #e5e7eb !important;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
+}
+
+.col-filter-panel.p-overlaypanel .p-overlaypanel-content {
+  padding: 0 !important;
+}
+
+/* Hide the arrow caret */
+.col-filter-panel.p-overlaypanel::before,
+.col-filter-panel.p-overlaypanel::after {
+  display: none !important;
+}
+
+.dark .col-filter-panel.p-overlaypanel {
+  border-color: #374151 !important;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5),
+    0 10px 10px -5px rgba(0, 0, 0, 0.3) !important;
+  background: #1f2937 !important;
+}
+
+/* ── PrimeReact Calendar (Datepicker) Dark Mode ─────────────────────────── */
+.dark .p-datepicker {
+  background: #1f2937 !important;
+  border-color: #374151 !important;
+  color: #f3f4f6 !important;
+}
+
+.dark .p-datepicker:not(.p-datepicker-inline) {
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5) !important;
+}
+
+.dark .p-datepicker .p-datepicker-header {
+  background: #374151 !important;
+  border-color: #4b5563 !important;
+  color: #f3f4f6 !important;
+}
+
+.dark .p-datepicker .p-datepicker-header .p-datepicker-title {
+  color: #f3f4f6 !important;
+}
+
+.dark .p-datepicker .p-datepicker-header .p-datepicker-prev,
+.dark .p-datepicker .p-datepicker-header .p-datepicker-next {
+  color: #d1d5db !important;
+}
+
+.dark .p-datepicker .p-datepicker-header .p-datepicker-prev:hover,
+.dark .p-datepicker .p-datepicker-header .p-datepicker-next:hover {
+  background: #4b5563 !important;
+  color: #fff !important;
+}
+
+.dark .p-datepicker table th {
+  color: #9ca3af !important;
+}
+
+.dark .p-datepicker table td > span {
+  color: #d1d5db !important;
+}
+
+.dark .p-datepicker table td > span:hover {
+  background: #374151 !important;
+  color: #fff !important;
+}
+
+.dark .p-datepicker table td > span.p-highlight {
+  background: #3b82f6 !important;
+  color: #fff !important;
+}
+
+.dark .p-datepicker table td.p-datepicker-today > span {
+  background: #1d4ed8 !important;
+  color: #fff !important;
+  font-weight: 700;
+}
+
+.dark .p-datepicker table td.p-datepicker-other-month > span {
+  color: #4b5563 !important;
+}
+
+.dark .p-datepicker .p-datepicker-buttonbar {
+  border-color: #4b5563 !important;
+}
+
+.dark .p-datepicker .p-datepicker-buttonbar .p-button {
+  color: #d1d5db !important;
+  background: transparent !important;
+  border-color: transparent !important;
+}
+
+.dark .p-datepicker .p-datepicker-buttonbar .p-button:hover {
+  background: #374151 !important;
+}
+
+/* Calendar trigger icon */
+.dark .p-calendar .p-button {
+  background: #374151 !important;
+  border-color: #4b5563 !important;
+  color: #d1d5db !important;
+}
+
+.dark .p-calendar .p-button:hover {
+  background: #4b5563 !important;
+}
+
+/* Fix Calendar input width inside filter panel */
+.col-filter-panel .p-calendar {
+  width: 100% !important;
+}
+
+.col-filter-panel .p-calendar .p-inputtext {
+  width: 100% !important;
+  font-size: 0.875rem !important;
 }

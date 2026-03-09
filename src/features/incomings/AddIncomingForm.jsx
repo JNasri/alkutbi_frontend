@@ -13,6 +13,9 @@ import { useDropzone } from "react-dropzone";
 import LoadingSpinner from "../../components/LoadingSpinner";
 import CreatableSelect from "react-select/creatable";
 import Select from "react-select";
+import useDarkMode from "../../hooks/useDarkMode";
+import customSelectStyles from "../../config/selectStyles";
+import { dropzoneAccept } from "../../config/dropzoneConfig";
 
 const AddIncomingForm = () => {
   const [fileSizeError, setFileSizeError] = useState(false);
@@ -31,11 +34,7 @@ const AddIncomingForm = () => {
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     multiple: false,
-    accept: {
-      "application/pdf": [".pdf"],
-      "application/msword": [".doc", ".docx"],
-      "image/*": [".jpg", ".jpeg", ".png"],
-    },
+    accept: dropzoneAccept,
   });
 
   // lang
@@ -47,69 +46,6 @@ const AddIncomingForm = () => {
 
   const { data: incomingsData, isSuccess: isIncomingSuccess } =
     useGetIncomingsQuery("incomingsList");
-
-  const customSelectStyles = {
-    control: (provided, state) => ({
-      ...provided,
-      backgroundColor: document.documentElement.classList.contains("dark")
-        ? "#1f2937" // bg-gray-800
-        : "#f9fafb", // bg-gray-50
-      borderColor: document.documentElement.classList.contains("dark")
-        ? "#ffffff" // border-white
-        : "#d1d5db", // border-gray-300
-      color: document.documentElement.classList.contains("dark")
-        ? "#ffffff"
-        : "#111827", // text-gray-900
-      borderRadius: "0.5rem", // rounded-lg
-      minHeight: "40px",
-      boxShadow: state.isFocused ? "0 0 0 1px #60a5fa" : "none", // focus ring
-      "&:hover": {
-        borderColor: "#60a5fa", // blue-400
-      },
-    }),
-    menu: (provided) => ({
-      ...provided,
-      backgroundColor: document.documentElement.classList.contains("dark")
-        ? "#1f2937" // bg-gray-800
-        : "#f9fafb", // bg-gray-50
-      borderRadius: "0.5rem",
-      zIndex: 50,
-    }),
-    option: (provided, state) => ({
-      ...provided,
-      backgroundColor: state.isFocused
-        ? document.documentElement.classList.contains("dark")
-          ? "#374151" // bg-gray-700
-          : "#e5e7eb" // bg-gray-200
-        : "transparent",
-      color: document.documentElement.classList.contains("dark")
-        ? "#ffffff"
-        : "#111827", // text-white or text-gray-900
-      "&:active": {
-        backgroundColor: document.documentElement.classList.contains("dark")
-          ? "#4b5563" // darker gray
-          : "#d1d5db", // gray-300
-      },
-    }),
-    singleValue: (provided) => ({
-      ...provided,
-      color: document.documentElement.classList.contains("dark")
-        ? "#ffffff"
-        : "#111827",
-    }),
-    input: (provided) => ({
-      ...provided,
-      color: document.documentElement.classList.contains("dark")
-        ? "#ffffff"
-        : "#111827",
-    }),
-    placeholder: (provided) => ({
-      ...provided,
-      color: document.documentElement.classList.contains("dark")
-        ? "#9ca3af" // text-gray-400
-        : "#6b7280", // text-gray-500
-    }),
-  };
 
   const fromOptions = useMemo(() => {
     if (!isIncomingSuccess) return [];
@@ -131,28 +67,6 @@ const AddIncomingForm = () => {
     return [...uniqueTos].map((val) => ({ label: val, value: val }));
   }, [incomingsData, isIncomingSuccess]);
 
-  const useDarkMode = () => {
-    const getTheme = () =>
-      document.documentElement.classList.contains("dark") ? "dark" : "light";
-
-    const [theme, setTheme] = useState(getTheme());
-
-    useEffect(() => {
-      const observer = new MutationObserver(() => {
-        const currentTheme = getTheme();
-        setTheme(currentTheme);
-      });
-
-      observer.observe(document.documentElement, {
-        attributes: true,
-        attributeFilter: ["class"],
-      });
-
-      return () => observer.disconnect();
-    }, []);
-
-    return theme;
-  };
   const theme = useDarkMode();
 
   // Form State

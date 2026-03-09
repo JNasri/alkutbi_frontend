@@ -12,6 +12,7 @@ import toast from "react-hot-toast";
 import { useDropzone } from "react-dropzone";
 import LoadingSpinner from "../../components/LoadingSpinner";
 import { nationalities } from "../../config/nationalities";
+import { dropzoneAccept } from "../../config/dropzoneConfig";
 
 const attachmentFields = [
   { key: "passportAttachment", labelKey: "passport" },
@@ -130,11 +131,7 @@ const EditPrisonCaseForm = () => {
     acc[key] = useDropzone({
       onDrop: makeDrop(key),
       multiple: false,
-      accept: {
-        "application/pdf": [".pdf"],
-        "application/msword": [".doc", ".docx"],
-        "image/*": [".jpg", ".jpeg", ".png"],
-      },
+      accept: dropzoneAccept,
     });
     return acc;
   }, {});

@@ -18,6 +18,8 @@ import Select from "react-select";
 import { numberToArabicText } from "../../utils/numberToArabicText";
 import moment from "moment-hijri";
 import ModernDatePicker from "../../components/ModernDatePicker";
+import useDarkMode from "../../hooks/useDarkMode";
+import customSelectStyles from "../../config/selectStyles";
 
 const EditCollectionOrderForm = () => {
   const { id } = useParams();
@@ -229,92 +231,6 @@ const EditCollectionOrderForm = () => {
     navigate,
     t,
   ]);
-
-  const customSelectStyles = {
-    control: (provided, state) => ({
-      ...provided,
-      backgroundColor: document.documentElement.classList.contains("dark")
-        ? "#1f2937"
-        : "#f9fafb",
-      borderColor: document.documentElement.classList.contains("dark")
-        ? "#ffffff"
-        : "#d1d5db",
-      color: document.documentElement.classList.contains("dark")
-        ? "#ffffff"
-        : "#111827",
-      borderRadius: "0.5rem",
-      minHeight: "40px",
-      boxShadow: state.isFocused ? "0 0 0 1px #60a5fa" : "none",
-      "&:hover": {
-        borderColor: "#60a5fa",
-      },
-    }),
-    menu: (provided) => ({
-      ...provided,
-      backgroundColor: document.documentElement.classList.contains("dark")
-        ? "#1f2937"
-        : "#f9fafb",
-      borderRadius: "0.5rem",
-      zIndex: 50,
-    }),
-    option: (provided, state) => ({
-      ...provided,
-      backgroundColor: state.isFocused
-        ? document.documentElement.classList.contains("dark")
-          ? "#374151"
-          : "#e5e7eb"
-        : "transparent",
-      color: document.documentElement.classList.contains("dark")
-        ? "#ffffff"
-        : "#111827",
-      "&:active": {
-        backgroundColor: document.documentElement.classList.contains("dark")
-          ? "#4b5563"
-          : "#d1d5db",
-      },
-    }),
-    singleValue: (provided) => ({
-      ...provided,
-      color: document.documentElement.classList.contains("dark")
-        ? "#ffffff"
-        : "#111827",
-    }),
-    input: (provided) => ({
-      ...provided,
-      color: document.documentElement.classList.contains("dark")
-        ? "#ffffff"
-        : "#111827",
-    }),
-    placeholder: (provided) => ({
-      ...provided,
-      color: document.documentElement.classList.contains("dark")
-        ? "#9ca3af"
-        : "#6b7280",
-    }),
-  };
-
-  const useDarkMode = () => {
-    const getTheme = () =>
-      document.documentElement.classList.contains("dark") ? "dark" : "light";
-
-    const [theme, setTheme] = useState(getTheme());
-
-    useEffect(() => {
-      const observer = new MutationObserver(() => {
-        const currentTheme = getTheme();
-        setTheme(currentTheme);
-      });
-
-      observer.observe(document.documentElement, {
-        attributes: true,
-        attributeFilter: ["class"],
-      });
-
-      return () => observer.disconnect();
-    }, []);
-
-    return theme;
-  };
 
   const theme = useDarkMode();
 
