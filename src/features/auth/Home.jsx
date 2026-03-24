@@ -1,15 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import { selectCurrentUser } from "../../features/auth/authSlice";
-import { useGetUsersQuery } from "../users/usersApiSlice";
-import { useGetIncomingsQuery } from "../incomings/incomingsApiSlice";
-import { useGetOutgoingsQuery } from "../outgoings/outgoingsApiSlice";
-import { useGetDeathcasesQuery } from "../deathCases/deathCasesApiSlice";
-import { useGetPrisoncasesQuery } from "../prisonCases/prisonCasesApiSlice";
-import { useGetAssetsQuery } from "../assets/assetsApiSlice";
-import { useGetPurchaseOrdersQuery } from "../purchaseOrders/purchaseOrdersApiSlice";
-import { useGetCollectionOrdersQuery } from "../collectionOrders/collectionOrdersApiSlice";
-import { useGetLogsQuery } from "../logger/logsApiSlice";
+import { useGetDashboardSummaryQuery } from "../dashboard/dashboardApiSlice";
 import LoadingSpinner from "../../components/LoadingSpinner";
 import { 
   Users, 
@@ -37,96 +29,46 @@ const Home = () => {
   const userName = currentLang === "ar" ? user?.ar_name : user?.en_name;
 
   // Data queries
-  const { data: users, isSuccess: isUsersSuccess, isLoading: isUsersLoading } = useGetUsersQuery();
-  const { data: incomings, isSuccess: isIncomingsSuccess, isLoading: isIncomingsLoading } = useGetIncomingsQuery();
-  const { data: outgoings, isSuccess: isOutgoingsSuccess, isLoading: isOutgoingsLoading } = useGetOutgoingsQuery();
-  const { data: deathcases, isSuccess: isDeathcasesSuccess, isLoading: isDeathcasesLoading } = useGetDeathcasesQuery();
-  const { data: prisoncases, isSuccess: isPrisoncasesSuccess, isLoading: isPrisoncasesLoading } = useGetPrisoncasesQuery();
-  const { data: assets, isSuccess: isAssetsSuccess, isLoading: isAssetsLoading } = useGetAssetsQuery();
-  const { data: purchaseOrders, isSuccess: isPOSuccess, isLoading: isPOLoading } = useGetPurchaseOrdersQuery();
-  const { data: collectionOrders, isSuccess: isCOSuccess, isLoading: isCOLoading } = useGetCollectionOrdersQuery();
-  const { data: logs, isSuccess: isLogsSuccess, isLoading: isLogsLoading } = useGetLogsQuery();
-
-  const isLoading = isUsersLoading || isIncomingsLoading || isOutgoingsLoading || 
-                    isDeathcasesLoading || isPrisoncasesLoading || isAssetsLoading ||
-                    isPOLoading || isCOLoading || isLogsLoading;
+  const { data: dStat, isSuccess, isLoading } = useGetDashboardSummaryQuery();
 
   if (isLoading) return <LoadingSpinner />;
 
-  // Financial Calculations
-  const totalPurchaseAmount = isPOSuccess && purchaseOrders?.ids 
-    ? purchaseOrders.ids.reduce((sum, id) => sum + (purchaseOrders.entities[id].totalAmount || 0), 0)
-    : 0;
-
-  // Total Purchase Amount but without the purchase orders that are made by visa
-  const totalPurchaseAmountWithoutVisa = isPOSuccess && purchaseOrders?.ids 
-    ? purchaseOrders.ids.reduce((sum, id) => {
-        const order = purchaseOrders.entities[id];
-        return order.paymentMethod !== 'visa' ? sum + (order.totalAmount || 0) : sum;
-      }, 0)
-    : 0;
-  
-  const totalCollectionAmount = isCOSuccess && collectionOrders?.ids
-    ? collectionOrders.ids.reduce((sum, id) => sum + (collectionOrders.entities[id].totalAmount || 0), 0)
-    : 0;
-
-  const purchaseCashTotal = isPOSuccess && purchaseOrders?.ids
-    ? purchaseOrders.ids.reduce((sum, id) => {
-        const order = purchaseOrders.entities[id];
-        return order.paymentMethod === 'cash' ? sum + (order.totalAmount || 0) : sum;
-      }, 0)
-    : 0;
-
-  const purchaseNonCashTotal = isPOSuccess && purchaseOrders?.ids
-    ? purchaseOrders.ids.reduce((sum, id) => {
-        const order = purchaseOrders.entities[id];
-        const isNonCash = ['visa', 'bank_transfer', 'sadad'].includes(order.paymentMethod);
-        return isNonCash ? sum + (order.totalAmount || 0) : sum;
-      }, 0)
-    : 0;
-
-  const collectionCashTotal = isCOSuccess && collectionOrders?.ids
-    ? collectionOrders.ids.reduce((sum, id) => {
-        const order = collectionOrders.entities[id];
-        return order.collectMethod === 'cash' ? sum + (order.totalAmount || 0) : sum;
-      }, 0)
-    : 0;
-
-  const collectionBankTotal = isCOSuccess && collectionOrders?.ids
-    ? collectionOrders.ids.reduce((sum, id) => {
-        const order = collectionOrders.entities[id];
-        return order.collectMethod === 'bank_transfer' ? sum + (order.totalAmount || 0) : sum;
-      }, 0)
-    : 0;
-
-  const balance = totalCollectionAmount - totalPurchaseAmount;
+  // Financial Calculations mapped from DB Aggregation
+  const balance = isSuccess ? dStat.balance : 0;
+  const totalPurchaseAmount = isSuccess ? dStat.totalPurchaseAmount : 0;
+  const totalPurchaseAmountWithoutVisa = isSuccess ? dStat.totalPurchaseAmountWithoutVisa : 0;
+  const totalCollectionAmount = isSuccess ? dStat.totalCollectionAmount : 0;
+  const purchaseCashTotal = isSuccess ? dStat.purchaseCashTotal : 0;
+  const purchaseNonCashTotal = isSuccess ? dStat.purchaseNonCashTotal : 0;
+  const collectionCashTotal = isSuccess ? dStat.collectionCashTotal : 0;
+  const collectionBankTotal = isSuccess ? dStat.collectionBankTotal : 0;
 
   // Section Config
   const managementCards = [
-    { label: t("total_users"), value: isUsersSuccess ? users.ids.length : 0, icon: Users },
-    { label: t("audit_logs"), value: isLogsSuccess && logs ? Object.keys(logs).length : 0, icon: Scroll },
-    { label: t("total_assets"), value: isAssetsSuccess ? assets.ids.length : 0, icon: Package },
+    { label: t("total_users"), value: isSuccess ? dStat.usersCount : 0, icon: Users },
+    { label: t("audit_logs"), value: isSuccess ? dStat.logsCount : 0, icon: Scroll },
+    { label: t("total_assets"), value: isSuccess ? dStat.assetsCount : 0, icon: Package },
   ];
 
   const poCards = [
-    { label: t("total_purchase_orders"), value: isPOSuccess ? purchaseOrders.ids.length : 0, icon: ShoppingCart },
+    { label: t("total_purchase_orders"), value: isSuccess ? dStat.purchaseOrdersCount : 0, icon: ShoppingCart },
     { label: t("purchase_orders_without_visa"), value: `${totalPurchaseAmountWithoutVisa.toLocaleString()} ${t("sar")}`, color: "text-red-600 dark:text-red-400", icon: TrendingDown },
     { label: t("purchase_cash_total"), value: `${purchaseCashTotal.toLocaleString()} ${t("sar")}`, color: "text-red-500", icon: Wallet },
     { label: t("purchase_non_cash_total"), value: `${purchaseNonCashTotal.toLocaleString()} ${t("sar")}`, color: "text-red-500", icon: CreditCard },
   ];
 
   const coCards = [
-    { label: t("total_collection_orders"), value: isCOSuccess ? collectionOrders.ids.length : 0, icon: Coins },
+    { label: t("total_collection_orders"), value: isSuccess ? dStat.collectionOrdersCount : 0, icon: Coins },
     { label: t("collection_orders"), value: `${totalCollectionAmount.toLocaleString()} ${t("sar")}`, color: "text-green-600 dark:text-green-400", icon: TrendingUp },
     { label: t("collection_cash_total"), value: `${collectionCashTotal.toLocaleString()} ${t("sar")}`, color: "text-green-500", icon: CircleDollarSign },
     { label: t("collection_bank_total"), value: `${collectionBankTotal.toLocaleString()} ${t("sar")}`, color: "text-green-500", icon: Landmark },
   ];
 
   const specialPapersCards = [
-    { label: t("total_incomings"), value: isIncomingsSuccess ? incomings.ids.length : 0, icon: FileText },
-    { label: t("total_outgoings"), value: isOutgoingsSuccess ? outgoings.ids.length : 0, icon: FileText },
-    { label: t("total_deathcases"), value: isDeathcasesSuccess ? deathcases.ids.length : 0, icon: Skull },
-    { label: t("total_prisoncases"), value: isPrisoncasesSuccess ? prisoncases.ids.length : 0, icon: ShieldAlert },
+    { label: t("total_incomings"), value: isSuccess ? dStat.incomingsCount : 0, icon: FileText },
+    { label: t("total_outgoings"), value: isSuccess ? dStat.outgoingsCount : 0, icon: FileText },
+    { label: t("total_deathcases"), value: isSuccess ? dStat.deathcasesCount : 0, icon: Skull },
+    { label: t("total_prisoncases"), value: isSuccess ? dStat.prisoncasesCount : 0, icon: ShieldAlert },
   ];
 
   const CardGrid = ({ cards }) => (

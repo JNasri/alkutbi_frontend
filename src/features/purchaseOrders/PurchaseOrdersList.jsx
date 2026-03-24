@@ -7,6 +7,7 @@ import {
   useAddBulkPurchaseOrdersMutation 
 } from "./purchaseOrdersApiSlice";
 import { useGetCollectionOrdersQuery } from "../collectionOrders/collectionOrdersApiSlice";
+import { useGetSignedUrlMutation } from "../s3/s3ApiSlice";
 import DataTableWrapper from "../../components/DataTableWrapper";
 import LoadingSpinner from "../../components/LoadingSpinner";
 import { Link } from "react-router-dom";
@@ -17,6 +18,26 @@ import DeleteConfirmModal from "../../components/DeleteConfirmModal";
 import * as XLSX from "xlsx";
 import moment from "moment-hijri";
 import { numberToArabicText } from "../../utils/numberToArabicText";
+
+const AttachmentButton = ({ s3Key, iconColorClass, title }) => {
+  const [getSignedUrl, { isLoading }] = useGetSignedUrlMutation();
+
+  const handleClick = async () => {
+    if (!s3Key) return;
+    try {
+      const res = await getSignedUrl(s3Key).unwrap();
+      window.open(res.url, "_blank");
+    } catch (e) {
+      toast.error("Failed to load attachment");
+    }
+  };
+
+  return (
+    <button onClick={handleClick} title={title} disabled={isLoading} className={`${iconColorClass} hover:opacity-80 transition disabled:opacity-50 cursor-pointer`}>
+      {isLoading ? <RefreshCw size={18} className="animate-spin" /> : <Paperclip size={20} />}
+    </button>
+  );
+};
 
 const PurchaseOrdersList = () => {
   const { t } = useTranslation();
@@ -132,18 +153,12 @@ const PurchaseOrdersList = () => {
         body: (item) => (
           <div className="flex items-center justify-center gap-2">
             {item.receiptUrl ? (
-              <a href={item.receiptUrl} target="_blank" rel="noopener noreferrer" title={t("receipt")} className="text-blue-500 hover:text-blue-700">
-                <Paperclip size={20} />
-              </a>
+              <AttachmentButton s3Key={item.receiptUrl} title={t("receipt")} iconColorClass="text-blue-500 hover:text-blue-700" />
             ) : item.fileUrl ? (
-              <a href={item.fileUrl} target="_blank" rel="noopener noreferrer" title={t("attachment")} className="text-blue-500 hover:text-blue-700">
-                <Paperclip size={20} />
-              </a>
+              <AttachmentButton s3Key={item.fileUrl} title={t("attachment")} iconColorClass="text-blue-500 hover:text-blue-700" />
             ) : null}
             {item.orderPrintUrl ? (
-              <a href={item.orderPrintUrl} target="_blank" rel="noopener noreferrer" title={t("order_print")} className="text-green-500 hover:text-green-700">
-                <Paperclip size={20} />
-              </a>
+              <AttachmentButton s3Key={item.orderPrintUrl} title={t("order_print")} iconColorClass="text-green-500 hover:text-green-700" />
             ) : null}
             {!item.receiptUrl && !item.orderPrintUrl && !item.fileUrl && <span className="text-gray-300">—</span>}
           </div>
