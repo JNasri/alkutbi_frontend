@@ -13,6 +13,7 @@ import {
   Package,
   ShoppingCart,
   Coins,
+  Landmark,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Link, useLocation } from "react-router-dom";
@@ -58,6 +59,7 @@ const DashSidebar = () => {
     { to: "/dashboard/deathcases", icon: Skull, label: t("death_cases"), show: showSpecialPapers },
     { to: "/dashboard/prisoncases", icon: ShieldAlert, label: t("prison_cases"), show: showSpecialPapers },
     { to: "/dashboard/assets", icon: Package, label: t("assets"), show: showAssets },
+    { to: "/dashboard/banks", icon: Landmark, label: t("banks"), show: isAdmin || isFinanceAdmin },
     { to: "/dashboard/logs", icon: Scroll, label: t("logs"), show: isAdmin || isFinanceAdmin},
   ];
 

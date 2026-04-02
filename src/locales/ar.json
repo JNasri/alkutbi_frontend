@@ -338,5 +338,20 @@
   "duplicate_records": "السجلات المكررة",
   "add_anyway": "إضافة على أي حال",
   "Apply": "تطبيق",
-  "Filter": "تصفية"
+  "Filter": "تصفية",
+  "banks": "البنوك",
+  "banks_list": "قائمة البنوك",
+  "add_bank": "إضافة بنك",
+  "edit_bank": "تعديل البنك",
+  "bank_added_successfully": "تم إضافة البنك بنجاح",
+  "bank_updated_successfully": "تم تحديث البنك بنجاح",
+  "bank_deleted_successfully": "تم حذف البنك بنجاح",
+  "error_adding_bank": "خطأ في إضافة البنك",
+  "error_updating_bank": "خطأ في تحديث البنك",
+  "no_banks_found": "لا توجد بنوك",
+  "error_loading_banks": "خطأ في تحميل البنوك",
+  "auto_filled": "مُعبأ تلقائياً",
+  "total_collection_orders": "إجمالي أوامر التحصيل",
+  "total_purchase_orders": "إجمالي أوامر الشراء",
+  "balance": "الرصيد"
 }

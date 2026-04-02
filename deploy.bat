@@ -30,7 +30,7 @@ echo [2/3] Deploying to S3...
 echo.
 
 REM Replace YOUR-BUCKET-NAME with your actual S3 bucket name
-set BUCKET_NAME=alkutbi-frontend-build
+set BUCKET_NAME=alkutbi-frontend-build-in
 
 REM Sync the dist folder to S3
 aws s3 sync dist s3://%BUCKET_NAME%/ --delete

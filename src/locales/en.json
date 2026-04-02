@@ -331,5 +331,20 @@
   "duplicate_records": "Duplicate Records",
   "add_anyway": "Add Anyway",
   "Apply": "Apply",
-  "Filter": "Filter"
+  "Filter": "Filter",
+  "banks": "Banks",
+  "banks_list": "Banks List",
+  "add_bank": "Add Bank",
+  "edit_bank": "Edit Bank",
+  "bank_added_successfully": "Bank added successfully",
+  "bank_updated_successfully": "Bank updated successfully",
+  "bank_deleted_successfully": "Bank deleted successfully",
+  "error_adding_bank": "Error adding bank",
+  "error_updating_bank": "Error updating bank",
+  "no_banks_found": "No banks found",
+  "error_loading_banks": "Error loading banks",
+  "auto_filled": "Auto-filled",
+  "total_collection_orders": "Total Collections",
+  "total_purchase_orders": "Total Purchases",
+  "balance": "Balance"
 }

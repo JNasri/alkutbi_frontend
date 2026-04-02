@@ -53,6 +53,11 @@ const CollectionOrdersList = lazy(() => import("./features/collectionOrders/Coll
 const AddCollectionOrderForm = lazy(() => import("./features/collectionOrders/AddCollectionOrderForm"));
 const EditCollectionOrderForm = lazy(() => import("./features/collectionOrders/EditCollectionOrderForm"));
 
+// Banks
+const BanksList = lazy(() => import("./features/banks/BanksList"));
+const AddBankForm = lazy(() => import("./features/banks/AddBankForm"));
+const EditBankForm = lazy(() => import("./features/banks/EditBankForm"));
+
 // array of special papers [admin,special_papers_manager,special_papers_employee]
 const addSpecialPapersRoles = [
   ROLES.Admin,
@@ -227,6 +232,14 @@ function App() {
                             element={<EditCollectionOrderForm />}
                           />
                         </Route>
+                      </Route>
+                    </Route>
+                    {/* /banks */}
+                    <Route element={<RequireAuth allowedRoles={[ROLES.Admin, ROLES.Finance_Admin]} />}>
+                      <Route path="banks">
+                        <Route index element={<BanksList />} />
+                        <Route path="add" element={<AddBankForm />} />
+                        <Route path="edit/:id" element={<EditBankForm />} />
                       </Route>
                     </Route>
                     {/* /logs */}

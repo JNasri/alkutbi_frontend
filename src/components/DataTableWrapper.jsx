@@ -150,12 +150,22 @@ const DataTableWrapper = ({
   // ── Sum ───────────────────────────────────────────────────────────────────
   const totalSum = useMemo(() => {
     if (!sumField) return 0;
-    return visibleData.reduce((acc, row) => {
+    let source = columnFilteredData;
+    if (globalFilter) {
+      const lower = globalFilter.toLowerCase();
+      source = source.filter((row) =>
+        columns.some((col) => {
+          const val = row[col.field];
+          return val != null && typeof val !== "object" && String(val).toLowerCase().includes(lower);
+        })
+      );
+    }
+    return source.reduce((acc, row) => {
       const val = row[sumField];
       const n = typeof val === "number" ? val : parseFloat(String(val).replace(/[^0-9.-]+/g, ""));
       return acc + (n || 0);
     }, 0);
-  }, [visibleData, sumField]);
+  }, [columnFilteredData, globalFilter, sumField, columns]);
 
   const rowsPerPageOptions = [5, 10, 25, 50];
 

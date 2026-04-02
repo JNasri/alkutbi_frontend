@@ -3,6 +3,7 @@ import {
   useAddNewCollectionOrderMutation,
   useGetCollectionOrdersQuery,
 } from "./collectionOrdersApiSlice";
+import { useGetBanksQuery } from "../banks/banksApiSlice";
 import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -32,6 +33,8 @@ const AddCollectionOrderForm = () => {
   const { data: collectionOrdersData, isSuccess: isCollectionOrdersSuccess } =
     useGetCollectionOrdersQuery("collectionOrdersList");
 
+  const { data: banksData, isSuccess: isBanksSuccess } = useGetBanksQuery("banksList");
+
   const [showDuplicateModal, setShowDuplicateModal] = useState(false);
   const [duplicateRecords, setDuplicateRecords] = useState([]);
 
@@ -55,6 +58,7 @@ const AddCollectionOrderForm = () => {
   const [voucherNumber, setVoucherNumber] = useState("");
   const [item, setItem] = useState("");
   const [receivingBankName, setReceivingBankName] = useState("");
+  const [receivingIbanNumber, setReceivingIbanNumber] = useState("");
   const [collectedFrom, setCollectedFrom] = useState("");
   const [customCollectedFrom, setCustomCollectedFrom] = useState("");
   const [totalAmount, setTotalAmount] = useState("");
@@ -149,15 +153,13 @@ const AddCollectionOrderForm = () => {
     return [...uniqueItems].map((val) => ({ label: val, value: val }));
   }, [collectionOrdersData, isCollectionOrdersSuccess]);
 
-  const receivingBankNameOptions = useMemo(() => {
-    if (!isCollectionOrdersSuccess) return [];
-    const uniqueBankNames = new Set(
-      collectionOrdersData.ids
-        .map((id) => collectionOrdersData.entities[id]?.receivingBankName)
-        .filter(Boolean)
-    );
-    return [...uniqueBankNames].map((val) => ({ label: val, value: val }));
-  }, [collectionOrdersData, isCollectionOrdersSuccess]);
+  const bankOptions = useMemo(() => {
+    if (!isBanksSuccess) return [];
+    return (banksData?.ids || []).map((id) => {
+      const bank = banksData.entities[id];
+      return { label: bank.name, value: bank.name, ibanNumber: bank.ibanNumber };
+    });
+  }, [banksData, isBanksSuccess]);
 
   const deductedFromOptions = useMemo(() => {
     if (!isCollectionOrdersSuccess) return [];
@@ -189,6 +191,7 @@ const AddCollectionOrderForm = () => {
       setVoucherNumber("");
       setItem("");
       setReceivingBankName("");
+      setReceivingIbanNumber("");
       setCollectedFrom("");
       setCustomCollectedFrom("");
       setTotalAmount("");
@@ -222,6 +225,7 @@ const AddCollectionOrderForm = () => {
       voucherNumber: voucherNumber || "",
       item: item || "",
       receivingBankName: receivingBankName || "",
+      receivingIbanNumber: receivingIbanNumber || "",
       collectedFrom: collectedFrom === "others" ? customCollectedFrom : collectedFrom || "",
       totalAmount: totalAmount ? parseFloat(totalAmount) : 0,
       totalAmountText: totalAmountText || "",
@@ -259,6 +263,7 @@ const AddCollectionOrderForm = () => {
       voucherNumber: voucherNumber || "",
       item: item || "",
       receivingBankName: receivingBankName || "",
+      receivingIbanNumber: receivingIbanNumber || "",
       collectedFrom: collectedFrom === "others" ? customCollectedFrom : collectedFrom || "",
       totalAmount: totalAmount ? parseFloat(totalAmount) : 0,
       totalAmountText: totalAmountText || "",
@@ -461,20 +466,33 @@ const AddCollectionOrderForm = () => {
                   <label className="text-sm font-medium text-gray-900 dark:text-white block mb-2">
                     {t("receiving_bank_name")}
                   </label>
-                  <CreatableSelect
-                    key={theme}
-                    placeholder={t("choose")}
-                    formatCreateLabel={(inputValue) =>
-                      `${t("click2create")} "${inputValue}"`
-                    }
+                  <Select
                     isClearable
-                    options={receivingBankNameOptions}
-                    onChange={(newValue) => setReceivingBankName(newValue?.value || "")}
-                    onCreateOption={(inputValue) => {
-                      setReceivingBankName(inputValue);
+                    options={bankOptions}
+                    value={bankOptions.find((opt) => opt.value === receivingBankName) || null}
+                    onChange={(selected) => {
+                      setReceivingBankName(selected?.value || "");
+                      setReceivingIbanNumber(selected?.ibanNumber || "");
                     }}
-                    value={receivingBankName ? { value: receivingBankName, label: receivingBankName } : null}
                     styles={customSelectStyles}
+                    placeholder={t("choose")}
+                  />
+                </div>
+              )}
+
+              {/* Receiving IBAN Number (auto-filled, read-only) */}
+              {showReceivingBankName && (
+                <div className="col-span-6 sm:col-span-3">
+                  <label className="text-sm font-medium text-gray-900 dark:text-white block mb-2">
+                    {t("iban_number")}
+                  </label>
+                  <input
+                    type="text"
+                    value={receivingIbanNumber}
+                    readOnly
+                    disabled
+                    className="shadow-sm bg-gray-100 border border-gray-300 text-gray-900 sm:text-sm rounded-lg block w-full p-2.5 dark:bg-gray-600 dark:text-white cursor-not-allowed"
+                    placeholder={t("auto_filled")}
                   />
                 </div>
               )}

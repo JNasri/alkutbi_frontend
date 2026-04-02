@@ -3,6 +3,7 @@ import {
   useAddNewPurchaseOrderMutation,
   useGetPurchaseOrdersQuery,
 } from "./purchaseOrdersApiSlice";
+import { useGetBanksQuery } from "../banks/banksApiSlice";
 import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -30,6 +31,8 @@ const AddPurchaseOrderForm = () => {
 
   const { data: purchaseOrdersData, isSuccess: isPurchaseOrdersSuccess } =
     useGetPurchaseOrdersQuery("purchaseOrdersList");
+
+  const { data: banksData, isSuccess: isBanksSuccess } = useGetBanksQuery("banksList");
 
   const [showDuplicateModal, setShowDuplicateModal] = useState(false);
   const [duplicateRecords, setDuplicateRecords] = useState([]);
@@ -212,25 +215,13 @@ const AddPurchaseOrderForm = () => {
     return [...uniqueAddedTo].map((val) => ({ label: val, value: val }));
   }, [purchaseOrdersData, isPurchaseOrdersSuccess]);
 
-  const bankNameFromOptions = useMemo(() => {
-    if (!isPurchaseOrdersSuccess) return [];
-    const uniqueBankNames = new Set(
-      purchaseOrdersData.ids
-        .map((id) => purchaseOrdersData.entities[id]?.bankNameFrom)
-        .filter(Boolean)
-    );
-    return [...uniqueBankNames].map((val) => ({ label: val, value: val }));
-  }, [purchaseOrdersData, isPurchaseOrdersSuccess]);
-
-  const ibanNumberFromOptions = useMemo(() => {
-    if (!isPurchaseOrdersSuccess) return [];
-    const uniqueIbans = new Set(
-      purchaseOrdersData.ids
-        .map((id) => purchaseOrdersData.entities[id]?.ibanNumberFrom)
-        .filter(Boolean)
-    );
-    return [...uniqueIbans].map((val) => ({ label: val, value: val }));
-  }, [purchaseOrdersData, isPurchaseOrdersSuccess]);
+  const bankOptions = useMemo(() => {
+    if (!isBanksSuccess) return [];
+    return (banksData?.ids || []).map((id) => {
+      const bank = banksData.entities[id];
+      return { label: bank.name, value: bank.name, ibanNumber: bank.ibanNumber };
+    });
+  }, [banksData, isBanksSuccess]);
 
   const bankNameToOptions = useMemo(() => {
     if (!isPurchaseOrdersSuccess) return [];
@@ -489,44 +480,33 @@ const AddPurchaseOrderForm = () => {
                   <label className="text-sm font-medium text-gray-900 dark:text-white block mb-2">
                     {t("bank_name_from")}
                   </label>
-                  <CreatableSelect
-                    key={theme}
-                    placeholder={t("choose")}
-                    formatCreateLabel={(inputValue) =>
-                      `${t("click2create")} "${inputValue}"`
-                    }
+                  <Select
                     isClearable
-                    options={bankNameFromOptions}
-                    onChange={(newValue) => setBankNameFrom(newValue?.value || "")}
-                    onCreateOption={(inputValue) => {
-                      setBankNameFrom(inputValue);
+                    options={bankOptions}
+                    value={bankOptions.find((opt) => opt.value === bankNameFrom) || null}
+                    onChange={(selected) => {
+                      setBankNameFrom(selected?.value || "");
+                      setIbanNumberFrom(selected?.ibanNumber || "");
                     }}
-                    value={bankNameFrom ? { value: bankNameFrom, label: bankNameFrom } : null}
                     styles={customSelectStyles}
+                    placeholder={t("choose")}
                   />
                 </div>
               )}
 
-              {/* IBAN Number From (conditional) */}
+              {/* IBAN Number From (auto-filled, read-only) */}
               {showBankFields && (
                 <div className="col-span-6 sm:col-span-3">
                   <label className="text-sm font-medium text-gray-900 dark:text-white block mb-2">
                     {t("iban_number_from")}
                   </label>
-                  <CreatableSelect
-                    key={theme}
-                    placeholder={t("choose")}
-                    formatCreateLabel={(inputValue) =>
-                      `${t("click2create")} "${inputValue}"`
-                    }
-                    isClearable
-                    options={ibanNumberFromOptions}
-                    onChange={(newValue) => setIbanNumberFrom(newValue?.value || "")}
-                    onCreateOption={(inputValue) => {
-                      setIbanNumberFrom(inputValue);
-                    }}
-                    value={ibanNumberFrom ? { value: ibanNumberFrom, label: ibanNumberFrom } : null}
-                    styles={customSelectStyles}
+                  <input
+                    type="text"
+                    value={ibanNumberFrom}
+                    readOnly
+                    disabled
+                    className="shadow-sm bg-gray-100 border border-gray-300 text-gray-900 sm:text-sm rounded-lg block w-full p-2.5 dark:bg-gray-600 dark:text-white cursor-not-allowed"
+                    placeholder={t("auto_filled")}
                   />
                 </div>
               )}
@@ -546,9 +526,7 @@ const AddPurchaseOrderForm = () => {
                     isClearable
                     options={bankNameToOptions}
                     onChange={(newValue) => setBankNameTo(newValue?.value || "")}
-                    onCreateOption={(inputValue) => {
-                      setBankNameTo(inputValue);
-                    }}
+                    onCreateOption={(inputValue) => setBankNameTo(inputValue)}
                     value={bankNameTo ? { value: bankNameTo, label: bankNameTo } : null}
                     styles={customSelectStyles}
                   />
@@ -570,9 +548,7 @@ const AddPurchaseOrderForm = () => {
                     isClearable
                     options={ibanNumberToOptions}
                     onChange={(newValue) => setIbanNumberTo(newValue?.value || "")}
-                    onCreateOption={(inputValue) => {
-                      setIbanNumberTo(inputValue);
-                    }}
+                    onCreateOption={(inputValue) => setIbanNumberTo(inputValue)}
                     value={ibanNumberTo ? { value: ibanNumberTo, label: ibanNumberTo } : null}
                     styles={customSelectStyles}
                   />
