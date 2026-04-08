@@ -14,10 +14,11 @@ const LogsList = () => {
     isSuccess,
     isError,
     error,
+    refetch,
   } = useGetLogsQuery(undefined, {
     pollingInterval: 60000,
     refetchOnFocus: true,
-    refetchOnMountOrArgChange: true,
+    refetchOnMountOrArgChange: 300,
   });
 
   if (isLoading) return <LoadingSpinner />;
@@ -63,6 +64,7 @@ const LogsList = () => {
           columns={columns}
           title={t("SystemAudits")}
           freezeLastColumn={false}
+          onRefresh={refetch}
         />
       </>
     );

@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import toast from "react-hot-toast";
 import { useGetDeathcasesQuery, useDeleteDeathcaseMutation } from "./deathCasesApiSlice";
 import DataTableWrapper from "../../components/DataTableWrapper";
@@ -8,6 +8,7 @@ import { Link } from "react-router-dom";
 import { Plus, Pencil, Trash2, RefreshCw } from "lucide-react";
 import useAuth from "../../hooks/useAuth";
 import DeleteConfirmModal from "../../components/DeleteConfirmModal";
+import { prefetchHandlers } from "../../hooks/usePrefetch";
 
 const DeathcasesList = () => {
   const { t } = useTranslation();
@@ -16,7 +17,6 @@ const DeathcasesList = () => {
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
-  const [isInitialSync, setIsInitialSync] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const {
@@ -30,18 +30,10 @@ const DeathcasesList = () => {
   } = useGetDeathcasesQuery("deathcasesList", {
     pollingInterval: 60000,
     refetchOnFocus: true,
-    refetchOnMountOrArgChange: true,
+    refetchOnMountOrArgChange: 300,
   });
 
-  useEffect(() => {
-    const syncData = async () => {
-      await refetch();
-      setIsInitialSync(false);
-    };
-    syncData();
-  }, [refetch]);
-
-  if (isInitialSync || (isLoading && !deathcases)) return <LoadingSpinner />;
+  if (isLoading && !deathcases) return <LoadingSpinner />;
 
   if (isError) {
     return (
@@ -144,6 +136,7 @@ const DeathcasesList = () => {
               {canEditSpecialPapers && (
                 <Link
                   to={`/dashboard/deathcases/edit/${d.id}`}
+                  {...prefetchHandlers(`/dashboard/deathcases/edit/${d.id}`)}
                   className="inline-flex items-center gap-1.5 px-3 py-3 rounded-lg bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800 transition-all hover:bg-blue-100 dark:hover:bg-blue-900/50 hover:shadow-sm group font-medium text-xs"
                 >
                   <Pencil size={14} className="group-hover:rotate-12 transition-transform" />
@@ -193,6 +186,7 @@ const DeathcasesList = () => {
               <div className="relative group">
                 <Link
                   to="/dashboard/deathcases/add"
+                  {...prefetchHandlers("/dashboard/deathcases/add")}
                   className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 border border-gray-500 hover:text-dark-900 hover:bg-gray-100 hover:text-gray-700 dark:border-white dark:bg-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white cursor-pointer"
                 >
                   <Plus size={20} />
@@ -250,6 +244,7 @@ const DeathcasesList = () => {
           data={transformedData}
           columns={columns}
           title={t("deathcases_list")}
+          onRefresh={refetch}
         />
 
         <DeleteConfirmModal

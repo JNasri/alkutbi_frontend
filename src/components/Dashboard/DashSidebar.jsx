@@ -18,6 +18,7 @@ import {
 import { useTranslation } from "react-i18next";
 import { Link, useLocation } from "react-router-dom";
 import useAuth from "../../hooks/useAuth";
+import { prefetchAllHandlers } from "../../hooks/usePrefetch";
 
 const DashSidebar = () => {
   const [isOpen, setIsOpen] = useState(true);
@@ -97,6 +98,7 @@ const DashSidebar = () => {
               <div key={item.to} className="relative group">
                 <Link
                   to={item.to}
+                  {...prefetchAllHandlers(item.to)}
                   className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 ${
                     active
                       ? "bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white font-semibold shadow-sm"

@@ -3,6 +3,7 @@ import useAuth from "../../hooks/useAuth";
 import { useGetUsersQuery, useDeleteUserMutation } from "./usersApiSlice";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
+import { prefetchHandlers } from "../../hooks/usePrefetch";
 import { useState } from "react";
 import toast from "react-hot-toast";
 import DataTableWrapper from "../../components/DataTableWrapper";
@@ -23,10 +24,11 @@ const UsersList = () => {
     isSuccess,
     isError,
     error,
+    refetch,
   } = useGetUsersQuery("usersList", {
     pollingInterval: 60000,
     refetchOnFocus: true,
-    refetchOnMountOrArgChange: true,
+    refetchOnMountOrArgChange: 300,
   });
 
   if (isLoading) return <LoadingSpinner />;
@@ -76,6 +78,7 @@ const UsersList = () => {
         <div className="flex items-center gap-2">
           <Link
             to={`/dashboard/users/edit/${user.id}`}
+            {...prefetchHandlers(`/dashboard/users/edit/${user.id}`)}
             className="inline-flex items-center gap-1.5 px-3 py-3 rounded-lg bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800 transition-all hover:bg-blue-100 dark:hover:bg-blue-900/50 hover:shadow-sm group font-medium"
           >
             <Pencil size={14} className="group-hover:rotate-12 transition-transform" />
@@ -104,6 +107,7 @@ const UsersList = () => {
           <div className="relative group ms-auto">
             <Link
               to="/dashboard/users/add"
+              {...prefetchHandlers("/dashboard/users/add")}
               className="mr-auto w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 border border-gray-500 hover:text-dark-900 hover:bg-gray-100 hover:text-gray-700 dark:border-white dark:bg-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white cursor-pointer"
               data-tooltip-target="tooltip-right"
             >
@@ -120,6 +124,7 @@ const UsersList = () => {
           data={transformedData}
           columns={columns}
           title={t("users_list")}
+          onRefresh={refetch}
         />
 
         <DeleteConfirmModal

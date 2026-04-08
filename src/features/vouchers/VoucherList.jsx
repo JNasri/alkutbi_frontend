@@ -13,9 +13,9 @@ const VoucherList = () => {
     isError,
     error,
   } = useGetvouchersQuery("vouchersList", {
-    pollingInterval: 10000,
+    pollingInterval: 60000,
     refetchOnFocus: true,
-    refetchOnMountOrArgChange: true,
+    refetchOnMountOrArgChange: 300,
   });
 
   let content;

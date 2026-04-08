@@ -1,6 +1,7 @@
 import { apiSlice } from "../../app/api/apiSlice";
 import { logout } from "./authSlice";
 import { setCredentials } from "./authSlice";
+import { clearAllSavedFilters } from "../../components/DataTableWrapper";
 
 export const authApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
@@ -31,6 +32,7 @@ export const authApiSlice = apiSlice.injectEndpoints({
         try {
           const { data } = await queryFulfilled;
           dispatch(logout());
+          clearAllSavedFilters();
           setTimeout(() => {
             dispatch(apiSlice.util.resetApiState());
           }, 1000);

@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import toast from "react-hot-toast";
 import { useGetIncomingsQuery, useDeleteIncomingMutation } from "./incomingsApiSlice";
 import DataTableWrapper from "../../components/DataTableWrapper";
@@ -8,6 +8,7 @@ import { Link } from "react-router-dom";
 import { Plus, Pencil, Trash2, RefreshCw } from "lucide-react";
 import useAuth from "../../hooks/useAuth";
 import DeleteConfirmModal from "../../components/DeleteConfirmModal";
+import { prefetchHandlers } from "../../hooks/usePrefetch";
 
 const IncomingsList = () => {
   const { t } = useTranslation();
@@ -16,7 +17,6 @@ const IncomingsList = () => {
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
-  const [isInitialSync, setIsInitialSync] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const canViewAttachment =
     isAdmin || roles.includes("Special Papers Manager");
@@ -32,18 +32,10 @@ const IncomingsList = () => {
   } = useGetIncomingsQuery("incomingsList", {
     pollingInterval: 60000,
     refetchOnFocus: true,
-    refetchOnMountOrArgChange: true,
+    refetchOnMountOrArgChange: 300,
   });
 
-  useEffect(() => {
-    const syncData = async () => {
-      await refetch();
-      setIsInitialSync(false);
-    };
-    syncData();
-  }, [refetch]);
-
-  if (isInitialSync || (isLoading && !incomings)) return <LoadingSpinner />;
+  if (isLoading && !incomings) return <LoadingSpinner />;
 
   if (isError) {
     return (
@@ -125,6 +117,7 @@ const IncomingsList = () => {
           {canEditSpecialPapers && (
             <Link
               to={`/dashboard/incomings/edit/${item.id}`}
+              {...prefetchHandlers(`/dashboard/incomings/edit/${item.id}`)}
               className="inline-flex items-center gap-1.5 px-3 py-3 rounded-lg bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800 transition-all hover:bg-blue-100 dark:hover:bg-blue-900/50 hover:shadow-sm group font-medium"
             >
               <Pencil size={14} className="group-hover:rotate-12 transition-transform" />
@@ -172,6 +165,7 @@ const IncomingsList = () => {
               <div className="relative group">
                 <Link
                   to="/dashboard/incomings/add"
+                  {...prefetchHandlers("/dashboard/incomings/add")}
                   className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 border border-gray-500 hover:text-dark-900 hover:bg-gray-100 hover:text-gray-700 dark:border-white dark:bg-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white cursor-pointer"
                 >
                   <Plus size={20} />
@@ -233,6 +227,7 @@ const IncomingsList = () => {
           data={transformedData}
           columns={columns}
           title={t("incomings_list")}
+          onRefresh={refetch}
         />
 
         <DeleteConfirmModal

@@ -327,7 +327,7 @@ const AddCollectionOrderForm = () => {
           <form onSubmit={onSaveCollectionOrderClicked}>
             <div className="grid grid-cols-6 gap-6">
               {/* Collected From */}
-              <div className="col-span-6 sm:col-span-3">
+              <div className="col-span-6">
                 <label className="text-sm font-medium text-gray-900 dark:text-white block mb-2">
                   {t("collected_from")}
                 </label>

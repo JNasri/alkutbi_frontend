@@ -1,5 +1,5 @@
 import { store } from "../../app/store";
-import { vouchersApiSlice } from "../vouchers/vouchersApiSlice";
+// import { vouchersApiSlice } from "../vouchers/vouchersApiSlice";
 import { usersApiSlice } from "../users/usersApiSlice";
 import { incomingsApiSlice } from "../incomings/incomingsApiSlice";
 import { outgoingsApiSlice } from "../outgoings/outgoingsApiSlice";
@@ -14,11 +14,11 @@ const PreFetch = () => {
     store.dispatch(
       usersApiSlice.util.prefetch("getUsers", "usersList", { force: true })
     );
-    store.dispatch(
-      vouchersApiSlice.util.prefetch("getvouchers", "vouchersList", {
-        force: true,
-      })
-    );
+    // store.dispatch(
+    //   vouchersApiSlice.util.prefetch("getvouchers", "vouchersList", {
+    //     force: true,
+    //   })
+    // );
     store.dispatch(
       incomingsApiSlice.util.prefetch("getIncomings", "incomingsList", {
         force: true,

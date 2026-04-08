@@ -11,7 +11,7 @@ import LoadingSpinner from "./LoadingSpinner";
 import i18n from "../../i18n";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
-import { FileSpreadsheet, Search, FilterX, ListFilter } from "lucide-react";
+import { FileSpreadsheet, Search, FilterX, ListFilter, CalendarDays } from "lucide-react";
 
 // PrimeReact imports
 import "primereact/resources/themes/lara-light-indigo/theme.css";
@@ -22,6 +22,35 @@ import "primeicons/primeicons.css";
 const NO_FILTER_FIELDS = new Set([
   "attachment", "attachments", "actions", "edit", "print",
 ]);
+
+// ── localStorage helpers for filter persistence ─────────────────────────────
+const STORAGE_PREFIX = "dtw_filters_";
+
+function loadFilters(title) {
+  if (!title) return null;
+  try {
+    const raw = localStorage.getItem(STORAGE_PREFIX + title);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    // Revive Date strings back into Date objects in columnFilters & dateDraft
+    for (const obj of [parsed.columnFilters, parsed.dateDraft]) {
+      if (!obj) continue;
+      for (const key of Object.keys(obj)) {
+        const f = obj[key];
+        if (f?.from) f.from = new Date(f.from);
+        if (f?.to) f.to = new Date(f.to);
+      }
+    }
+    return parsed;
+  } catch { return null; }
+}
+
+function saveFilters(title, state) {
+  if (!title) return;
+  try {
+    localStorage.setItem(STORAGE_PREFIX + title, JSON.stringify(state));
+  } catch { /* quota exceeded — silently ignore */ }
+}
 
 // ── Shared button styles matching the site design ─────────────────────────
 const BTN_APPLY =
@@ -35,26 +64,57 @@ const DataTableWrapper = ({
   title,
   freezeLastColumn = true,
   sumField = null,
+  dateField = "createdAt",
+  onRefresh,
 }) => {
   const { i18n, t } = useTranslation();
   const isRTL = i18n.dir() === "rtl";
 
+  // ── Restore saved filters from localStorage ────────────────────────────────
+  const saved = useMemo(() => loadFilters(title), [title]);
+
   // ── Core table state ──────────────────────────────────────────────────────
-  const [globalFilter, setGlobalFilter] = useState("");
+  const [globalFilter, setGlobalFilter] = useState(saved?.globalFilter ?? "");
   const [selectedRows, setSelectedRows] = useState([]);
   const [loading, setLoading] = useState(false);
   const [first, setFirst] = useState(0);
-  const [rows, setRows] = useState(10);
+  const [rows, setRows] = useState(saved?.rows ?? 10);
   const [visibleData, setVisibleData] = useState(data);
   const dt = useRef(null);
 
+  // ── Today / All toggle ─────────────────────────────────────────────────────
+  const [showToday, setShowToday] = useState(saved?.showToday ?? true);
+
   // ── Column filter state ───────────────────────────────────────────────────
-  const [columnFilters, setColumnFilters] = useState({});
-  const [searchDraft, setSearchDraft] = useState({});
-  const [dateDraft, setDateDraft] = useState({});
+  const [columnFilters, setColumnFilters] = useState(saved?.columnFilters ?? {});
+  const [searchDraft, setSearchDraft] = useState(saved?.searchDraft ?? {});
+  const [dateDraft, setDateDraft] = useState(saved?.dateDraft ?? {});
   const filterPanelRefs = useRef({});
 
   useEffect(() => { setVisibleData(data); }, [data]);
+
+  // ── Persist filters to localStorage on change ─────────────────────────────
+  useEffect(() => {
+    saveFilters(title, { globalFilter, columnFilters, searchDraft, dateDraft, rows, showToday });
+  }, [title, globalFilter, columnFilters, searchDraft, dateDraft, rows, showToday]);
+
+  // Reset pagination when Today/All is toggled
+  useEffect(() => { setFirst(0); }, [showToday]);
+
+  const handleTodayToggle = async (isToday) => {
+    setLoading(true);
+    setShowToday(isToday);
+    if (onRefresh) {
+      try {
+        await onRefresh();
+      } catch (err) {
+        console.error(err);
+      }
+    } else {
+      await new Promise((res) => setTimeout(res, 400));
+    }
+    setLoading(false);
+  };
 
   // Close all filter panels when language changes
   useEffect(() => {
@@ -116,12 +176,28 @@ const DataTableWrapper = ({
     [columns, hasActiveFilter]
   );
 
+  // ── Today / All pre-filter ─────────────────────────────────────────────────
+  const baseData = useMemo(() => {
+    if (!showToday || !dateField) return data;
+    const todayStr = new Date().toLocaleDateString();
+    return data.filter((row) => {
+      const val = row[dateField];
+      if (val == null || val === "") return false;
+      // Compare as locale string (matches createdAt formatted with toLocaleDateString)
+      if (val === todayStr) return true;
+      // Also try parsing as a Date for YYYY-MM-DD or other formats
+      const parsed = new Date(val);
+      if (!isNaN(parsed.getTime()) && parsed.toLocaleDateString() === todayStr) return true;
+      return false;
+    });
+  }, [data, showToday, dateField]);
+
   // ── Column filtering ──────────────────────────────────────────────────────
   const columnFilteredData = useMemo(() => {
     const activeEntries = Object.entries(columnFilters).filter(([, f]) => f);
-    if (activeEntries.length === 0) return data;
+    if (activeEntries.length === 0) return baseData;
 
-    return data.filter((row) =>
+    return baseData.filter((row) =>
       activeEntries.every(([field, filter]) => {
         if (filter.type === "search" && filter.value) {
           return String(row[field] ?? "").toLowerCase().includes(filter.value.toLowerCase());
@@ -393,14 +469,15 @@ const DataTableWrapper = ({
 
   // ── Table header ──────────────────────────────────────────────────────────
   const header = (
-    <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
-      <h2 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">
-        {title}
-      </h2>
+    <div className="flex flex-col gap-4 mb-6">
+      {/* Row 1: Title + Sum badge */}
+      <div className="flex items-center justify-between">
+        <h2 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">
+          {title}
+        </h2>
 
-      <div className="flex flex-col lg:flex-row items-center gap-4 w-full lg:w-auto">
         {sumField && (
-          <div className="bg-blue-50/50 dark:bg-blue-900/20 px-6 py-2 rounded-xl flex items-center gap-3 border-2 border-blue-500 dark:border-blue-400 animate-in fade-in slide-in-from-top-4 duration-500 backdrop-blur-sm">
+          <div className="bg-blue-50/50 dark:bg-blue-900/20 px-5 py-2 rounded-xl flex items-center gap-3 border-2 border-blue-500 dark:border-blue-400 backdrop-blur-sm">
             <span className="text-blue-700 dark:text-blue-400 text-xs font-bold uppercase tracking-wider">
               {t("total_amount_sum")}:
             </span>
@@ -409,9 +486,39 @@ const DataTableWrapper = ({
             </span>
           </div>
         )}
+      </div>
+
+      {/* Row 2: Today/All toggle | Search | Actions */}
+      <div className="flex flex-col sm:flex-row items-center gap-3">
+        {/* Today / All toggle */}
+        {dateField && (
+          <div className="flex items-center bg-gray-100 dark:bg-gray-700/60 rounded-lg p-0.5 flex-shrink-0">
+            <button
+              onClick={() => handleTodayToggle(true)}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-semibold transition-all cursor-pointer ${
+                showToday
+                  ? "bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm"
+                  : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+              }`}
+            >
+              <CalendarDays size={15} />
+              {t("today")}
+            </button>
+            <button
+              onClick={() => handleTodayToggle(false)}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-semibold transition-all cursor-pointer ${
+                !showToday
+                  ? "bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm"
+                  : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+              }`}
+            >
+              {t("all")}
+            </button>
+          </div>
+        )}
 
         {/* Global Search */}
-        <div className="relative w-full lg:w-80 group">
+        <div className="relative flex-1 min-w-0 w-full sm:w-auto group">
           <Search
             size={18}
             className={`absolute top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-blue-500 transition-colors pointer-events-none ${
@@ -425,17 +532,17 @@ const DataTableWrapper = ({
             placeholder={t("search...")}
             className={`w-full ${
               i18n.language === "ar" ? "pr-5 pl-12" : "pl-5 pr-12"
-            } py-2.5 bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-xl text-sm focus:bg-white dark:focus:bg-gray-900 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none text-gray-700 dark:text-gray-200 placeholder-gray-400`}
+            } py-2 bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-xl text-sm focus:bg-white dark:focus:bg-gray-900 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none text-gray-700 dark:text-gray-200 placeholder-gray-400`}
           />
         </div>
 
         {/* Action Buttons */}
-        <div className="flex items-center gap-3 w-full sm:w-auto justify-center">
+        <div className="flex items-center gap-2 flex-shrink-0">
           <button
             onClick={clearAllFilters}
-            className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400 border border-orange-200 dark:border-orange-800 transition-all hover:bg-orange-100 dark:hover:bg-orange-900/40 hover:shadow-md font-semibold text-sm cursor-pointer whitespace-nowrap group"
+            className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400 border border-orange-200 dark:border-orange-800 transition-all hover:bg-orange-100 dark:hover:bg-orange-900/40 hover:shadow-md font-semibold text-sm cursor-pointer whitespace-nowrap group"
           >
-            <FilterX size={18} className="group-hover:-rotate-6 transition-transform" />
+            <FilterX size={16} className="group-hover:-rotate-6 transition-transform" />
             {t("Clear")}
             {activeFilterCount > 0 && (
               <span className="inline-flex items-center justify-center w-5 h-5 text-xs font-bold bg-orange-500 text-white rounded-full">
@@ -446,9 +553,9 @@ const DataTableWrapper = ({
 
           <button
             onClick={exportExcel}
-            className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 border border-green-200 dark:border-green-800 transition-all hover:bg-green-100 dark:hover:bg-green-900/40 hover:shadow-md font-semibold text-sm cursor-pointer whitespace-nowrap group"
+            className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 border border-green-200 dark:border-green-800 transition-all hover:bg-green-100 dark:hover:bg-green-900/40 hover:shadow-md font-semibold text-sm cursor-pointer whitespace-nowrap group"
           >
-            <FileSpreadsheet size={18} className="group-hover:scale-110 transition-transform" />
+            <FileSpreadsheet size={16} className="group-hover:scale-110 transition-transform" />
             {t("Export Excel")}
           </button>
         </div>
@@ -491,7 +598,8 @@ const DataTableWrapper = ({
             first={first}
             onPage={(e) => { setFirst(e.first); setRows(e.rows); }}
             rowsPerPageOptions={rowsPerPageOptions}
-            paginatorTemplate="RowsPerPageDropdown FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink"
+            paginatorTemplate="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown"
+            currentPageReportTemplate={`${t("showing")} {first}–{last} ${t("of")} {totalRecords} ${t("records")}`}
             globalFilter={globalFilter}
             onValueChange={(e) => setVisibleData(e)}
             emptyMessage={t("No records found")}
@@ -572,3 +680,12 @@ const DataTableWrapper = ({
 };
 
 export default DataTableWrapper;
+
+export function clearAllSavedFilters() {
+  const keysToRemove = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key?.startsWith(STORAGE_PREFIX)) keysToRemove.push(key);
+  }
+  keysToRemove.forEach((k) => localStorage.removeItem(k));
+}

@@ -75,7 +75,7 @@ const CollectionOrderPrint = ({ collectionOrder }) => {
         return char;
       }).join('');
     };
-
+    
     return `
 <!DOCTYPE html>
 <html dir="rtl" lang="ar">

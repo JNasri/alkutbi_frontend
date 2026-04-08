@@ -3,6 +3,7 @@ import { useDispatch } from 'react-redux';
 import { logout } from '../features/auth/authSlice';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
+import { clearAllSavedFilters } from '../components/DataTableWrapper';
 
 const useInactivityLogout = (timeoutMs = 1800000) => { // 30 minutes default
     const dispatch = useDispatch();
@@ -18,6 +19,7 @@ const useInactivityLogout = (timeoutMs = 1800000) => { // 30 minutes default
 
     const handleLogout = () => {
         dispatch(logout());
+        clearAllSavedFilters();
         navigate('/login');
         toast('Logged out due to inactivity', { icon: '🕒' });
     };

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import toast from "react-hot-toast";
 import { useGetBanksQuery, useDeleteBankMutation } from "./banksApiSlice";
@@ -8,8 +8,10 @@ import DataTableWrapper from "../../components/DataTableWrapper";
 import LoadingSpinner from "../../components/LoadingSpinner";
 import { Link } from "react-router-dom";
 import { Plus, Pencil, Trash2, RefreshCw } from "lucide-react";
+import { prefetchHandlers } from "../../hooks/usePrefetch";
 import useAuth from "../../hooks/useAuth";
 import DeleteConfirmModal from "../../components/DeleteConfirmModal";
+import { Calendar } from "primereact/calendar";
 
 const BanksList = () => {
   const { t } = useTranslation();
@@ -18,8 +20,8 @@ const BanksList = () => {
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
-  const [isInitialSync, setIsInitialSync] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [dateRange, setDateRange] = useState([new Date(), new Date()]);
 
   const {
     data: banksData,
@@ -32,7 +34,7 @@ const BanksList = () => {
   } = useGetBanksQuery("banksList", {
     pollingInterval: 60000,
     refetchOnFocus: true,
-    refetchOnMountOrArgChange: true,
+    refetchOnMountOrArgChange: 300,
   });
 
   const { data: coData, isSuccess: isCoSuccess } = useGetCollectionOrdersQuery("collectionOrdersList");
@@ -41,10 +43,28 @@ const BanksList = () => {
   // Build per-bank totals
   const bankTotals = useMemo(() => {
     const totals = {};
+    const startDate = dateRange?.[0] ? new Date(dateRange[0]) : null;
+    const endDate = dateRange?.[1] ? new Date(dateRange[1]) : startDate;
+
+    if (startDate && !isNaN(startDate.getTime())) {
+      startDate.setHours(0, 0, 0, 0);
+    }
+    if (endDate && !isNaN(endDate.getTime())) {
+      endDate.setHours(23, 59, 59, 999);
+    }
+
+    const isInRange = (dateStr) => {
+      if (!startDate || isNaN(startDate.getTime())) return true;
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return false;
+      return d >= startDate && d <= endDate;
+    };
 
     if (isCoSuccess && coData?.ids) {
       coData.ids.forEach((id) => {
         const co = coData.entities[id];
+        if (!isInRange(co.createdAt)) return;
+
         const bankName = co?.receivingBankName?.trim();
         if (!bankName) return;
         if (!totals[bankName]) totals[bankName] = { co: 0, po: 0 };
@@ -55,6 +75,8 @@ const BanksList = () => {
     if (isPoSuccess && poData?.ids) {
       poData.ids.forEach((id) => {
         const po = poData.entities[id];
+        if (!isInRange(po.createdAt)) return;
+
         const bankName = po?.bankNameFrom?.trim();
         if (!bankName) return;
         if (!totals[bankName]) totals[bankName] = { co: 0, po: 0 };
@@ -63,17 +85,9 @@ const BanksList = () => {
     }
 
     return totals;
-  }, [coData, poData, isCoSuccess, isPoSuccess]);
+  }, [coData, poData, isCoSuccess, isPoSuccess, dateRange]);
 
-  useEffect(() => {
-    const syncData = async () => {
-      await refetch();
-      setIsInitialSync(false);
-    };
-    syncData();
-  }, [refetch]);
-
-  if (isInitialSync || (isLoading && !banksData)) return <LoadingSpinner />;
+  if (isLoading && !banksData) return <LoadingSpinner />;
 
   if (isError)
     return (
@@ -115,6 +129,7 @@ const BanksList = () => {
           {canManage && (
             <Link
               to={`/dashboard/banks/edit/${bank.id}`}
+              {...prefetchHandlers(`/dashboard/banks/edit/${bank.id}`)}
               className="inline-flex items-center gap-1.5 px-3 py-3 rounded-lg bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800 transition-all hover:bg-blue-100 dark:hover:bg-blue-900/50 hover:shadow-sm group font-medium"
             >
               <Pencil size={14} className="group-hover:rotate-12 transition-transform" />
@@ -142,6 +157,22 @@ const BanksList = () => {
             🏦 {t("banks")}
           </h1>
           <div className="flex items-center gap-2 ms-auto">
+            {/* New Date Picker for Bank Totals */}
+            <div className="relative group flex items-center">
+              <Calendar
+                value={dateRange}
+                onChange={(e) => setDateRange(e.value)}
+                selectionMode="range"
+                dateFormat="yy-mm-dd"
+                showIcon
+                showButtonBar
+                readOnlyInput
+                placeholder={t("select_date")}
+                className="w-56 sm:w-[18rem] bg-gray-100 hover:bg-gray-200 border border-gray-500 dark:border-white dark:bg-gray-900 rounded-full overflow-hidden text-sm h-10 transition-colors"
+                inputClassName="bg-transparent border-none text-gray-800 dark:text-gray-100 text-sm font-medium w-full px-3 py-2 outline-none h-full"
+              />
+            </div>
+
             <div className="relative group">
               <button
                 onClick={async () => {
@@ -162,6 +193,7 @@ const BanksList = () => {
               <div className="relative group">
                 <Link
                   to="/dashboard/banks/add"
+                  {...prefetchHandlers("/dashboard/banks/add")}
                   className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 border border-gray-500 hover:bg-gray-100 hover:text-gray-700 dark:border-white dark:bg-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white cursor-pointer"
                 >
                   <Plus size={20} />
@@ -178,6 +210,8 @@ const BanksList = () => {
           data={transformedData}
           columns={columns}
           title={t("banks_list")}
+          onRefresh={refetch}
+          dateField={null}
         />
 
         <DeleteConfirmModal

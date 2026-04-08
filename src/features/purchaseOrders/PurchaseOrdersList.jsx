@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { useState, useEffect } from "react";
+import { useState, useMemo } from "react";
 import toast from "react-hot-toast";
 import { 
   useGetPurchaseOrdersQuery, 
@@ -7,11 +7,13 @@ import {
   useAddBulkPurchaseOrdersMutation 
 } from "./purchaseOrdersApiSlice";
 import { useGetCollectionOrdersQuery } from "../collectionOrders/collectionOrdersApiSlice";
+import { useGetBanksQuery } from "../banks/banksApiSlice";
 import { useGetSignedUrlMutation } from "../s3/s3ApiSlice";
 import DataTableWrapper from "../../components/DataTableWrapper";
 import LoadingSpinner from "../../components/LoadingSpinner";
 import { Link } from "react-router-dom";
-import { Plus, Paperclip, Pencil, Trash2, RefreshCw, Upload } from "lucide-react";
+import { prefetchHandlers } from "../../hooks/usePrefetch";
+import { Plus, Paperclip, Pencil, Trash2, RefreshCw, Upload, X, CheckCircle, AlertCircle } from "lucide-react";
 import PurchaseOrderPrint from "./PurchaseOrderPrint";
 import useAuth from "../../hooks/useAuth";
 import DeleteConfirmModal from "../../components/DeleteConfirmModal";
@@ -47,8 +49,11 @@ const PurchaseOrdersList = () => {
   
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
-  const [isInitialSync, setIsInitialSync] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Excel import preview state
+  const [showImportPreview, setShowImportPreview] = useState(false);
+  const [parsedRecords, setParsedRecords] = useState([]);
 
   const {
     data: purchaseOrders,
@@ -59,9 +64,9 @@ const PurchaseOrdersList = () => {
     refetch: refetchPO,
     isFetching: isFetchingPO,
   } = useGetPurchaseOrdersQuery("purchaseOrdersList", {
-    pollingInterval: 30000,
+    pollingInterval: 60000,
     refetchOnFocus: true,
-    refetchOnMountOrArgChange: true,
+    refetchOnMountOrArgChange: 300,
   });
 
   const {
@@ -73,21 +78,25 @@ const PurchaseOrdersList = () => {
     refetch: refetchCO,
     isFetching: isFetchingCO,
   } = useGetCollectionOrdersQuery("collectionOrdersList", {
-    pollingInterval: 30000,
+    pollingInterval: 60000,
     refetchOnFocus: true,
-    refetchOnMountOrArgChange: true,
+    refetchOnMountOrArgChange: 300,
   });
 
-  // Force refetch on mount to ensure status changes from edit forms are visible
-  useEffect(() => {
-    const syncData = async () => {
-      await Promise.all([refetchPO(), refetchCO()]);
-      setIsInitialSync(false);
-    };
-    syncData();
-  }, [refetchPO, refetchCO]);
+  const { data: banksData } = useGetBanksQuery("banksList");
 
-  if (isInitialSync || (isLoadingPO && !purchaseOrders) || (isLoadingCO && !collectionOrders)) return <LoadingSpinner />;
+  // Build bank name → IBAN lookup from banks data
+  const bankIbanMap = useMemo(() => {
+    if (!banksData?.ids) return {};
+    const map = {};
+    banksData.ids.forEach((id) => {
+      const bank = banksData.entities[id];
+      if (bank?.name) map[bank.name.trim()] = bank.ibanNumber || "";
+    });
+    return map;
+  }, [banksData]);
+
+  if ((isLoadingPO && !purchaseOrders) || (isLoadingCO && !collectionOrders)) return <LoadingSpinner />;
 
   if (isErrorPO || isErrorCO) {
     return (
@@ -105,9 +114,21 @@ const PurchaseOrdersList = () => {
       (id) => purchaseOrders.entities[id]
     );
 
-    const sortedList = [...purchaseOrderList].sort((a, b) => 
-      (b.purchasingId || "").localeCompare(a.purchasingId || "")
-    );
+    const statusWeight = {
+      new: 1,
+      audited: 2,
+      authorized: 3,
+      finalized: 4,
+    };
+
+    const sortedList = [...purchaseOrderList].sort((a, b) => {
+      const weightA = statusWeight[a.status] || 5;
+      const weightB = statusWeight[b.status] || 5;
+      if (weightA !== weightB) {
+        return weightA - weightB;
+      }
+      return new Date(b.createdAt) - new Date(a.createdAt);
+    });
 
     if (!purchaseOrderList || purchaseOrderList.length === 0) {
       return (
@@ -211,7 +232,7 @@ const PurchaseOrdersList = () => {
         )
       },
       { field: "createdAt", header: t("createdAt"), nowrap: true },
-      { field: "updatedAt", header: t("updatedAt"), nowrap: true },
+      { field: "time", header: t("time"), nowrap: true },
       { field: "actions", header: t("actions"), autoWidth: true },
     ];
 
@@ -272,12 +293,13 @@ const PurchaseOrdersList = () => {
       dayName: convertDayNameToArabic(item.dayName),
       paymentMethod: paymentMethodTranslations[item.paymentMethod] || item.paymentMethod || "—",
       createdAt: new Date(item.createdAt).toLocaleDateString(),
-      updatedAt: new Date(item.updatedAt).toLocaleDateString(),
+      time: new Date(item.createdAt).toLocaleTimeString(),
       actions: (
         <div className="flex items-center gap-2">
           {(canEditFinance || ((isFinanceEmployee || isFinanceSubAdmin) && item.issuer?.username === username)) && (
             <Link
               to={`/dashboard/purchaseorders/edit/${item.id}`}
+              {...prefetchHandlers(`/dashboard/purchaseorders/edit/${item.id}`)}
               className="inline-flex items-center gap-1.5 px-3 py-3 rounded-lg bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800 transition-all hover:bg-blue-100 dark:hover:bg-blue-900/50 hover:shadow-sm group font-medium"
             >
               <Pencil size={14} className="group-hover:rotate-12 transition-transform" />
@@ -322,12 +344,12 @@ const PurchaseOrdersList = () => {
 
     const balance = totalCollectionAmount - totalPurchaseAmount;
 
-    const handleExcelImport = async (e) => {
+    const handleExcelImport = (e) => {
       const file = e.target.files[0];
       if (!file) return;
 
       const reader = new FileReader();
-      reader.onload = async (evt) => {
+      reader.onload = (evt) => {
         try {
           const bstr = evt.target.result;
           const wb = XLSX.read(bstr, { type: "binary" });
@@ -341,21 +363,30 @@ const PurchaseOrdersList = () => {
           }
 
           const formattedOrders = rawData.map((row) => {
-            // Expected columns from screenshot: AD Date, Total Amount, Item, Notes
             const adDate = row["AD Date"] || row["AD date"] || row["Date"] || row["التاريخ"];
             const totalAmount = row["Total Amount"] || row["total amount"] || row["Amount"] || row["المبلغ"];
-            const item = row["Item"] || row["item"] || row["البيان"];
-            const notes = row["Notes"] || row["notes"] || row["الملاحظات"];
+            const transactionType = row["Transaction Type"] || row["transaction type"] || row["نوع المعاملة"] || "";
+            const item = row["Item"] || row["item"] || row["الصنف"] || "";
+            const notes = row["Notes"] || row["notes"] || row["الملاحظات"] || "";
+            const supplier = row["Supplier"] || row["supplier"] || row["المورد"] || "";
+            const managementName = row["Management Name"] || row["management name"] || row["اسم الإدارة"] || "";
+            const paymentMethod = row["Payment Method"] || row["payment method"] || row["طريقة الدفع"] || "";
+            const bankNameFrom = row["Bank Name (From)"] || row["bank name from"] || row["اسم البنك (من)"] || "";
+            const bankNameTo = row["Bank Name (To)"] || row["bank name to"] || row["اسم البنك (إلى)"] || "";
 
             if (!adDate || !totalAmount) return null;
 
-            // Convert Excel date to JS Date
             let jsDate;
             if (typeof adDate === "number") {
-              // Excel stores dates as serial numbers
               jsDate = new Date((adDate - 25569) * 86400 * 1000);
             } else {
-              jsDate = new Date(adDate);
+              // Try DD-MM-YYYY or DD/MM/YYYY format first
+              const ddmmyyyy = String(adDate).match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})$/);
+              if (ddmmyyyy) {
+                jsDate = new Date(parseInt(ddmmyyyy[3]), parseInt(ddmmyyyy[2]) - 1, parseInt(ddmmyyyy[1]));
+              } else {
+                jsDate = new Date(adDate);
+              }
             }
 
             if (isNaN(jsDate.getTime())) return null;
@@ -375,16 +406,40 @@ const PurchaseOrdersList = () => {
               ? parseFloat(totalAmount.replace(/,/g, "")) 
               : parseFloat(totalAmount);
 
+            // Map transaction type from Excel (handle English/Arabic values)
+            const txMap = {
+              "expenses": "expenses", "مصروفات": "expenses",
+              "receivables": "receivables", "مستحقات": "receivables",
+              "custody": "custody", "عهدة": "custody",
+              "advance": "advance", "سلفة": "advance",
+              "payments": "payments", "مدفوعات": "payments",
+            };
+            const mappedTx = txMap[transactionType.toLowerCase()] || transactionType || "expenses";
+
+            // Map payment method from Excel
+            const pmMap = {
+              "cash": "cash", "نقدي": "cash",
+              "visa": "visa", "الفيزا": "visa",
+              "bank transfer": "bank_transfer", "bank_transfer": "bank_transfer", "تحويل بنكي": "bank_transfer",
+              "sadad": "sadad", "سداد": "sadad",
+            };
+            const mappedPm = pmMap[paymentMethod.toLowerCase()] || "cash";
+
             return {
               dateAD,
               dayName,
               dateHijri,
               totalAmount: amountValue,
               totalAmountText: numberToArabicText(amountValue),
-              item: item || "",
-              notes: notes || "",
-              transactionType: "expenses",
-              paymentMethod: "cash",
+              transactionType: mappedTx,
+              paymentMethod: mappedPm,
+              bankNameFrom: bankNameFrom,
+              ibanNumberFrom: bankIbanMap[bankNameFrom.trim()] || "",
+              bankNameTo: bankNameTo,
+              managementName: managementName,
+              supplier: supplier,
+              item: item,
+              notes: notes,
               status: "new"
             };
           }).filter(Boolean);
@@ -394,19 +449,134 @@ const PurchaseOrdersList = () => {
             return;
           }
 
-          await addBulkPurchaseOrders(formattedOrders).unwrap();
-          toast.success(t("bulk_import_success", { count: formattedOrders.length }));
-          e.target.value = ""; // Reset file input
+          // Show preview modal instead of sending immediately
+          setParsedRecords(formattedOrders);
+          setShowImportPreview(true);
         } catch (error) {
-          console.error("Excel import error:", error);
-          toast.error(t("bulk_import_error"));
+          console.error("Excel parse error:", error);
+          toast.error(t("excel_parse_error"));
         }
       };
       reader.readAsBinaryString(file);
+      e.target.value = ""; // Reset file input
+    };
+
+    const handleConfirmImport = async () => {
+      try {
+        await addBulkPurchaseOrders(parsedRecords).unwrap();
+        toast.success(t("bulk_import_success", { count: parsedRecords.length }));
+        setShowImportPreview(false);
+        setParsedRecords([]);
+      } catch (error) {
+        console.error("Bulk import error:", error);
+        toast.error(t("bulk_import_error"));
+      }
+    };
+
+    const transactionTypeLabels = {
+      expenses: t("expenses"),
+      receivables: t("receivables"),
+      custody: t("custody"),
+      advance: t("advance"),
+      payments: t("payments"),
     };
 
     return (
       <>
+        {/* Import Preview Modal */}
+        {showImportPreview && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[85vh] flex flex-col border border-gray-200 dark:border-gray-700">
+              {/* Modal Header */}
+              <div className="flex items-center justify-between p-5 border-b border-gray-200 dark:border-gray-700">
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                    <Upload size={22} className="text-blue-500" />
+                    {t("import_preview_title")}
+                  </h2>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                    {t("records_to_import", { count: parsedRecords.length })}
+                  </p>
+                </div>
+                <button
+                  onClick={() => { setShowImportPreview(false); setParsedRecords([]); }}
+                  className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition cursor-pointer"
+                >
+                  <X size={18} className="text-gray-500" />
+                </button>
+              </div>
+
+              {/* Modal Body - Scrollable table */}
+              <div className="overflow-auto flex-1 p-4">
+                <table className="w-full text-sm">
+                  <thead className="sticky top-0 bg-gray-100 dark:bg-gray-700 z-10">
+                    <tr>
+                      <th className="px-3 py-2 text-start font-semibold text-gray-700 dark:text-gray-300">#</th>
+                      <th className="px-3 py-2 text-start font-semibold text-gray-700 dark:text-gray-300">{t("transaction_type")}</th>
+                      <th className="px-3 py-2 text-start font-semibold text-gray-700 dark:text-gray-300">{t("date_ad")}</th>
+                      <th className="px-3 py-2 text-start font-semibold text-gray-700 dark:text-gray-300">{t("total_amount")}</th>
+                      <th className="px-3 py-2 text-start font-semibold text-gray-700 dark:text-gray-300">{t("item")}</th>
+                      <th className="px-3 py-2 text-start font-semibold text-gray-700 dark:text-gray-300">{t("bank_name_from")} / {t("iban_number_from")}</th>
+                      <th className="px-3 py-2 text-start font-semibold text-gray-700 dark:text-gray-300">{t("bank_name_to")}</th>
+                      <th className="px-3 py-2 text-start font-semibold text-gray-700 dark:text-gray-300">{t("notes")}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {parsedRecords.map((record, index) => (
+                      <tr key={index} className={`border-b border-gray-100 dark:border-gray-700 `}>
+                        <td className="px-3 py-2 text-gray-500 dark:text-gray-400 font-mono">{index + 1}</td>
+                        <td className="px-3 py-2 text-gray-900 dark:text-gray-100">{transactionTypeLabels[record.transactionType] || record.transactionType}</td>
+                        <td className="px-3 py-2 text-gray-900 dark:text-gray-100 whitespace-nowrap">{record.dateAD}</td>
+                        <td className="px-3 py-2 text-gray-900 dark:text-gray-100 whitespace-nowrap font-medium">{record.totalAmount?.toLocaleString()} {t("sar")}</td>
+                        <td className="px-3 py-2 text-gray-600 dark:text-gray-400 max-w-[150px] truncate" title={record.item}>{record.item || "—"}</td>
+                        <td className="px-3 py-2 text-gray-600 dark:text-gray-400 max-w-[200px]" title={record.ibanNumberFrom ? `${record.bankNameFrom} - ${record.ibanNumberFrom}` : record.bankNameFrom}>
+                          <div className="truncate">{record.bankNameFrom || "—"}</div>
+                          {record.ibanNumberFrom && <div className="truncate text-xs text-gray-400 dark:text-gray-500 mt-0.5 font-mono">{record.ibanNumberFrom}</div>}
+                        </td>
+                        <td className="px-3 py-2 text-gray-600 dark:text-gray-400 max-w-[200px] truncate" title={record.bankNameTo}>{record.bankNameTo || "—"}</td>
+                        <td className="px-3 py-2 text-gray-600 dark:text-gray-400 max-w-[200px] truncate" title={record.notes}>{record.notes || "—"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Modal Footer */}
+              <div className="flex items-center justify-between p-5 border-t border-gray-200 dark:border-gray-700">
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                  {t("total_amount")}: <span className="text-gray-900 dark:text-white font-bold">{parsedRecords.reduce((sum, r) => sum + (r.totalAmount || 0), 0).toLocaleString()} {t("sar")}</span>
+                </p>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => { setShowImportPreview(false); setParsedRecords([]); }}
+                    disabled={isImporting}
+                    className="px-5 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition font-medium text-sm cursor-pointer disabled:opacity-50"
+                  >
+                    {t("cancel")}
+                  </button>
+                  <button
+                    onClick={handleConfirmImport}
+                    disabled={isImporting}
+                    className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white transition font-medium text-sm flex items-center gap-2 cursor-pointer disabled:opacity-50"
+                  >
+                    {isImporting ? (
+                      <>
+                        <RefreshCw size={16} className="animate-spin" />
+                        {t("loading")}
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle size={16} />
+                        {t("confirm_import")}
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="flex items-center mb-2 p-1">
           <h1 className="text-4xl font-bold text-gray-800 dark:text-white">
             🪙 {t("purchase_orders")}
@@ -430,7 +600,7 @@ const PurchaseOrdersList = () => {
 
             {canAddFinance && (
               <>
-                {username === "Saleh" || username === "nasri" && (
+                {username === "Saleh" || username === "Nasri" && (
                   <div className="relative group">
                     <button
                       onClick={() => document.getElementById("excel-bulk-import").click()}
@@ -455,6 +625,7 @@ const PurchaseOrdersList = () => {
                 <div className="relative group">
                 <Link
                   to="/dashboard/purchaseorders/add"
+                  {...prefetchHandlers("/dashboard/purchaseorders/add")}
                   className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 border border-gray-500 hover:text-dark-900 hover:bg-gray-100 hover:text-gray-700 dark:border-white dark:bg-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white cursor-pointer"
                 >
                   <Plus size={20} />
@@ -518,6 +689,9 @@ const PurchaseOrdersList = () => {
           columns={columns}
           title={t("purchase_orders_list")}
           sumField="totalAmount"
+          onRefresh={async () => {
+            await Promise.all([refetchPO(), refetchCO()]);
+          }}
         />
 
         <DeleteConfirmModal

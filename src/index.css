@@ -441,50 +441,94 @@ html[dir="ltr"] .custom-table .p-frozen-column {
   border-color: #6b7280 !important;
 }
 
-/* Paginator styling for better alignment */
+/* ── Paginator ─────────────────────────────────────────────── */
 .p-paginator {
   display: flex !important;
   align-items: center !important;
-
+  justify-content: center !important;
+  gap: 0.375rem !important;
+  padding: 0.75rem 1rem !important;
+  font-size: 0.8125rem !important;
+  border: none !important;
+  background: transparent !important;
 }
 
+/* "Showing X–Y of Z" label — pin to the start */
+.p-paginator .p-paginator-current {
+  margin-inline-end: auto !important;
+  color: #6b7280 !important;
+  font-size: 0.8125rem !important;
+  white-space: nowrap !important;
+}
+
+/* Rows-per-page dropdown — pin to the end */
+.p-paginator .p-dropdown {
+  margin-inline-start: auto !important;
+  border-radius: 0.375rem !important;
+  font-size: 0.8125rem !important;
+  height: 1.75rem !important;
+}
+
+/* Navigation arrows */
 .p-paginator .p-paginator-first,
 .p-paginator .p-paginator-prev,
 .p-paginator .p-paginator-next,
 .p-paginator .p-paginator-last {
-  height: 2rem !important;
+  min-width: 1.75rem !important;
+  height: 1.75rem !important;
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
+  border-radius: 0.375rem !important;
+  color: #6b7280 !important;
+  transition: all 150ms !important;
 }
 
+.p-paginator .p-paginator-first:hover,
+.p-paginator .p-paginator-prev:hover,
+.p-paginator .p-paginator-next:hover,
+.p-paginator .p-paginator-last:hover {
+  background: #f3f4f6 !important;
+  color: #111827 !important;
+}
+
+/* Page number buttons */
 .p-paginator .p-paginator-pages {
   display: flex !important;
   align-items: center !important;
-  gap: 0.25rem !important;
+  gap: 0.125rem !important;
 }
 
 .p-paginator .p-paginator-page {
-  min-width: 2rem !important;
-  height: 2rem !important;
+  min-width: 1.75rem !important;
+  height: 1.75rem !important;
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
+  border-radius: 0.375rem !important;
+  font-weight: 500 !important;
+  color: #6b7280 !important;
+  transition: all 150ms !important;
 }
 
-.p-paginator .p-dropdown {
-  margin: 0 !important;
+.p-paginator .p-paginator-page:hover {
+  background: #f3f4f6 !important;
+  color: #111827 !important;
 }
 
-.p-paginator .p-paginator-current {
-  margin: 0 1rem !important;
+.p-paginator .p-paginator-page.p-highlight {
+  background: #3b82f6 !important;
+  color: white !important;
+  font-weight: 600 !important;
 }
 
-/* Dark mode paginator */
+/* ── Dark mode paginator ── */
 .dark .p-paginator {
-  background: #374151 !important;
-  border-color: #4b5563 !important;
-  color: #f3f4f6 !important;
+  background: transparent !important;
+}
+
+.dark .p-paginator .p-paginator-current {
+  color: #9ca3af !important;
 }
 
 .dark .p-paginator .p-paginator-first,
@@ -492,7 +536,7 @@ html[dir="ltr"] .custom-table .p-frozen-column {
 .dark .p-paginator .p-paginator-next,
 .dark .p-paginator .p-paginator-last,
 .dark .p-paginator .p-paginator-page {
-  color: #d1d5db !important;
+  color: #9ca3af !important;
 }
 
 .dark .p-paginator .p-paginator-first:hover,
@@ -500,16 +544,13 @@ html[dir="ltr"] .custom-table .p-frozen-column {
 .dark .p-paginator .p-paginator-next:hover,
 .dark .p-paginator .p-paginator-last:hover,
 .dark .p-paginator .p-paginator-page:hover {
-  background: #4b5563 !important;
+  background: #374151 !important;
+  color: #f3f4f6 !important;
 }
 
 .dark .p-paginator .p-paginator-page.p-highlight {
   background: #3b82f6 !important;
   color: white !important;
-}
-
-.dark .p-paginator .p-paginator-current {
-  color: #d1d5db !important;
 }
 
 /* Flip pagination arrows in RTL */
