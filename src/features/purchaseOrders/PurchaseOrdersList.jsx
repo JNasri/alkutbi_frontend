@@ -600,7 +600,7 @@ const PurchaseOrdersList = () => {
 
             {canAddFinance && (
               <>
-                {username === "Saleh" || username === "Nasri" && (
+                {(username === "Saleh" || username === "Nasri") && (
                   <div className="relative group">
                     <button
                       onClick={() => document.getElementById("excel-bulk-import").click()}
