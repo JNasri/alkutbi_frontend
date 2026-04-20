@@ -24,7 +24,7 @@ const routeImports = {
     edit: () => import("../features/deathCases/EditDeathCaseForm"),
   },
   "/dashboard/prisoncases": {
-    list: () => import("../features/prisonCases/prisonCasesList"),
+    list: () => import("../features/prisonCases/PrisonCasesList"),
     add: () => import("../features/prisonCases/AddPrisonCaseForm"),
     edit: () => import("../features/prisonCases/EditPrisonCaseForm"),
   },
