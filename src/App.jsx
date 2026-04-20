@@ -25,7 +25,7 @@ const UsersList = lazy(() => import("./features/users/UsersList"));
 const OutgoingsList = lazy(() => import("./features/outgoings/OutgoingsList"));
 const IncomingsList = lazy(() => import("./features/incomings/IncomingsList"));
 const DeathcasesList = lazy(() => import("./features/deathCases/DeathCasesList"));
-const PrisoncasesList = lazy(() => import("./features/prisonCases/prisonCasesList"));
+const PrisoncasesList = lazy(() => import("./features/prisonCases/PrisonCasesList"));
 const AssetsList = lazy(() => import("./features/assets/AssetsList"));
 const PurchaseOrdersList = lazy(() => import("./features/purchaseOrders/PurchaseOrdersList"));
 const LogsList = lazy(() => import("./features/logger/LogsList"));
