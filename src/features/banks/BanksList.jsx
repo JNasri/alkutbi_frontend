@@ -21,7 +21,7 @@ const BanksList = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [dateRange, setDateRange] = useState([new Date(), new Date()]);
+  const [dateRange, setDateRange] = useState(null);
 
   const {
     data: banksData,
