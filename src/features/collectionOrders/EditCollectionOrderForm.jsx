@@ -101,6 +101,7 @@ const EditCollectionOrderForm = () => {
 
   const collectedFromOptions = [
     { value: "umrah", label: t("umrah") },
+    { value: "cash_deposit", label: t("cash_deposit") },
     { value: "transport", label: t("transport") },
     { value: "hotels", label: t("hotels") },
     { value: "others", label: t("others") },
@@ -158,7 +159,7 @@ const EditCollectionOrderForm = () => {
       setReceivingIbanNumber(collectionOrder.receivingIbanNumber || "");
       
       const cfValue = collectionOrder.collectedFrom || "";
-      const isKnown = ["umrah", "transport", "hotels"].includes(cfValue);
+      const isKnown = ["umrah", "cash_deposit", "transport", "hotels"].includes(cfValue);
       if (cfValue && !isKnown) {
         setCollectedFrom("others");
         setCustomCollectedFrom(cfValue);

@@ -260,6 +260,7 @@
   "print": "طباعة",
   "transaction_type": "نوع المعاملة",
   "expenses": "مصروفات",
+  "cash_deposit": "ايداع نقدي",
   "receivables": "مستحقات",
   "custody": "عهدة",
   "advance": "سلفة",

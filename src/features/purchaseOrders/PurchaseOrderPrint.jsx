@@ -56,6 +56,7 @@ const PurchaseOrderPrint = ({ purchaseOrder }) => {
 
     // Transaction type translations
     const transactionTypeArabic = {
+      cash_deposit: "ايداع نقدي",
       expenses: "مصروفات",
       receivables: "مستحقات",
       custody: "عهدة",

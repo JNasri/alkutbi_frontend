@@ -144,6 +144,7 @@ const CollectionOrdersList = () => {
 
     const collectedFromTranslations = {
       umrah: t("umrah"),
+      cash_deposit: t("cash_deposit"),
       transport: t("transport"),
       hotels: t("hotels"),
       others: t("others_external"),
@@ -383,6 +384,7 @@ const CollectionOrdersList = () => {
 
             // Map collected from
             const cfMap = {
+              "cash deposit": "cash_deposit", "cash_deposit": "cash_deposit", "ايداع نقدي": "cash_deposit",
               "umrah": "umrah", "عمرة": "umrah",
               "transport": "transport", "نقل": "transport",
               "hotels": "hotels", "فنادق": "hotels",
@@ -448,6 +450,7 @@ const CollectionOrdersList = () => {
 
     const collectedFromLabels = {
       umrah: t("umrah"),
+      cash_deposit: t("cash_deposit"),
       transport: t("transport"),
       hotels: t("hotels"),
       others: t("others_external"),

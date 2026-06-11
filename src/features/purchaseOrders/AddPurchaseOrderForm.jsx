@@ -109,6 +109,7 @@ const AddPurchaseOrderForm = () => {
   // Transaction type options
   const transactionTypeOptions = [
     { value: "expenses", label: t("expenses") },
+    { value: "cash_deposit", label: t("cash_deposit") },
     { value: "receivables", label: t("receivables") },
     { value: "custody", label: t("custody") },
     { value: "advance", label: t("advance") },

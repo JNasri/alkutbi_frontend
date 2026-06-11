@@ -253,6 +253,7 @@
   "print": "Print",
   "transaction_type": "Transaction Type",
   "expenses": "Expenses",
+  "cash_deposit": "Cash Deposit",
   "receivables": "Receivables",
   "custody": "Custody",
   "advance": "Advance",

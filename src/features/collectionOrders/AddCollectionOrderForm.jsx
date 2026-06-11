@@ -79,6 +79,7 @@ const AddCollectionOrderForm = () => {
   // Collected from options
   const collectedFromOptions = [
     { value: "umrah", label: t("umrah") },
+    { value: "cash_deposit", label: t("cash_deposit") },
     { value: "transport", label: t("transport") },
     { value: "hotels", label: t("hotels") },
     { value: "others", label: t("others") },

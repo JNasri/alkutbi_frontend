@@ -54,6 +54,7 @@ const CollectionOrderPrint = ({ collectionOrder }) => {
 
     // Collected from translations
     const collectedFromArabic = {
+      cash_deposit: "ايداع نقدي",
       umrah: "عمرة",
       transport: "نقل",
       hotels: "فنادق",

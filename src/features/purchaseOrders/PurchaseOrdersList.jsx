@@ -147,6 +147,7 @@ const PurchaseOrdersList = () => {
 
     const transactionTypeTranslations = {
       expenses: t("expenses"),
+      cash_deposit: t("cash_deposit"),
       receivables: t("receivables"),
       custody: t("custody"),
       advance: t("advance"),
@@ -408,6 +409,7 @@ const PurchaseOrdersList = () => {
 
             // Map transaction type from Excel (handle English/Arabic values)
             const txMap = {
+              "cash deposit": "cash_deposit", "cash_deposit": "cash_deposit", "ايداع نقدي": "cash_deposit",
               "expenses": "expenses", "مصروفات": "expenses",
               "receivables": "receivables", "مستحقات": "receivables",
               "custody": "custody", "عهدة": "custody",
@@ -475,6 +477,7 @@ const PurchaseOrdersList = () => {
 
     const transactionTypeLabels = {
       expenses: t("expenses"),
+      cash_deposit: t("cash_deposit"),
       receivables: t("receivables"),
       custody: t("custody"),
       advance: t("advance"),
