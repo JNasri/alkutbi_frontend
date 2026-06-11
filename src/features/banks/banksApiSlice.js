@@ -4,6 +4,17 @@ import { apiSlice } from "../../app/api/apiSlice";
 const banksAdapter = createEntityAdapter({});
 const initialState = banksAdapter.getInitialState();
 
+const buildBanksSummaryUrl = (arg = {}) => {
+  const params = new URLSearchParams();
+
+  if (arg.dateBasis) params.set("dateBasis", arg.dateBasis);
+  if (arg.from) params.set("from", arg.from);
+  if (arg.to) params.set("to", arg.to);
+
+  const queryString = params.toString();
+  return `/banks/summary${queryString ? `?${queryString}` : ""}`;
+};
+
 export const banksApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     getBanks: builder.query({
@@ -28,13 +39,23 @@ export const banksApiSlice = apiSlice.injectEndpoints({
         return [{ type: "Bank", id: "LIST" }];
       },
     }),
+    getBanksSummary: builder.query({
+      query: buildBanksSummaryUrl,
+      validateStatus: (response, result) =>
+        response.status === 200 && !result.isError,
+      transformResponse: (responseData) => responseData?.banks || [],
+      providesTags: [{ type: "Bank", id: "SUMMARY" }],
+    }),
     addNewBank: builder.mutation({
       query: (initialData) => ({
         url: "/banks",
         method: "POST",
         body: initialData,
       }),
-      invalidatesTags: [{ type: "Bank", id: "LIST" }],
+      invalidatesTags: [
+        { type: "Bank", id: "LIST" },
+        { type: "Bank", id: "SUMMARY" },
+      ],
     }),
     updateBank: builder.mutation({
       query: (data) => ({
@@ -45,6 +66,7 @@ export const banksApiSlice = apiSlice.injectEndpoints({
       invalidatesTags: (result, error, arg) => [
         { type: "Bank", id: arg.id },
         { type: "Bank", id: "LIST" },
+        { type: "Bank", id: "SUMMARY" },
       ],
     }),
     deleteBank: builder.mutation({
@@ -56,6 +78,7 @@ export const banksApiSlice = apiSlice.injectEndpoints({
       invalidatesTags: (result, error, arg) => [
         { type: "Bank", id: arg.id },
         { type: "Bank", id: "LIST" },
+        { type: "Bank", id: "SUMMARY" },
       ],
     }),
   }),
@@ -63,6 +86,7 @@ export const banksApiSlice = apiSlice.injectEndpoints({
 
 export const {
   useGetBanksQuery,
+  useGetBanksSummaryQuery,
   useAddNewBankMutation,
   useUpdateBankMutation,
   useDeleteBankMutation,

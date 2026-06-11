@@ -1,6 +1,7 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
-  useGetCollectionOrdersQuery,
+  useGetCollectionOrderQuery,
+  useGetCollectionOrderOptionsQuery,
   useUpdateCollectionOrderMutation,
   useDeleteCollectionOrderMutation,
 } from "./collectionOrdersApiSlice";
@@ -29,15 +30,19 @@ const EditCollectionOrderForm = () => {
   const { isFinanceEmployee, isFinanceSubAdmin, isFinanceAdmin, isAdmin, username } = useAuth();
 
   const {
-    data: collectionOrdersData,
-    isSuccess: isCollectionOrdersSuccess,
+    data: collectionOrder,
     isLoading: isFetching,
     isError: fetchError,
-  } = useGetCollectionOrdersQuery("collectionOrdersList");
+  } = useGetCollectionOrderQuery(id);
 
-  const { data: banksData, isSuccess: isBanksSuccess } = useGetBanksQuery("banksList");
+  const { data: collectionOrderOptions = {}, isLoading: areOptionsLoading } =
+    useGetCollectionOrderOptionsQuery("collectionOrderOptions");
 
-  const collectionOrder = collectionOrdersData?.entities[id];
+  const {
+    data: banksData,
+    isSuccess: isBanksSuccess,
+    isLoading: areBanksLoading,
+  } = useGetBanksQuery("banksList");
 
   const [
     updateCollectionOrder,
@@ -240,15 +245,7 @@ const EditCollectionOrderForm = () => {
 
   const theme = useDarkMode();
 
-  const voucherNumberOptions = useMemo(() => {
-    if (!isCollectionOrdersSuccess) return [];
-    const uniqueVoucherNumbers = new Set(
-      collectionOrdersData.ids
-        .map((id) => collectionOrdersData.entities[id]?.voucherNumber)
-        .filter(Boolean)
-    );
-    return [...uniqueVoucherNumbers].map((val) => ({ label: val, value: val }));
-  }, [collectionOrdersData, isCollectionOrdersSuccess]);
+  const voucherNumberOptions = collectionOrderOptions.voucherNumberOptions || [];
 
   const bankOptions = useMemo(() => {
     if (!isBanksSuccess) return [];
@@ -258,35 +255,9 @@ const EditCollectionOrderForm = () => {
     });
   }, [banksData, isBanksSuccess]);
 
-  const itemOptions = useMemo(() => {
-    if (!isCollectionOrdersSuccess) return [];
-    const uniqueItems = new Set(
-      collectionOrdersData.ids
-        .map((id) => collectionOrdersData.entities[id]?.item)
-        .filter(Boolean)
-    );
-    return [...uniqueItems].map((val) => ({ label: val, value: val }));
-  }, [collectionOrdersData, isCollectionOrdersSuccess]);
-
-  const deductedFromOptions = useMemo(() => {
-    if (!isCollectionOrdersSuccess) return [];
-    const uniqueDeductedFrom = new Set(
-      collectionOrdersData.ids
-        .map((id) => collectionOrdersData.entities[id]?.deductedFrom)
-        .filter(Boolean)
-    );
-    return [...uniqueDeductedFrom].map((val) => ({ label: val, value: val }));
-  }, [collectionOrdersData, isCollectionOrdersSuccess]);
-
-  const addedToOptions = useMemo(() => {
-    if (!isCollectionOrdersSuccess) return [];
-    const uniqueAddedTo = new Set(
-      collectionOrdersData.ids
-        .map((id) => collectionOrdersData.entities[id]?.addedTo)
-        .filter(Boolean)
-    );
-    return [...uniqueAddedTo].map((val) => ({ label: val, value: val }));
-  }, [collectionOrdersData, isCollectionOrdersSuccess]);
+  const itemOptions = collectionOrderOptions.itemOptions || [];
+  const deductedFromOptions = collectionOrderOptions.deductedFromOptions || [];
+  const addedToOptions = collectionOrderOptions.addedToOptions || [];
 
   const onSaveClicked = async (e) => {
     e.preventDefault();
@@ -330,7 +301,7 @@ const EditCollectionOrderForm = () => {
   const errClass = isError || isDelError ? "errmsg" : "offscreen";
   const errMsg = error?.data?.message || delError?.data?.message || "";
 
-  if (isFetching) return <LoadingSpinner />;
+  if (isFetching || areOptionsLoading || areBanksLoading) return <LoadingSpinner />;
   if (fetchError || !collectionOrder)
     return <p className="p-4">{t("error_loading_collection_order")}</p>;
 

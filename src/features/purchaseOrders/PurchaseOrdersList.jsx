@@ -6,8 +6,8 @@ import {
   useDeletePurchaseOrderMutation,
   useAddBulkPurchaseOrdersMutation 
 } from "./purchaseOrdersApiSlice";
-import { useGetCollectionOrdersQuery } from "../collectionOrders/collectionOrdersApiSlice";
 import { useGetBanksQuery } from "../banks/banksApiSlice";
+import { useGetOrdersSummaryQuery } from "../dashboard/dashboardApiSlice";
 import { useGetSignedUrlMutation } from "../s3/s3ApiSlice";
 import DataTableWrapper from "../../components/DataTableWrapper";
 import LoadingSpinner from "../../components/LoadingSpinner";
@@ -70,14 +70,14 @@ const PurchaseOrdersList = () => {
   });
 
   const {
-    data: collectionOrders,
-    isLoading: isLoadingCO,
-    isSuccess: isSuccessCO,
-    isError: isErrorCO,
-    error: errorCO,
-    refetch: refetchCO,
-    isFetching: isFetchingCO,
-  } = useGetCollectionOrdersQuery("collectionOrdersList", {
+    data: ordersSummary,
+    isLoading: isLoadingSummary,
+    isSuccess: isSuccessSummary,
+    isError: isErrorSummary,
+    error: errorSummary,
+    refetch: refetchOrdersSummary,
+    isFetching: isFetchingSummary,
+  } = useGetOrdersSummaryQuery({ scope: "all", dateBasis: "createdAt" }, {
     pollingInterval: 60000,
     refetchOnFocus: true,
     refetchOnMountOrArgChange: 300,
@@ -96,20 +96,20 @@ const PurchaseOrdersList = () => {
     return map;
   }, [banksData]);
 
-  if ((isLoadingPO && !purchaseOrders) || (isLoadingCO && !collectionOrders)) return <LoadingSpinner />;
+  if ((isLoadingPO && !purchaseOrders) || (isLoadingSummary && !ordersSummary)) return <LoadingSpinner />;
 
-  if (isErrorPO || isErrorCO) {
+  if (isErrorPO || isErrorSummary) {
     return (
       <div
         className="p-4 mb-4 text-sm text-red-800 rounded-lg bg-red-50 dark:bg-gray-800 dark:text-red-400"
         role="alert"
       >
-        <span className="font-medium">Alert! :</span> {errorPO?.data?.message || errorCO?.data?.message}
+        <span className="font-medium">Alert! :</span> {errorPO?.data?.message || errorSummary?.data?.message}
       </div>
     );
   }
 
-  if (isSuccessPO && isSuccessCO) {
+  if (isSuccessPO && isSuccessSummary) {
     const purchaseOrderList = purchaseOrders.ids.map(
       (id) => purchaseOrders.entities[id]
     );
@@ -321,29 +321,13 @@ const PurchaseOrdersList = () => {
       ),
     }));
 
-    const totalPurchaseAmount = purchaseOrderList.reduce(
-      (sum, order) => sum + (order.totalAmount || 0),
-      0
-    );
-
-    // totla purchase orders without visa
-    const totalPurchaseAmountWithoutVisa = purchaseOrderList.filter(
-      (order) => order.paymentMethod !== "visa"
-    ).reduce(
-      (sum, order) => sum + (order.totalAmount || 0),
-      0
-    );
-
-    const collectionOrderList = collectionOrders.ids.map(
-      (id) => collectionOrders.entities[id]
-    );
-
-    const totalCollectionAmount = collectionOrderList.reduce(
-      (sum, order) => sum + (order.totalAmount || 0),
-      0
-    );
-
-    const balance = totalCollectionAmount - totalPurchaseAmount;
+    const purchaseSummary = ordersSummary?.purchase || {};
+    const collectionSummary = ordersSummary?.collection || {};
+    const totalPurchaseOrdersCount = purchaseSummary.count ?? purchaseOrderList.length;
+    const totalPurchaseAmount = purchaseSummary.totalAmount || 0;
+    const totalPurchaseAmountWithoutVisa = purchaseSummary.totalAmountWithoutVisa || 0;
+    const totalCollectionAmount = collectionSummary.totalAmount || 0;
+    const balance = ordersSummary?.balance ?? totalCollectionAmount - totalPurchaseAmount;
 
     const handleExcelImport = (e) => {
       const file = e.target.files[0];
@@ -589,12 +573,12 @@ const PurchaseOrdersList = () => {
               <button
                 onClick={async () => {
                   setIsRefreshing(true);
-                  await Promise.all([refetchPO(), refetchCO()]);
+                  await Promise.all([refetchPO(), refetchOrdersSummary()]);
                   setIsRefreshing(false);
                 }}
                 className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 border border-gray-500 hover:text-dark-900 hover:bg-gray-100 hover:text-gray-700 dark:border-white dark:bg-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white cursor-pointer transition-all active:scale-95"
               >
-                <RefreshCw size={20} className={`${(isFetchingPO || isFetchingCO) ? "animate-spin" : ""}`} />
+                <RefreshCw size={20} className={`${(isFetchingPO || isFetchingSummary) ? "animate-spin" : ""}`} />
               </button>
               <div className="absolute end-full top-1/2 me-2 -translate-y-1/2 whitespace-nowrap px-3 py-1.5 text-sm text-gray-800 bg-gray-300 dark:bg-gray-200 dark:text-gray-800 rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-10 shadow-md font-medium">
                 {t("refresh")}
@@ -650,7 +634,7 @@ const PurchaseOrdersList = () => {
               {t("total_purchase_orders")}
             </p>
             <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
-              {purchaseOrderList.length}
+              {totalPurchaseOrdersCount}
             </h3>
           </div>
 
@@ -693,7 +677,7 @@ const PurchaseOrdersList = () => {
           title={t("purchase_orders_list")}
           sumField="totalAmount"
           onRefresh={async () => {
-            await Promise.all([refetchPO(), refetchCO()]);
+            await Promise.all([refetchPO(), refetchOrdersSummary()]);
           }}
         />
 

@@ -1,9 +1,7 @@
 import { useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import toast from "react-hot-toast";
-import { useGetBanksQuery, useDeleteBankMutation } from "./banksApiSlice";
-import { useGetCollectionOrdersQuery } from "../collectionOrders/collectionOrdersApiSlice";
-import { useGetPurchaseOrdersQuery } from "../purchaseOrders/purchaseOrdersApiSlice";
+import { useGetBanksSummaryQuery, useDeleteBankMutation } from "./banksApiSlice";
 import DataTableWrapper from "../../components/DataTableWrapper";
 import LoadingSpinner from "../../components/LoadingSpinner";
 import { Link } from "react-router-dom";
@@ -12,6 +10,18 @@ import { prefetchHandlers } from "../../hooks/usePrefetch";
 import useAuth from "../../hooks/useAuth";
 import DeleteConfirmModal from "../../components/DeleteConfirmModal";
 import { Calendar } from "primereact/calendar";
+
+const formatDateParam = (value) => {
+  if (!value) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+};
 
 const BanksList = () => {
   const { t } = useTranslation();
@@ -23,71 +33,32 @@ const BanksList = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [dateRange, setDateRange] = useState(null);
 
+  const summaryQuery = useMemo(() => {
+    const from = formatDateParam(dateRange?.[0]);
+    const to = formatDateParam(dateRange?.[1] || dateRange?.[0]);
+
+    return {
+      dateBasis: "createdAt",
+      ...(from ? { from } : {}),
+      ...(to ? { to } : {}),
+    };
+  }, [dateRange]);
+
   const {
-    data: banksData,
+    data: banksSummary,
     isLoading,
     isSuccess,
     isError,
     error,
     refetch,
     isFetching,
-  } = useGetBanksQuery("banksList", {
+  } = useGetBanksSummaryQuery(summaryQuery, {
     pollingInterval: 60000,
     refetchOnFocus: true,
     refetchOnMountOrArgChange: 300,
   });
 
-  const { data: coData, isSuccess: isCoSuccess } = useGetCollectionOrdersQuery("collectionOrdersList");
-  const { data: poData, isSuccess: isPoSuccess } = useGetPurchaseOrdersQuery("purchaseOrdersList");
-
-  // Build per-bank totals
-  const bankTotals = useMemo(() => {
-    const totals = {};
-    const startDate = dateRange?.[0] ? new Date(dateRange[0]) : null;
-    const endDate = dateRange?.[1] ? new Date(dateRange[1]) : startDate;
-
-    if (startDate && !isNaN(startDate.getTime())) {
-      startDate.setHours(0, 0, 0, 0);
-    }
-    if (endDate && !isNaN(endDate.getTime())) {
-      endDate.setHours(23, 59, 59, 999);
-    }
-
-    const isInRange = (dateStr) => {
-      if (!startDate || isNaN(startDate.getTime())) return true;
-      const d = new Date(dateStr);
-      if (isNaN(d.getTime())) return false;
-      return d >= startDate && d <= endDate;
-    };
-
-    if (isCoSuccess && coData?.ids) {
-      coData.ids.forEach((id) => {
-        const co = coData.entities[id];
-        if (!isInRange(co.createdAt)) return;
-
-        const bankName = co?.receivingBankName?.trim();
-        if (!bankName) return;
-        if (!totals[bankName]) totals[bankName] = { co: 0, po: 0 };
-        totals[bankName].co = Math.round((totals[bankName].co + (Number(co.totalAmount) || 0)) * 100) / 100;
-      });
-    }
-
-    if (isPoSuccess && poData?.ids) {
-      poData.ids.forEach((id) => {
-        const po = poData.entities[id];
-        if (!isInRange(po.createdAt)) return;
-
-        const bankName = po?.bankNameFrom?.trim();
-        if (!bankName) return;
-        if (!totals[bankName]) totals[bankName] = { co: 0, po: 0 };
-        totals[bankName].po = Math.round((totals[bankName].po + (Number(po.totalAmount) || 0)) * 100) / 100;
-      });
-    }
-
-    return totals;
-  }, [coData, poData, isCoSuccess, isPoSuccess, dateRange]);
-
-  if (isLoading && !banksData) return <LoadingSpinner />;
+  if (isLoading && !banksSummary) return <LoadingSpinner />;
 
   if (isError)
     return (
@@ -99,7 +70,7 @@ const BanksList = () => {
   const canManage = isAdmin || isFinanceAdmin;
 
   if (isSuccess) {
-    const banksList = banksData?.ids?.map((id) => banksData.entities[id]) || [];
+    const banksList = banksSummary || [];
 
     const columns = [
       { field: "name", header: t("bank_name") },
@@ -111,10 +82,9 @@ const BanksList = () => {
     ];
 
     const transformedData = banksList.map((bank) => {
-      const totals = bankTotals[bank.name?.trim()] || { co: 0, po: 0 };
-      const coTotal = totals.co;
-      const poTotal = totals.po;
-      const balance = Math.round((coTotal - poTotal) * 100) / 100;
+      const coTotal = Number(bank.totalCollectionOrders) || 0;
+      const poTotal = Number(bank.totalPurchaseOrders) || 0;
+      const balance = Number(bank.balance) || 0;
       const fmt = (n) => n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
       return {
         ...bank,

@@ -1,6 +1,7 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
-  useGetPurchaseOrdersQuery,
+  useGetPurchaseOrderQuery,
+  useGetPurchaseOrderOptionsQuery,
   useUpdatePurchaseOrderMutation,
   useDeletePurchaseOrderMutation,
 } from "./purchaseOrdersApiSlice";
@@ -28,15 +29,19 @@ const EditPurchaseOrderForm = () => {
   const { isFinanceEmployee, isFinanceSubAdmin, isFinanceAdmin, isAdmin, username } = useAuth();
 
   const {
-    data: purchaseOrdersData,
-    isSuccess: isPurchaseOrdersSuccess,
+    data: purchaseOrder,
     isLoading: isFetching,
     isError: fetchError,
-  } = useGetPurchaseOrdersQuery("purchaseOrdersList");
+  } = useGetPurchaseOrderQuery(id);
 
-  const { data: banksData, isSuccess: isBanksSuccess } = useGetBanksQuery("banksList");
+  const { data: purchaseOrderOptions = {}, isLoading: areOptionsLoading } =
+    useGetPurchaseOrderOptionsQuery("purchaseOrderOptions");
 
-  const purchaseOrder = purchaseOrdersData?.entities[id];
+  const {
+    data: banksData,
+    isSuccess: isBanksSuccess,
+    isLoading: areBanksLoading,
+  } = useGetBanksQuery("banksList");
 
   const [
     updatePurchaseOrder,
@@ -240,55 +245,11 @@ const EditPurchaseOrderForm = () => {
     maxFiles: 1,
   });
 
-  const managementOptions = useMemo(() => {
-    if (!isPurchaseOrdersSuccess) return [];
-    const uniqueManagements = new Set(
-      purchaseOrdersData.ids
-        .map((id) => purchaseOrdersData.entities[id]?.managementName)
-        .filter(Boolean)
-    );
-    return [...uniqueManagements].map((val) => ({ label: val, value: val }));
-  }, [purchaseOrdersData, isPurchaseOrdersSuccess]);
-
-  const supplierOptions = useMemo(() => {
-    if (!isPurchaseOrdersSuccess) return [];
-    const uniqueSuppliers = new Set(
-      purchaseOrdersData.ids
-        .map((id) => purchaseOrdersData.entities[id]?.supplier)
-        .filter(Boolean)
-    );
-    return [...uniqueSuppliers].map((val) => ({ label: val, value: val }));
-  }, [purchaseOrdersData, isPurchaseOrdersSuccess]);
-
-  const itemOptions = useMemo(() => {
-    if (!isPurchaseOrdersSuccess) return [];
-    const uniqueItems = new Set(
-      purchaseOrdersData.ids
-        .map((id) => purchaseOrdersData.entities[id]?.item)
-        .filter(Boolean)
-    );
-    return [...uniqueItems].map((val) => ({ label: val, value: val }));
-  }, [purchaseOrdersData, isPurchaseOrdersSuccess]);
-
-  const deductedFromOptions = useMemo(() => {
-    if (!isPurchaseOrdersSuccess) return [];
-    const uniqueDeductedFrom = new Set(
-      purchaseOrdersData.ids
-        .map((id) => purchaseOrdersData.entities[id]?.deductedFrom)
-        .filter(Boolean)
-    );
-    return [...uniqueDeductedFrom].map((val) => ({ label: val, value: val }));
-  }, [purchaseOrdersData, isPurchaseOrdersSuccess]);
-
-  const addedToOptions = useMemo(() => {
-    if (!isPurchaseOrdersSuccess) return [];
-    const uniqueAddedTo = new Set(
-      purchaseOrdersData.ids
-        .map((id) => purchaseOrdersData.entities[id]?.addedTo)
-        .filter(Boolean)
-    );
-    return [...uniqueAddedTo].map((val) => ({ label: val, value: val }));
-  }, [purchaseOrdersData, isPurchaseOrdersSuccess]);
+  const managementOptions = purchaseOrderOptions.managementOptions || [];
+  const supplierOptions = purchaseOrderOptions.supplierOptions || [];
+  const itemOptions = purchaseOrderOptions.itemOptions || [];
+  const deductedFromOptions = purchaseOrderOptions.deductedFromOptions || [];
+  const addedToOptions = purchaseOrderOptions.addedToOptions || [];
 
   const bankOptions = useMemo(() => {
     if (!isBanksSuccess) return [];
@@ -298,25 +259,8 @@ const EditPurchaseOrderForm = () => {
     });
   }, [banksData, isBanksSuccess]);
 
-  const bankNameToOptions = useMemo(() => {
-    if (!isPurchaseOrdersSuccess) return [];
-    const uniqueBankNames = new Set(
-      purchaseOrdersData.ids
-        .map((id) => purchaseOrdersData.entities[id]?.bankNameTo)
-        .filter(Boolean)
-    );
-    return [...uniqueBankNames].map((val) => ({ label: val, value: val }));
-  }, [purchaseOrdersData, isPurchaseOrdersSuccess]);
-
-  const ibanNumberToOptions = useMemo(() => {
-    if (!isPurchaseOrdersSuccess) return [];
-    const uniqueIbans = new Set(
-      purchaseOrdersData.ids
-        .map((id) => purchaseOrdersData.entities[id]?.ibanNumberTo)
-        .filter(Boolean)
-    );
-    return [...uniqueIbans].map((val) => ({ label: val, value: val }));
-  }, [purchaseOrdersData, isPurchaseOrdersSuccess]);
+  const bankNameToOptions = purchaseOrderOptions.bankNameToOptions || [];
+  const ibanNumberToOptions = purchaseOrderOptions.ibanNumberToOptions || [];
 
   const onSaveClicked = async (e) => {
     e.preventDefault();
@@ -366,7 +310,7 @@ const EditPurchaseOrderForm = () => {
   const errClass = isError || isDelError ? "errmsg" : "offscreen";
   const errMsg = error?.data?.message || delError?.data?.message || "";
 
-  if (isFetching) return <LoadingSpinner />;
+  if (isFetching || areOptionsLoading || areBanksLoading) return <LoadingSpinner />;
   if (fetchError || !purchaseOrder)
     return <p className="p-4">{t("error_loading_purchase_order")}</p>;
 

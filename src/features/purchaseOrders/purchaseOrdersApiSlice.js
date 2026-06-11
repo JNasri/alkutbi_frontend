@@ -27,8 +27,21 @@ export const purchaseOrdersApiSlice = apiSlice.injectEndpoints({
       },
     }),
 
+    getPurchaseOrderOptions: builder.query({
+      query: () => "/purchaseorders/options",
+      validateStatus: (response, result) =>
+        response.status === 200 && !result.isError,
+      providesTags: [{ type: "PurchaseOrder", id: "OPTIONS" }],
+    }),
+
     getPurchaseOrder: builder.query({
       query: (id) => `/purchaseorders/${id}`,
+      validateStatus: (response, result) =>
+        response.status === 200 && !result.isError,
+      transformResponse: (responseData) => ({
+        ...responseData,
+        id: responseData._id,
+      }),
       providesTags: (result, error, id) => [{ type: "PurchaseOrder", id }],
     }),
 
@@ -48,7 +61,12 @@ export const purchaseOrdersApiSlice = apiSlice.injectEndpoints({
           body: formData,
         };
       },
-      invalidatesTags: [{ type: "PurchaseOrder", id: "LIST" }],
+      invalidatesTags: [
+        { type: "PurchaseOrder", id: "LIST" },
+        { type: "PurchaseOrder", id: "OPTIONS" },
+        { type: "Dashboard", id: "ORDERS_SUMMARY" },
+        { type: "Bank", id: "SUMMARY" },
+      ],
     }),
 
     addBulkPurchaseOrders: builder.mutation({
@@ -57,7 +75,12 @@ export const purchaseOrdersApiSlice = apiSlice.injectEndpoints({
         method: "POST",
         body: { orders },
       }),
-      invalidatesTags: [{ type: "PurchaseOrder", id: "LIST" }],
+      invalidatesTags: [
+        { type: "PurchaseOrder", id: "LIST" },
+        { type: "PurchaseOrder", id: "OPTIONS" },
+        { type: "Dashboard", id: "ORDERS_SUMMARY" },
+        { type: "Bank", id: "SUMMARY" },
+      ],
     }),
 
     updatePurchaseOrder: builder.mutation({
@@ -79,6 +102,9 @@ export const purchaseOrdersApiSlice = apiSlice.injectEndpoints({
       invalidatesTags: (result, error, arg) => [
         { type: "PurchaseOrder", id: arg.id },
         { type: "PurchaseOrder", id: "LIST" },
+        { type: "PurchaseOrder", id: "OPTIONS" },
+        { type: "Dashboard", id: "ORDERS_SUMMARY" },
+        { type: "Bank", id: "SUMMARY" },
       ],
     }),
 
@@ -91,6 +117,9 @@ export const purchaseOrdersApiSlice = apiSlice.injectEndpoints({
       invalidatesTags: (result, error, arg) => [
         { type: "PurchaseOrder", id: arg.id },
         { type: "PurchaseOrder", id: "LIST" },
+        { type: "PurchaseOrder", id: "OPTIONS" },
+        { type: "Dashboard", id: "ORDERS_SUMMARY" },
+        { type: "Bank", id: "SUMMARY" },
       ],
     }),
   }),
@@ -98,6 +127,7 @@ export const purchaseOrdersApiSlice = apiSlice.injectEndpoints({
 
 export const {
   useGetPurchaseOrdersQuery,
+  useGetPurchaseOrderOptionsQuery,
   useGetPurchaseOrderQuery,
   useAddNewPurchaseOrderMutation,
   useAddBulkPurchaseOrdersMutation,

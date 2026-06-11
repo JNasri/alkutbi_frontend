@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import {
   useAddNewCollectionOrderMutation,
-  useGetCollectionOrdersQuery,
+  useGetCollectionOrderOptionsQuery,
 } from "./collectionOrdersApiSlice";
 import { useGetBanksQuery } from "../banks/banksApiSlice";
 import { useMemo } from "react";
@@ -30,10 +30,14 @@ const AddCollectionOrderForm = () => {
   const [addNewCollectionOrder, { isLoading, isSuccess, isError, error }] =
     useAddNewCollectionOrderMutation();
 
-  const { data: collectionOrdersData, isSuccess: isCollectionOrdersSuccess } =
-    useGetCollectionOrdersQuery("collectionOrdersList");
+  const { data: collectionOrderOptions = {}, isLoading: areOptionsLoading } =
+    useGetCollectionOrderOptionsQuery("collectionOrderOptions");
 
-  const { data: banksData, isSuccess: isBanksSuccess } = useGetBanksQuery("banksList");
+  const {
+    data: banksData,
+    isSuccess: isBanksSuccess,
+    isLoading: areBanksLoading,
+  } = useGetBanksQuery("banksList");
 
   const [showDuplicateModal, setShowDuplicateModal] = useState(false);
   const [duplicateRecords, setDuplicateRecords] = useState([]);
@@ -133,26 +137,8 @@ const AddCollectionOrderForm = () => {
 
 
 
-  // Create options from existing data
-  const voucherNumberOptions = useMemo(() => {
-    if (!isCollectionOrdersSuccess) return [];
-    const uniqueVoucherNumbers = new Set(
-      collectionOrdersData.ids
-        .map((id) => collectionOrdersData.entities[id]?.voucherNumber)
-        .filter(Boolean)
-    );
-    return [...uniqueVoucherNumbers].map((val) => ({ label: val, value: val }));
-  }, [collectionOrdersData, isCollectionOrdersSuccess]);
-
-  const itemOptions = useMemo(() => {
-    if (!isCollectionOrdersSuccess) return [];
-    const uniqueItems = new Set(
-      collectionOrdersData.ids
-        .map((id) => collectionOrdersData.entities[id]?.item)
-        .filter(Boolean)
-    );
-    return [...uniqueItems].map((val) => ({ label: val, value: val }));
-  }, [collectionOrdersData, isCollectionOrdersSuccess]);
+  const voucherNumberOptions = collectionOrderOptions.voucherNumberOptions || [];
+  const itemOptions = collectionOrderOptions.itemOptions || [];
 
   const bankOptions = useMemo(() => {
     if (!isBanksSuccess) return [];
@@ -162,25 +148,8 @@ const AddCollectionOrderForm = () => {
     });
   }, [banksData, isBanksSuccess]);
 
-  const deductedFromOptions = useMemo(() => {
-    if (!isCollectionOrdersSuccess) return [];
-    const uniqueDeductedFrom = new Set(
-      collectionOrdersData.ids
-        .map((id) => collectionOrdersData.entities[id]?.deductedFrom)
-        .filter(Boolean)
-    );
-    return [...uniqueDeductedFrom].map((val) => ({ label: val, value: val }));
-  }, [collectionOrdersData, isCollectionOrdersSuccess]);
-
-  const addedToOptions = useMemo(() => {
-    if (!isCollectionOrdersSuccess) return [];
-    const uniqueAddedTo = new Set(
-      collectionOrdersData.ids
-        .map((id) => collectionOrdersData.entities[id]?.addedTo)
-        .filter(Boolean)
-    );
-    return [...uniqueAddedTo].map((val) => ({ label: val, value: val }));
-  }, [collectionOrdersData, isCollectionOrdersSuccess]);
+  const deductedFromOptions = collectionOrderOptions.deductedFromOptions || [];
+  const addedToOptions = collectionOrderOptions.addedToOptions || [];
 
   useEffect(() => {
     if (isSuccess) {
@@ -293,7 +262,7 @@ const AddCollectionOrderForm = () => {
 
   return (
     <>
-      {isLoading && <LoadingSpinner />}
+      {(isLoading || areOptionsLoading || areBanksLoading) && <LoadingSpinner />}
       <p className={errClass}>{error?.data?.message}</p>
       <DuplicateConfirmModal
         isOpen={showDuplicateModal}

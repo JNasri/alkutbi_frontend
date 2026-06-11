@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import {
   useAddNewPurchaseOrderMutation,
-  useGetPurchaseOrdersQuery,
+  useGetPurchaseOrderOptionsQuery,
 } from "./purchaseOrdersApiSlice";
 import { useGetBanksQuery } from "../banks/banksApiSlice";
 import { useMemo } from "react";
@@ -29,10 +29,14 @@ const AddPurchaseOrderForm = () => {
   const [addNewPurchaseOrder, { isLoading, isSuccess, isError, error }] =
     useAddNewPurchaseOrderMutation();
 
-  const { data: purchaseOrdersData, isSuccess: isPurchaseOrdersSuccess } =
-    useGetPurchaseOrdersQuery("purchaseOrdersList");
+  const { data: purchaseOrderOptions = {}, isLoading: areOptionsLoading } =
+    useGetPurchaseOrderOptionsQuery("purchaseOrderOptions");
 
-  const { data: banksData, isSuccess: isBanksSuccess } = useGetBanksQuery("banksList");
+  const {
+    data: banksData,
+    isSuccess: isBanksSuccess,
+    isLoading: areBanksLoading,
+  } = useGetBanksQuery("banksList");
 
   const [showDuplicateModal, setShowDuplicateModal] = useState(false);
   const [duplicateRecords, setDuplicateRecords] = useState([]);
@@ -165,56 +169,11 @@ const AddPurchaseOrderForm = () => {
 
 
 
-  // Create options from existing data
-  const managementOptions = useMemo(() => {
-    if (!isPurchaseOrdersSuccess) return [];
-    const uniqueManagements = new Set(
-      purchaseOrdersData.ids
-        .map((id) => purchaseOrdersData.entities[id]?.managementName)
-        .filter(Boolean)
-    );
-    return [...uniqueManagements].map((val) => ({ label: val, value: val }));
-  }, [purchaseOrdersData, isPurchaseOrdersSuccess]);
-
-  const supplierOptions = useMemo(() => {
-    if (!isPurchaseOrdersSuccess) return [];
-    const uniqueSuppliers = new Set(
-      purchaseOrdersData.ids
-        .map((id) => purchaseOrdersData.entities[id]?.supplier)
-        .filter(Boolean)
-    );
-    return [...uniqueSuppliers].map((val) => ({ label: val, value: val }));
-  }, [purchaseOrdersData, isPurchaseOrdersSuccess]);
-
-  const itemOptions = useMemo(() => {
-    if (!isPurchaseOrdersSuccess) return [];
-    const uniqueItems = new Set(
-      purchaseOrdersData.ids
-        .map((id) => purchaseOrdersData.entities[id]?.item)
-        .filter(Boolean)
-    );
-    return [...uniqueItems].map((val) => ({ label: val, value: val }));
-  }, [purchaseOrdersData, isPurchaseOrdersSuccess]);
-
-  const deductedFromOptions = useMemo(() => {
-    if (!isPurchaseOrdersSuccess) return [];
-    const uniqueDeductedFrom = new Set(
-      purchaseOrdersData.ids
-        .map((id) => purchaseOrdersData.entities[id]?.deductedFrom)
-        .filter(Boolean)
-    );
-    return [...uniqueDeductedFrom].map((val) => ({ label: val, value: val }));
-  }, [purchaseOrdersData, isPurchaseOrdersSuccess]);
-
-  const addedToOptions = useMemo(() => {
-    if (!isPurchaseOrdersSuccess) return [];
-    const uniqueAddedTo = new Set(
-      purchaseOrdersData.ids
-        .map((id) => purchaseOrdersData.entities[id]?.addedTo)
-        .filter(Boolean)
-    );
-    return [...uniqueAddedTo].map((val) => ({ label: val, value: val }));
-  }, [purchaseOrdersData, isPurchaseOrdersSuccess]);
+  const managementOptions = purchaseOrderOptions.managementOptions || [];
+  const supplierOptions = purchaseOrderOptions.supplierOptions || [];
+  const itemOptions = purchaseOrderOptions.itemOptions || [];
+  const deductedFromOptions = purchaseOrderOptions.deductedFromOptions || [];
+  const addedToOptions = purchaseOrderOptions.addedToOptions || [];
 
   const bankOptions = useMemo(() => {
     if (!isBanksSuccess) return [];
@@ -224,25 +183,8 @@ const AddPurchaseOrderForm = () => {
     });
   }, [banksData, isBanksSuccess]);
 
-  const bankNameToOptions = useMemo(() => {
-    if (!isPurchaseOrdersSuccess) return [];
-    const uniqueBankNames = new Set(
-      purchaseOrdersData.ids
-        .map((id) => purchaseOrdersData.entities[id]?.bankNameTo)
-        .filter(Boolean)
-    );
-    return [...uniqueBankNames].map((val) => ({ label: val, value: val }));
-  }, [purchaseOrdersData, isPurchaseOrdersSuccess]);
-
-  const ibanNumberToOptions = useMemo(() => {
-    if (!isPurchaseOrdersSuccess) return [];
-    const uniqueIbans = new Set(
-      purchaseOrdersData.ids
-        .map((id) => purchaseOrdersData.entities[id]?.ibanNumberTo)
-        .filter(Boolean)
-    );
-    return [...uniqueIbans].map((val) => ({ label: val, value: val }));
-  }, [purchaseOrdersData, isPurchaseOrdersSuccess]);
+  const bankNameToOptions = purchaseOrderOptions.bankNameToOptions || [];
+  const ibanNumberToOptions = purchaseOrderOptions.ibanNumberToOptions || [];
 
   useEffect(() => {
     if (isSuccess) {
@@ -371,7 +313,7 @@ const AddPurchaseOrderForm = () => {
 
   return (
     <>
-      {isLoading && <LoadingSpinner />}
+      {(isLoading || areOptionsLoading || areBanksLoading) && <LoadingSpinner />}
       <p className={errClass}>{error?.data?.message}</p>
       <DuplicateConfirmModal
         isOpen={showDuplicateModal}

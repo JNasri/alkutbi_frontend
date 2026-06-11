@@ -27,8 +27,21 @@ export const collectionOrdersApiSlice = apiSlice.injectEndpoints({
       },
     }),
 
+    getCollectionOrderOptions: builder.query({
+      query: () => "/collectionorders/options",
+      validateStatus: (response, result) =>
+        response.status === 200 && !result.isError,
+      providesTags: [{ type: "CollectionOrder", id: "OPTIONS" }],
+    }),
+
     getCollectionOrder: builder.query({
       query: (id) => `/collectionorders/${id}`,
+      validateStatus: (response, result) =>
+        response.status === 200 && !result.isError,
+      transformResponse: (responseData) => ({
+        ...responseData,
+        id: responseData._id,
+      }),
       providesTags: (result, error, id) => [{ type: "CollectionOrder", id }],
     }),
 
@@ -48,7 +61,12 @@ export const collectionOrdersApiSlice = apiSlice.injectEndpoints({
           body: formData,
         };
       },
-      invalidatesTags: [{ type: "CollectionOrder", id: "LIST" }],
+      invalidatesTags: [
+        { type: "CollectionOrder", id: "LIST" },
+        { type: "CollectionOrder", id: "OPTIONS" },
+        { type: "Dashboard", id: "ORDERS_SUMMARY" },
+        { type: "Bank", id: "SUMMARY" },
+      ],
     }),
 
     updateCollectionOrder: builder.mutation({
@@ -70,6 +88,9 @@ export const collectionOrdersApiSlice = apiSlice.injectEndpoints({
       invalidatesTags: (result, error, arg) => [
         { type: "CollectionOrder", id: arg.id },
         { type: "CollectionOrder", id: "LIST" },
+        { type: "CollectionOrder", id: "OPTIONS" },
+        { type: "Dashboard", id: "ORDERS_SUMMARY" },
+        { type: "Bank", id: "SUMMARY" },
       ],
     }),
 
@@ -82,6 +103,9 @@ export const collectionOrdersApiSlice = apiSlice.injectEndpoints({
       invalidatesTags: (result, error, arg) => [
         { type: "CollectionOrder", id: arg.id },
         { type: "CollectionOrder", id: "LIST" },
+        { type: "CollectionOrder", id: "OPTIONS" },
+        { type: "Dashboard", id: "ORDERS_SUMMARY" },
+        { type: "Bank", id: "SUMMARY" },
       ],
     }),
 
@@ -91,13 +115,19 @@ export const collectionOrdersApiSlice = apiSlice.injectEndpoints({
         method: "POST",
         body: { orders },
       }),
-      invalidatesTags: [{ type: "CollectionOrder", id: "LIST" }],
+      invalidatesTags: [
+        { type: "CollectionOrder", id: "LIST" },
+        { type: "CollectionOrder", id: "OPTIONS" },
+        { type: "Dashboard", id: "ORDERS_SUMMARY" },
+        { type: "Bank", id: "SUMMARY" },
+      ],
     }),
   }),
 });
 
 export const {
   useGetCollectionOrdersQuery,
+  useGetCollectionOrderOptionsQuery,
   useGetCollectionOrderQuery,
   useAddNewCollectionOrderMutation,
   useUpdateCollectionOrderMutation,
