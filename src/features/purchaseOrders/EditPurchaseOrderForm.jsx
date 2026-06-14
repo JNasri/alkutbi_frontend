@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import {
   useGetPurchaseOrderQuery,
   useGetPurchaseOrderOptionsQuery,
@@ -86,6 +86,12 @@ const EditPurchaseOrderForm = () => {
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [isNavigatingBack, setIsNavigatingBack] = useState(false);
+
+  const navigateToPurchaseOrders = useCallback(() => {
+    setIsNavigatingBack(true);
+    setTimeout(() => navigate("/dashboard/purchaseorders"), 0);
+  }, [navigate]);
 
   // Status options with roles restriction
   const statusOptions = useMemo(() => {
@@ -129,7 +135,7 @@ const EditPurchaseOrderForm = () => {
       
       if (!isInitialLoad && !canEdit) {
         toast.error(t("no_permission_to_edit_this_order"));
-        navigate("/dashboard/purchaseorders");
+        navigateToPurchaseOrders();
         return;
       }
 
@@ -158,7 +164,7 @@ const EditPurchaseOrderForm = () => {
       setExistingOrderPrintUrl(purchaseOrder.orderPrintUrl || "");
       setIsInitialLoad(false);
     }
-  }, [purchaseOrder, isAdmin, isFinanceAdmin, isFinanceEmployee, username, navigate, t]);
+  }, [purchaseOrder, isAdmin, isFinanceAdmin, isFinanceEmployee, username, t, isInitialLoad, navigateToPurchaseOrders]);
 
   // Auto-convert number to Arabic text
   useEffect(() => {
@@ -195,14 +201,14 @@ const EditPurchaseOrderForm = () => {
   useEffect(() => {
     if (isSuccess) {
       toast.success(t("purchase_order_updated_successfully"));
-      navigate("/dashboard/purchaseorders");
+      navigateToPurchaseOrders();
     } else if (isError) {
       toast.error(error?.data?.message || t("error_updating_purchase_order"));
     }
 
     if (isDelSuccess) {
-      toast.success(t("purchase_order_deleted_successfully"));
-      navigate("/dashboard/purchaseorders");
+      toast.success(t("purchase_order_archived_successfully"));
+      navigateToPurchaseOrders();
     } else if (isDelError) {
       toast.error(
         delError?.data?.message || t("error_deleting_purchase_order")
@@ -215,8 +221,8 @@ const EditPurchaseOrderForm = () => {
     isDelSuccess,
     isDelError,
     delError,
-    navigate,
     t,
+    navigateToPurchaseOrders,
   ]);
 
   const theme = useDarkMode();
@@ -319,12 +325,12 @@ const EditPurchaseOrderForm = () => {
 
   return (
     <>
-      {(isUpdating || isDeleting) && <LoadingSpinner />}
+      {(isUpdating || isDeleting || isNavigatingBack) && <LoadingSpinner />}
       <p className={errClass}>{errMsg}</p>
 
       <div className="flex items-center gap-4 mb-4 p-1">
         <button
-          onClick={() => navigate("/dashboard/purchaseorders")}
+          onClick={navigateToPurchaseOrders}
           className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 border border-gray-500 hover:bg-gray-200 hover:text-gray-700 dark:border-white dark:bg-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white cursor-pointer"
         >
           {i18n.language === "ar" ? (

@@ -9,6 +9,7 @@ import toast from "react-hot-toast";
 import DataTableWrapper from "../../components/DataTableWrapper";
 import LoadingSpinner from "../../components/LoadingSpinner";
 import DeleteConfirmModal from "../../components/DeleteConfirmModal";
+import { getRoleLabel, sortRoles } from "../../config/roles";
 
 const UsersList = () => {
   const { t } = useTranslation();
@@ -71,7 +72,9 @@ const UsersList = () => {
     // Convert arrays or dates if needed
     const transformedData = userList.map((user) => ({
       ...user,
-      roles: user.roles.join(", "),
+      roles: sortRoles(user.roles)
+        .map((role) => getRoleLabel(t, role))
+        .join(", "),
       createdAt: new Date(user.createdAt).toLocaleDateString(),
       updatedAt: new Date(user.updatedAt).toLocaleDateString(),
       actions: (

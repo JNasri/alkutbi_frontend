@@ -11,7 +11,7 @@ import LoadingSpinner from "./LoadingSpinner";
 import i18n from "../../i18n";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
-import { FileSpreadsheet, Search, FilterX, ListFilter, CalendarDays } from "lucide-react";
+import { FileSpreadsheet, Search, FilterX, ListFilter, CalendarDays, Archive } from "lucide-react";
 
 // PrimeReact imports
 import "primereact/resources/themes/lara-light-indigo/theme.css";
@@ -53,10 +53,48 @@ function saveFilters(title, state) {
 }
 
 // ── Shared button styles matching the site design ─────────────────────────
+const toLocalDateParam = (value) => {
+  if (!value) return null;
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+const serializeColumnFilters = (filters) =>
+  Object.entries(filters || {}).reduce((acc, [field, filter]) => {
+    if (!filter || typeof filter !== "object") return acc;
+
+    if (filter.type === "date") {
+      acc[field] = {
+        ...filter,
+        from: toLocalDateParam(filter.from),
+        to: toLocalDateParam(filter.to),
+      };
+      return acc;
+    }
+
+    acc[field] = filter;
+    return acc;
+  }, {});
+
 const BTN_APPLY =
   "flex-1 py-2 text-sm font-semibold bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white rounded-lg transition-colors shadow-sm cursor-pointer";
 const BTN_CLEAR =
   "flex-1 py-2 text-sm font-semibold bg-orange-50 dark:bg-orange-900/20 hover:bg-orange-100 dark:hover:bg-orange-900/40 text-orange-600 dark:text-orange-400 border border-orange-200 dark:border-orange-800 rounded-lg transition-colors cursor-pointer";
+
+const DEFAULT_SCOPE_OPTIONS = [
+  { value: "today", labelKey: "today" },
+  { value: "all", labelKey: "all" },
+];
+
+const SCOPE_ICONS = {
+  today: CalendarDays,
+  archive: Archive,
+};
 
 const DataTableWrapper = ({
   data,
@@ -66,24 +104,56 @@ const DataTableWrapper = ({
   sumField = null,
   dateField = "createdAt",
   onRefresh,
+  serverSide = false,
+  totalRecords = 0,
+  serverTotalSum = null,
+  isServerLoading = false,
+  onServerStateChange,
+  onExportData,
+  scopeOptions = DEFAULT_SCOPE_OPTIONS,
 }) => {
   const { i18n, t } = useTranslation();
   const isRTL = i18n.dir() === "rtl";
 
   // ── Restore saved filters from localStorage ────────────────────────────────
   const saved = useMemo(() => loadFilters(title), [title]);
+  const normalizedScopeOptions = useMemo(() => {
+    const options =
+      Array.isArray(scopeOptions) && scopeOptions.length
+        ? scopeOptions
+        : DEFAULT_SCOPE_OPTIONS;
+
+    return options
+      .map((option) =>
+        typeof option === "string"
+          ? { value: option, labelKey: option }
+          : option
+      )
+      .filter((option) => option?.value);
+  }, [scopeOptions]);
 
   // ── Core table state ──────────────────────────────────────────────────────
   const [globalFilter, setGlobalFilter] = useState(saved?.globalFilter ?? "");
+  const [globalSearchDraft, setGlobalSearchDraft] = useState(saved?.globalSearchDraft ?? saved?.globalFilter ?? "");
   const [selectedRows, setSelectedRows] = useState([]);
   const [loading, setLoading] = useState(false);
   const [first, setFirst] = useState(0);
   const [rows, setRows] = useState(saved?.rows ?? 10);
   const [visibleData, setVisibleData] = useState(data);
+  const [sortField, setSortField] = useState(saved?.sortField ?? null);
+  const [sortOrder, setSortOrder] = useState(saved?.sortOrder ?? null);
   const dt = useRef(null);
+  const loadingResetTimerRef = useRef(null);
 
-  // ── Today / All toggle ─────────────────────────────────────────────────────
-  const [showToday, setShowToday] = useState(saved?.showToday ?? true);
+  // ── Table scope toggle ─────────────────────────────────────────────────────
+  const [activeScope, setActiveScope] = useState(() => {
+    const savedScope =
+      saved?.activeScope ?? (saved?.showToday === false ? "all" : "today");
+    return normalizedScopeOptions.some((option) => option.value === savedScope)
+      ? savedScope
+      : normalizedScopeOptions[0]?.value || "today";
+  });
+  const showToday = activeScope === "today";
 
   // ── Column filter state ───────────────────────────────────────────────────
   const [columnFilters, setColumnFilters] = useState(saved?.columnFilters ?? {});
@@ -95,15 +165,98 @@ const DataTableWrapper = ({
 
   // ── Persist filters to localStorage on change ─────────────────────────────
   useEffect(() => {
-    saveFilters(title, { globalFilter, columnFilters, searchDraft, dateDraft, rows, showToday });
-  }, [title, globalFilter, columnFilters, searchDraft, dateDraft, rows, showToday]);
+    saveFilters(title, {
+      globalFilter,
+      globalSearchDraft,
+      columnFilters,
+      searchDraft,
+      dateDraft,
+      rows,
+      activeScope,
+      showToday,
+      sortField,
+      sortOrder,
+    });
+  }, [title, globalFilter, globalSearchDraft, columnFilters, searchDraft, dateDraft, rows, activeScope, showToday, sortField, sortOrder]);
 
-  // Reset pagination when Today/All is toggled
-  useEffect(() => { setFirst(0); }, [showToday]);
+  // Reset pagination when the scope is toggled
+  useEffect(() => { setFirst(0); }, [activeScope]);
 
-  const handleTodayToggle = async (isToday) => {
+  useEffect(() => {
+    if (!normalizedScopeOptions.some((option) => option.value === activeScope)) {
+      setActiveScope(normalizedScopeOptions[0]?.value || "today");
+    }
+  }, [activeScope, normalizedScopeOptions]);
+
+  const beginServerActionLoading = useCallback(() => {
+    if (!serverSide) return;
+    if (loadingResetTimerRef.current) {
+      clearTimeout(loadingResetTimerRef.current);
+    }
     setLoading(true);
-    setShowToday(isToday);
+    loadingResetTimerRef.current = setTimeout(() => setLoading(false), 700);
+  }, [serverSide]);
+
+  useEffect(() => () => {
+    if (loadingResetTimerRef.current) {
+      clearTimeout(loadingResetTimerRef.current);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!serverSide) return;
+
+    if (isServerLoading) {
+      if (loadingResetTimerRef.current) {
+        clearTimeout(loadingResetTimerRef.current);
+      }
+      setLoading(true);
+      return;
+    }
+
+    if (loading) {
+      if (loadingResetTimerRef.current) {
+        clearTimeout(loadingResetTimerRef.current);
+      }
+      loadingResetTimerRef.current = setTimeout(() => setLoading(false), 120);
+    }
+  }, [serverSide, isServerLoading, loading]);
+
+  useEffect(() => {
+    if (!serverSide || !onServerStateChange) return;
+
+    onServerStateChange({
+      first,
+      rows,
+      page: Math.floor(first / rows) + 1,
+      scope: activeScope,
+      search: globalFilter,
+      filters: serializeColumnFilters(columnFilters),
+      sortField,
+      sortOrder,
+    });
+  }, [
+    serverSide,
+    onServerStateChange,
+    first,
+    rows,
+    activeScope,
+    globalFilter,
+    columnFilters,
+    sortField,
+    sortOrder,
+  ]);
+
+  const handleScopeToggle = async (scope) => {
+    if (scope === activeScope) return;
+
+    setFirst(0);
+    setActiveScope(scope);
+    if (serverSide) {
+      beginServerActionLoading();
+      return;
+    }
+    setLoading(true);
     if (onRefresh) {
       try {
         await onRefresh();
@@ -128,6 +281,16 @@ const DataTableWrapper = ({
       if (NO_FILTER_FIELDS.has(col.field)) { map[col.field] = null; return; }
       if (col.filterType === null)          { map[col.field] = null; return; }
       if (col.filterType)                   { map[col.field] = col.filterType; return; }
+      if (serverSide) {
+        if (col.filterOptions) { map[col.field] = "select"; return; }
+
+        const fl = col.field.toLowerCase();
+        if (fl.includes("date") || fl.endsWith("_at")) {
+          map[col.field] = "date"; return;
+        }
+
+        map[col.field] = "search"; return;
+      }
 
       const fl = col.field.toLowerCase();
       if (fl.includes("date") || fl.endsWith("_at") || fl.endsWith("time")) {
@@ -142,7 +305,7 @@ const DataTableWrapper = ({
       map[col.field] = unique.size < 10 ? "select" : "search";
     });
     return map;
-  }, [columns, data]);
+  }, [columns, data, serverSide]);
 
   // ── Select options ────────────────────────────────────────────────────────
   const selectOptionsMap = useMemo(() => {
@@ -150,15 +313,45 @@ const DataTableWrapper = ({
     columns.forEach((col) => {
       if (filterTypeMap[col.field] !== "select") return;
       if (col.filterOptions) { map[col.field] = col.filterOptions; return; }
+      if (serverSide) { map[col.field] = []; return; }
       const vals = data
         .map((row) => row[col.field])
         .filter((v) => v != null && v !== "" && typeof v !== "object" && typeof v !== "function");
       map[col.field] = [...new Set(vals.map(String))].sort().map((v) => ({ label: v, value: v }));
     });
     return map;
-  }, [columns, data, filterTypeMap]);
+  }, [columns, data, filterTypeMap, serverSide]);
 
   // ── Active filter helpers ─────────────────────────────────────────────────
+  useEffect(() => {
+    if (!serverSide) return;
+
+    setColumnFilters((prev) => {
+      let changed = false;
+      const next = { ...prev };
+
+      Object.entries(prev).forEach(([field, filter]) => {
+        if (filter?.type !== "select") return;
+        const options = selectOptionsMap[field];
+        if (!options?.length) return;
+
+        const allowedValues = new Set(options.map((opt) => String(opt.value)));
+        const currentValues = Array.isArray(filter.value) ? filter.value : [];
+        const validValues = currentValues.filter((value) =>
+          allowedValues.has(String(value))
+        );
+
+        if (validValues.length !== currentValues.length) {
+          changed = true;
+          if (validValues.length) next[field] = { ...filter, value: validValues };
+          else delete next[field];
+        }
+      });
+
+      return changed ? next : prev;
+    });
+  }, [serverSide, selectOptionsMap]);
+
   const hasActiveFilter = useCallback(
     (field) => {
       const f = columnFilters[field];
@@ -172,12 +365,13 @@ const DataTableWrapper = ({
   );
 
   const activeFilterCount = useMemo(
-    () => columns.filter((c) => hasActiveFilter(c.field)).length,
-    [columns, hasActiveFilter]
+    () => columns.filter((c) => hasActiveFilter(c.field)).length + (globalFilter ? 1 : 0),
+    [columns, hasActiveFilter, globalFilter]
   );
 
   // ── Today / All pre-filter ─────────────────────────────────────────────────
   const baseData = useMemo(() => {
+    if (serverSide) return data;
     if (!showToday || !dateField) return data;
     const todayStr = new Date().toLocaleDateString();
     return data.filter((row) => {
@@ -190,10 +384,12 @@ const DataTableWrapper = ({
       if (!isNaN(parsed.getTime()) && parsed.toLocaleDateString() === todayStr) return true;
       return false;
     });
-  }, [data, showToday, dateField]);
+  }, [data, showToday, dateField, serverSide]);
 
   // ── Column filtering ──────────────────────────────────────────────────────
   const columnFilteredData = useMemo(() => {
+    if (serverSide) return data;
+
     const activeEntries = Object.entries(columnFilters).filter(([, f]) => f);
     if (activeEntries.length === 0) return baseData;
 
@@ -221,10 +417,11 @@ const DataTableWrapper = ({
         return true;
       })
     );
-  }, [data, columnFilters]);
+  }, [data, baseData, columnFilters, serverSide]);
 
   // ── Sum ───────────────────────────────────────────────────────────────────
   const totalSum = useMemo(() => {
+    if (serverSide) return serverTotalSum || 0;
     if (!sumField) return 0;
     let source = columnFilteredData;
     if (globalFilter) {
@@ -241,7 +438,7 @@ const DataTableWrapper = ({
       const n = typeof val === "number" ? val : parseFloat(String(val).replace(/[^0-9.-]+/g, ""));
       return acc + (n || 0);
     }, 0);
-  }, [columnFilteredData, globalFilter, sumField, columns]);
+  }, [columnFilteredData, globalFilter, sumField, columns, serverSide, serverTotalSum]);
 
   const rowsPerPageOptions = [5, 10, 25, 50];
 
@@ -257,6 +454,8 @@ const DataTableWrapper = ({
   // ── Filter actions ────────────────────────────────────────────────────────
   const applySearchFilter = (field) => {
     const val = searchDraft[field] ?? "";
+    setFirst(0);
+    beginServerActionLoading();
     setColumnFilters((prev) => ({ ...prev, [field]: { type: "search", value: val } }));
     filterPanelRefs.current[field]?.hide();
   };
@@ -268,6 +467,8 @@ const DataTableWrapper = ({
 
   const applyDateFilter = (field) => {
     const draft = dateDraft[field] || {};
+    setFirst(0);
+    beginServerActionLoading();
     setColumnFilters((prev) => ({
       ...prev,
       [field]: { type: "date", from: draft.from || null, to: draft.to || null },
@@ -276,14 +477,28 @@ const DataTableWrapper = ({
   };
 
   const clearColumnFilter = (field) => {
+    setFirst(0);
+    beginServerActionLoading();
     setColumnFilters((prev) => { const n = { ...prev }; delete n[field]; return n; });
     setSearchDraft((prev)  => { const n = { ...prev }; delete n[field]; return n; });
     setDateDraft((prev)    => { const n = { ...prev }; delete n[field]; return n; });
     filterPanelRefs.current[field]?.hide();
   };
 
+  const applyGlobalSearch = () => {
+    const nextSearch = globalSearchDraft.trim();
+    setFirst(0);
+    if (nextSearch !== globalFilter) {
+      beginServerActionLoading();
+    }
+    setGlobalFilter(nextSearch);
+  };
+
   const clearAllFilters = () => {
+    setFirst(0);
+    beginServerActionLoading();
     setGlobalFilter("");
+    setGlobalSearchDraft("");
     setSelectedRows([]);
     setColumnFilters({});
     setSearchDraft({});
@@ -346,6 +561,8 @@ const DataTableWrapper = ({
                   type="checkbox"
                   checked={currentVal.includes(opt.value)}
                   onChange={(e) => {
+                    setFirst(0);
+                    beginServerActionLoading();
                     const newVal = e.target.checked
                       ? [...currentVal, opt.value]
                       : currentVal.filter((v) => v !== opt.value);
@@ -423,12 +640,25 @@ const DataTableWrapper = ({
   };
 
   // ── Excel export ──────────────────────────────────────────────────────────
-  const exportExcel = () => {
+  const buildCurrentServerState = useCallback(() => ({
+    scope: activeScope,
+    search: globalFilter,
+    filters: serializeColumnFilters(columnFilters),
+    sortField,
+    sortOrder,
+  }), [activeScope, globalFilter, columnFilters, sortField, sortOrder]);
+
+  const exportExcel = async () => {
     setLoading(true);
-    setTimeout(() => {
-      try {
+
+    try {
+      let exportData;
+
+      if (serverSide && onExportData) {
+        exportData = await onExportData(buildCurrentServerState());
+      } else {
         // Start from column-filtered data, then apply global filter manually
-        let exportData = columnFilteredData;
+        exportData = columnFilteredData;
         if (globalFilter) {
           const lower = globalFilter.toLowerCase();
           exportData = exportData.filter((row) =>
@@ -438,31 +668,33 @@ const DataTableWrapper = ({
             })
           );
         }
-
-        const worksheetData = exportData.map((row) => {
-          const obj = {};
-          columns.forEach((col) => {
-            const value = row[col.field];
-            if (typeof value === "object" && value !== null && value.props) {
-              obj[col.header] = value.props.children || value.props.title || "";
-            } else {
-              obj[col.header] = value;
-            }
-          });
-          return obj;
-        });
-        const worksheet = XLSX.utils.json_to_sheet(worksheetData);
-        const workbook  = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, title || "Sheet1");
-        const excelBuffer = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
-        const dataBlob = new Blob([excelBuffer], {
-          type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8",
-        });
-        saveAs(dataBlob, `${title || "data"}.xlsx`);
-      } finally {
-        setLoading(false);
       }
-    }, 100);
+
+      const worksheetData = (exportData || []).map((row) => {
+        const obj = {};
+        columns.forEach((col) => {
+          const value = row[col.field];
+          if (typeof value === "object" && value !== null && value.props) {
+            obj[col.header] = value.props.children || value.props.title || "";
+          } else {
+            obj[col.header] = value;
+          }
+        });
+        return obj;
+      });
+      const worksheet = XLSX.utils.json_to_sheet(worksheetData);
+      const workbook  = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, title || "Sheet1");
+      const excelBuffer = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
+      const dataBlob = new Blob([excelBuffer], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8",
+      });
+      saveAs(dataBlob, `${title || "data"}.xlsx`);
+    } catch (err) {
+      console.error("Failed to export Excel", err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const exportCSV = () => dt.current.exportCSV();
@@ -488,52 +720,63 @@ const DataTableWrapper = ({
         )}
       </div>
 
-      {/* Row 2: Today/All toggle | Search | Actions */}
+      {/* Row 2: Scope toggle | Search | Actions */}
       <div className="flex flex-col sm:flex-row items-center gap-3">
-        {/* Today / All toggle */}
+        {/* Scope toggle */}
         {dateField && (
           <div className="flex items-center bg-gray-100 dark:bg-gray-700/60 rounded-lg p-0.5 flex-shrink-0">
-            <button
-              onClick={() => handleTodayToggle(true)}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-semibold transition-all cursor-pointer ${
-                showToday
-                  ? "bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm"
-                  : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
-              }`}
-            >
-              <CalendarDays size={15} />
-              {t("today")}
-            </button>
-            <button
-              onClick={() => handleTodayToggle(false)}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-semibold transition-all cursor-pointer ${
-                !showToday
-                  ? "bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm"
-                  : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
-              }`}
-            >
-              {t("all")}
-            </button>
+            {normalizedScopeOptions.map((option) => {
+              const Icon = SCOPE_ICONS[option.value];
+              const isActive = activeScope === option.value;
+
+              return (
+                <button
+                  key={option.value}
+                  onClick={() => handleScopeToggle(option.value)}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-semibold transition-all cursor-pointer ${
+                    isActive
+                      ? "bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm"
+                      : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+                  }`}
+                >
+                  {Icon && <Icon size={15} />}
+                  {option.label || t(option.labelKey || option.value)}
+                </button>
+              );
+            })}
           </div>
         )}
 
         {/* Global Search */}
-        <div className="relative flex-1 min-w-0 w-full sm:w-auto group">
-          <Search
-            size={18}
-            className={`absolute top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-blue-500 transition-colors pointer-events-none ${
-              i18n.language === "ar" ? "left-4" : "right-4"
-            }`}
-          />
-          <input
-            type="text"
-            value={globalFilter}
-            onChange={(e) => setGlobalFilter(e.target.value)}
-            placeholder={t("search...")}
-            className={`w-full ${
-              i18n.language === "ar" ? "pr-5 pl-12" : "pl-5 pr-12"
-            } py-2 bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-xl text-sm focus:bg-white dark:focus:bg-gray-900 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none text-gray-700 dark:text-gray-200 placeholder-gray-400`}
-          />
+        <div className="flex items-center gap-2 w-full sm:w-[380px] lg:w-[420px] min-w-0">
+          <div className="relative flex-1 min-w-0 group">
+            <Search
+              size={18}
+              className={`absolute top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-blue-500 transition-colors pointer-events-none ${
+                i18n.language === "ar" ? "left-4" : "right-4"
+              }`}
+            />
+            <input
+              type="text"
+              value={globalSearchDraft}
+              onChange={(e) => setGlobalSearchDraft(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") applyGlobalSearch();
+              }}
+              placeholder={t("search...")}
+              className={`w-full ${
+                i18n.language === "ar" ? "pr-5 pl-12" : "pl-5 pr-12"
+              } py-2 bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-xl text-sm focus:bg-white dark:focus:bg-gray-900 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none text-gray-700 dark:text-gray-200 placeholder-gray-400`}
+            />
+          </div>
+          <button
+            onClick={applyGlobalSearch}
+            disabled={loading || isServerLoading}
+            className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white transition-all hover:shadow-md font-semibold text-sm cursor-pointer disabled:cursor-not-allowed whitespace-nowrap"
+          >
+            <Search size={16} />
+            {t("search")}
+          </button>
         </div>
 
         {/* Action Buttons */}
@@ -566,7 +809,7 @@ const DataTableWrapper = ({
   // ── Render ────────────────────────────────────────────────────────────────
   return (
     <>
-      {loading && <LoadingSpinner />}
+      {(loading || isServerLoading) && <LoadingSpinner />}
 
       {/* OverlayPanels at root level — avoids z-index / table overflow issues */}
       {columns.map((col) => {
@@ -593,19 +836,39 @@ const DataTableWrapper = ({
             ref={dt}
             value={columnFilteredData}
             dataKey="id"
+            lazy={serverSide}
+            totalRecords={serverSide ? totalRecords : undefined}
             paginator
             rows={rows}
             first={first}
-            onPage={(e) => { setFirst(e.first); setRows(e.rows); }}
+            onPage={(e) => {
+              beginServerActionLoading();
+              setFirst(e.first);
+              setRows(e.rows);
+            }}
             rowsPerPageOptions={rowsPerPageOptions}
             paginatorTemplate="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown"
             currentPageReportTemplate={`${t("showing")} {first}–{last} ${t("of")} {totalRecords} ${t("records")}`}
-            globalFilter={globalFilter}
-            onValueChange={(e) => setVisibleData(e)}
+            globalFilter={serverSide ? undefined : globalFilter}
+            onValueChange={(e) => {
+              if (!serverSide) setVisibleData(e);
+            }}
             emptyMessage={t("No records found")}
             stripedRows
             showGridlines
-            sortMode="multiple"
+            sortMode={serverSide ? "single" : "multiple"}
+            sortField={serverSide ? sortField : undefined}
+            sortOrder={serverSide ? sortOrder : undefined}
+            onSort={
+              serverSide
+                ? (e) => {
+                    beginServerActionLoading();
+                    setFirst(0);
+                    setSortField(e.sortField || null);
+                    setSortOrder(e.sortOrder || null);
+                  }
+                : undefined
+            }
             removableSort
             resizableColumns
             columnResizeMode="expand"

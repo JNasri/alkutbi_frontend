@@ -1,34 +1,39 @@
 import { useSelector } from "react-redux";
 import { selectCurrentToken } from "../features/auth/authSlice";
 import { jwtDecode } from "jwt-decode";
+import { ROLES, normalizeRoles } from "../config/roles";
 
 const useAuth = () => {
   const token = useSelector(selectCurrentToken);
 
   if (token) {
     const decoded = jwtDecode(token);
-    const { username, ar_name, en_name, roles } = decoded.UserInfo;
+    const { username, ar_name, en_name } = decoded.UserInfo;
+    const roles = normalizeRoles(decoded.UserInfo.roles);
 
-    const isAdmin = roles.includes("Admin");
-    const isOperationManager = roles.includes("Operation Manager");
-    const isOperationEmployee = roles.includes("Operation Employee");
-    const isSpecialPapersManager = roles.includes("Special Papers Manager");
-    const isSpecialPapersEmployee = roles.includes("Special Papers Employee");
-    const isFinanceAdmin = roles.includes("Finance Admin");
-    const isFinanceSubAdmin = roles.includes("Finance Sub-Admin");
-    const isFinanceEmployee = roles.includes("Finance Employee");
-    const isAgent = roles.includes("Agent");
+    const isAdmin = roles.includes(ROLES.Admin);
+    const isOperationManager = roles.includes(ROLES.Operation_Manager);
+    const isOperationEmployee = roles.includes(ROLES.Operation_Employee);
+    const isSpecialPapersManager = roles.includes(ROLES.Special_Papers_Manager);
+    const isSpecialPapersEmployee = roles.includes(ROLES.Special_Papers_Employee);
+    const isFinanceAdmin = roles.includes(ROLES.Finance_Manager);
+    const isFinanceSubAdmin = roles.includes(ROLES.Finance_Sub_Manager);
+    const isFinanceOutsider = roles.includes(ROLES.Finance_Outsider);
+    const isFinanceEmployee =
+      roles.includes(ROLES.Finance_Employee) || isFinanceOutsider;
+    const isAgent = roles.includes(ROLES.Agent);
 
-    let status = "Spectator";
-    if (isAdmin) status = "Admin";
-    else if (isOperationManager) status = "Operation Manager";
-    else if (isOperationEmployee) status = "Operation Employee";
-    else if (isSpecialPapersManager) status = "Special Papers Manager";
-    else if (isSpecialPapersEmployee) status = "Special Papers Employee";
-    else if (isFinanceAdmin) status = "Finance Admin";
-    else if (isFinanceSubAdmin) status = "Finance Sub-Admin";
-    else if (isFinanceEmployee) status = "Finance Employee";
-    else if (isAgent) status = "Agent";
+    let status = roles[0] || ROLES.Spectator;
+    if (isAdmin) status = ROLES.Admin;
+    else if (isOperationManager) status = ROLES.Operation_Manager;
+    else if (isOperationEmployee) status = ROLES.Operation_Employee;
+    else if (isSpecialPapersManager) status = ROLES.Special_Papers_Manager;
+    else if (isSpecialPapersEmployee) status = ROLES.Special_Papers_Employee;
+    else if (isFinanceAdmin) status = ROLES.Finance_Manager;
+    else if (isFinanceSubAdmin) status = ROLES.Finance_Sub_Manager;
+    else if (isFinanceOutsider) status = ROLES.Finance_Outsider;
+    else if (isFinanceEmployee) status = ROLES.Finance_Employee;
+    else if (isAgent) status = ROLES.Agent;
 
     const canEditSpecialPapers = isAdmin || isSpecialPapersManager;
     const canAddSpecialPapers = isAdmin || isSpecialPapersManager || isSpecialPapersEmployee;
@@ -55,6 +60,7 @@ const useAuth = () => {
       isFinanceAdmin,
       isFinanceSubAdmin,
       isFinanceEmployee,
+      isFinanceOutsider,
       isAgent,
       canEditSpecialPapers,
       canAddSpecialPapers,
@@ -74,7 +80,7 @@ const useAuth = () => {
     ar_name: "",
     en_name: "",
     roles: [],
-    status: "Spectator",
+    status: ROLES.Spectator,
     isAdmin: false,
     isOperationManager: false,
     isOperationEmployee: false,
@@ -83,6 +89,7 @@ const useAuth = () => {
     isFinanceAdmin: false,
     isFinanceSubAdmin: false,
     isFinanceEmployee: false,
+    isFinanceOutsider: false,
     isAgent: false,
     canEditSpecialPapers: false,
     canAddSpecialPapers: false,
@@ -92,7 +99,6 @@ const useAuth = () => {
     isFinanceRole: false,
     canEditAssets: false,
     canAddAssets: false,
-    canDeleteFinance: false,
     canDeleteSpecialPapers: false,
     canDelete: false
   };

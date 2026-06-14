@@ -1,7 +1,7 @@
 import { Routes, Route } from "react-router-dom";
 import { lazy, Suspense } from "react";
 import { Toaster } from "react-hot-toast";
-import { ROLES } from "./config/roles";
+import { MONTHLY_REVIEW_ROLES, ROLES } from "./config/roles";
 import LoadingSpinner from "./components/LoadingSpinner";
 
 // Eagerly load critical components
@@ -19,6 +19,7 @@ const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const Home = lazy(() => import("./features/auth/Home"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const Sticker = lazy(() => import("./components/Sticker"));
+const RequestUserForm = lazy(() => import("./features/userRequests/RequestUserForm"));
 
 // Lists
 const UsersList = lazy(() => import("./features/users/UsersList"));
@@ -29,6 +30,7 @@ const PrisoncasesList = lazy(() => import("./features/prisonCases/PrisonCasesLis
 const AssetsList = lazy(() => import("./features/assets/AssetsList"));
 const PurchaseOrdersList = lazy(() => import("./features/purchaseOrders/PurchaseOrdersList"));
 const LogsList = lazy(() => import("./features/logger/LogsList"));
+const MonthlyReviewsPage = lazy(() => import("./features/monthlyReviews/MonthlyReviewsPage"));
 
 // Edit Forms
 const EditUserForm = lazy(() => import("./features/users/EditUserForm"));
@@ -67,9 +69,16 @@ const addSpecialPapersRoles = [
 const editSpecialPapersRoles = [ROLES.Admin, ROLES.Special_Papers_Manager];
 
 // array of finance roles
-const financeRoles = [ROLES.Admin, ROLES.Finance_Admin, ROLES.Finance_Sub_Admin, ROLES.Finance_Employee, ROLES.Special_Papers_Manager];
-const financeEditRoles = [ROLES.Admin, ROLES.Finance_Admin, ROLES.Finance_Sub_Admin, ROLES.Finance_Employee,ROLES.Special_Papers_Manager];
-const financeAddRoles = [ROLES.Admin, ROLES.Finance_Admin, ROLES.Finance_Sub_Admin, ROLES.Finance_Employee,ROLES.Special_Papers_Manager];
+const financeRoles = [
+  ROLES.Admin,
+  ROLES.Finance_Manager,
+  ROLES.Finance_Sub_Manager,
+  ROLES.Finance_Employee,
+  ROLES.Finance_Outsider,
+  ROLES.Special_Papers_Manager,
+];
+const financeEditRoles = financeRoles;
+const financeAddRoles = financeRoles;
 
 function App() {
   return (
@@ -93,6 +102,9 @@ function App() {
                 {/* /dashboard */}
                 <Route element={<PreFetch />}>
                   <Route path="/sticker" element={<Sticker />} />
+                  <Route path="requestUser" element={<DashLayout />}>
+                    <Route index element={<RequestUserForm />} />
+                  </Route>
                   <Route path="dashboard" element={<DashLayout />}>
                     {/* / */}
                     <Route index element={<Home />} />
@@ -235,7 +247,7 @@ function App() {
                       </Route>
                     </Route>
                     {/* /banks */}
-                    <Route element={<RequireAuth allowedRoles={[ROLES.Admin, ROLES.Finance_Admin]} />}>
+                    <Route element={<RequireAuth allowedRoles={[ROLES.Admin, ROLES.Finance_Manager, ROLES.Finance_Sub_Manager, ROLES.Finance_Employee, ROLES.Finance_Outsider]} />}>
                       <Route path="banks">
                         <Route index element={<BanksList />} />
                         <Route path="add" element={<AddBankForm />} />
@@ -243,9 +255,15 @@ function App() {
                       </Route>
                     </Route>
                     {/* /logs */}
-                    <Route element={<RequireAuth allowedRoles={[ROLES.Admin, ROLES.Finance_Admin]} />}>
+                    <Route element={<RequireAuth allowedRoles={[ROLES.Admin, ROLES.Finance_Manager]} />}>
                       <Route path="logs">
                         <Route index element={<LogsList />} />
+                      </Route>
+                    </Route>
+                    {/* /monthlyreviews */}
+                    <Route element={<RequireAuth allowedRoles={MONTHLY_REVIEW_ROLES} />}>
+                      <Route path="monthlyreviews">
+                        <Route index element={<MonthlyReviewsPage />} />
                       </Route>
                     </Route>
                   </Route>

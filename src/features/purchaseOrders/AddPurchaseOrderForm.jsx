@@ -1,10 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import {
   useAddNewPurchaseOrderMutation,
   useGetPurchaseOrderOptionsQuery,
 } from "./purchaseOrdersApiSlice";
 import { useGetBanksQuery } from "../banks/banksApiSlice";
-import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { ArrowLeft, ArrowRight } from "lucide-react";
@@ -95,6 +94,12 @@ const AddPurchaseOrderForm = () => {
   const [notes, setNotes] = useState("");
   const [receiptFile, setReceiptFile] = useState(null);
   const [orderPrintFile, setOrderPrintFile] = useState(null);
+  const [isNavigatingBack, setIsNavigatingBack] = useState(false);
+
+  const navigateToPurchaseOrders = useCallback(() => {
+    setIsNavigatingBack(true);
+    setTimeout(() => navigate("/dashboard/purchaseorders"), 0);
+  }, [navigate]);
 
   // Status options with colors
   const statusOptions = [
@@ -212,9 +217,9 @@ const AddPurchaseOrderForm = () => {
       setReceiptFile(null);
       setOrderPrintFile(null);
       toast.success(t("purchase_order_added_successfully"));
-      navigate("/dashboard/purchaseorders");
+      navigateToPurchaseOrders();
     }
-  }, [isSuccess, navigate, t]);
+  }, [isSuccess, navigateToPurchaseOrders, t]);
 
   const onSavePurchaseOrderClicked = async (e) => {
     e.preventDefault();
@@ -313,7 +318,7 @@ const AddPurchaseOrderForm = () => {
 
   return (
     <>
-      {(isLoading || areOptionsLoading || areBanksLoading) && <LoadingSpinner />}
+      {(isLoading || areOptionsLoading || areBanksLoading || isNavigatingBack) && <LoadingSpinner />}
       <p className={errClass}>{error?.data?.message}</p>
       <DuplicateConfirmModal
         isOpen={showDuplicateModal}
@@ -326,7 +331,7 @@ const AddPurchaseOrderForm = () => {
         {/* Back Button */}
         <div className="relative group">
           <button
-            onClick={() => navigate("/dashboard/purchaseorders")}
+            onClick={navigateToPurchaseOrders}
             className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 border border-gray-500 hover:bg-gray-200 hover:text-gray-700 dark:border-white dark:bg-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white cursor-pointer"
           >
             {i18n.language === "ar" ? (

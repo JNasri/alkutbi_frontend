@@ -4,6 +4,38 @@ import { apiSlice } from "../../app/api/apiSlice";
 const collectionOrdersAdapter = createEntityAdapter({});
 const initialState = collectionOrdersAdapter.getInitialState();
 
+const buildCollectionOrdersTableQuery = (args = {}) => {
+  const params = new URLSearchParams();
+  params.set("mode", "table");
+  params.set("page", args.page || 1);
+  params.set("limit", args.limit || 10);
+  params.set("scope", args.scope || "today");
+
+  if (args.search) params.set("search", args.search);
+  if (args.sortField) params.set("sortField", args.sortField);
+  if (args.sortOrder) params.set("sortOrder", args.sortOrder);
+  if (args.filters && Object.keys(args.filters).length) {
+    params.set("filters", JSON.stringify(args.filters));
+  }
+
+  return `/collectionorders?${params.toString()}`;
+};
+
+const buildCollectionOrdersExportQuery = (args = {}) => {
+  const params = new URLSearchParams();
+  params.set("mode", "tableExport");
+  params.set("scope", args.scope || "today");
+
+  if (args.search) params.set("search", args.search);
+  if (args.sortField) params.set("sortField", args.sortField);
+  if (args.sortOrder) params.set("sortOrder", args.sortOrder);
+  if (args.filters && Object.keys(args.filters).length) {
+    params.set("filters", JSON.stringify(args.filters));
+  }
+
+  return `/collectionorders?${params.toString()}`;
+};
+
 export const collectionOrdersApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     getCollectionOrders: builder.query({
@@ -25,6 +57,34 @@ export const collectionOrdersApiSlice = apiSlice.injectEndpoints({
           ];
         } else return [{ type: "CollectionOrder", id: "LIST" }];
       },
+    }),
+
+    getCollectionOrdersTable: builder.query({
+      query: buildCollectionOrdersTableQuery,
+      validateStatus: (response, result) =>
+        response.status === 200 && !result.isError,
+      transformResponse: (responseData) => ({
+        ...responseData,
+        data: (responseData.data || []).map((collectionOrder) => ({
+          ...collectionOrder,
+          id: collectionOrder.id || collectionOrder._id,
+        })),
+      }),
+      providesTags: [{ type: "CollectionOrder", id: "LIST" }],
+    }),
+
+    getCollectionOrdersExport: builder.query({
+      query: buildCollectionOrdersExportQuery,
+      validateStatus: (response, result) =>
+        response.status === 200 && !result.isError,
+      transformResponse: (responseData) => ({
+        ...responseData,
+        data: (responseData.data || []).map((collectionOrder) => ({
+          ...collectionOrder,
+          id: collectionOrder.id || collectionOrder._id,
+        })),
+      }),
+      keepUnusedDataFor: 0,
     }),
 
     getCollectionOrderOptions: builder.query({
@@ -109,6 +169,21 @@ export const collectionOrdersApiSlice = apiSlice.injectEndpoints({
       ],
     }),
 
+    restoreCollectionOrder: builder.mutation({
+      query: ({ id }) => ({
+        url: "/collectionorders/restore",
+        method: "PATCH",
+        body: { id },
+      }),
+      invalidatesTags: (result, error, arg) => [
+        { type: "CollectionOrder", id: arg.id },
+        { type: "CollectionOrder", id: "LIST" },
+        { type: "CollectionOrder", id: "OPTIONS" },
+        { type: "Dashboard", id: "ORDERS_SUMMARY" },
+        { type: "Bank", id: "SUMMARY" },
+      ],
+    }),
+
     addBulkCollectionOrders: builder.mutation({
       query: (orders) => ({
         url: "/collectionorders/bulk",
@@ -127,11 +202,14 @@ export const collectionOrdersApiSlice = apiSlice.injectEndpoints({
 
 export const {
   useGetCollectionOrdersQuery,
+  useGetCollectionOrdersTableQuery,
+  useLazyGetCollectionOrdersExportQuery,
   useGetCollectionOrderOptionsQuery,
   useGetCollectionOrderQuery,
   useAddNewCollectionOrderMutation,
   useUpdateCollectionOrderMutation,
   useDeleteCollectionOrderMutation,
+  useRestoreCollectionOrderMutation,
   useAddBulkCollectionOrdersMutation,
 } = collectionOrdersApiSlice;
 

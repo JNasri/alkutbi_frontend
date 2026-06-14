@@ -1,13 +1,19 @@
 import { useTranslation } from "react-i18next";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import toast from "react-hot-toast";
-import { useGetCollectionOrdersQuery, useDeleteCollectionOrderMutation, useAddBulkCollectionOrdersMutation } from "./collectionOrdersApiSlice";
+import {
+  useGetCollectionOrdersTableQuery,
+  useLazyGetCollectionOrdersExportQuery,
+  useDeleteCollectionOrderMutation,
+  useRestoreCollectionOrderMutation,
+  useAddBulkCollectionOrdersMutation,
+} from "./collectionOrdersApiSlice";
 import { useGetSignedUrlMutation } from "../s3/s3ApiSlice";
 import DataTableWrapper from "../../components/DataTableWrapper";
 import LoadingSpinner from "../../components/LoadingSpinner";
 import { Link } from "react-router-dom";
 import { prefetchHandlers } from "../../hooks/usePrefetch";
-import { Plus, Paperclip, Pencil, Trash2, RefreshCw, Upload, X, CheckCircle } from "lucide-react";
+import { Plus, Paperclip, Pencil, Trash2, RefreshCw, Upload, X, CheckCircle, AlertCircle } from "lucide-react";
 import CollectionOrderPrint from "./CollectionOrderPrint";
 import useAuth from "../../hooks/useAuth";
 import DeleteConfirmModal from "../../components/DeleteConfirmModal";
@@ -38,29 +44,64 @@ const AttachmentButton = ({ s3Key, iconColorClass, title }) => {
   );
 };
 
+const ORDER_SCOPE_OPTIONS = [
+  { value: "today", labelKey: "today" },
+  { value: "all", labelKey: "all" },
+  { value: "archive", labelKey: "archive" },
+];
+
 const CollectionOrdersList = () => {
   const { t } = useTranslation();
   const { canEditFinance, canAddFinance, canDeleteFinance, isFinanceEmployee, isFinanceSubAdmin, username } = useAuth();
   const [deleteCollectionOrder] = useDeleteCollectionOrderMutation();
+  const [restoreCollectionOrder, { isLoading: isRestoring }] = useRestoreCollectionOrderMutation();
+  const [getCollectionOrdersExport] = useLazyGetCollectionOrdersExportQuery();
   const [addBulkCollectionOrders, { isLoading: isImporting }] = useAddBulkCollectionOrdersMutation();
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
+  const [itemToRestore, setItemToRestore] = useState(null);
+  const [archiveInfoItem, setArchiveInfoItem] = useState(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Excel import preview state
   const [showImportPreview, setShowImportPreview] = useState(false);
   const [parsedRecords, setParsedRecords] = useState([]);
+  const [tableParams, setTableParams] = useState({
+    page: 1,
+    limit: 10,
+    scope: "today",
+    search: "",
+    filters: {},
+    sortField: null,
+    sortOrder: null,
+  });
+
+  const handleServerStateChange = useCallback((state) => {
+    setTableParams((prev) => {
+      const next = {
+        page: state.page || 1,
+        limit: state.rows || 10,
+        scope: state.scope || "today",
+        search: state.search || "",
+        filters: state.filters || {},
+        sortField: state.sortField || null,
+        sortOrder: state.sortOrder || null,
+      };
+
+      return JSON.stringify(prev) === JSON.stringify(next) ? prev : next;
+    });
+  }, []);
 
   const {
-    data: collectionOrders,
+    data: collectionOrdersTable,
     isLoading: isLoadingCO,
     isSuccess: isSuccessCO,
     isError: isErrorCO,
     error: errorCO,
     refetch: refetchCO,
     isFetching: isFetchingCO,
-  } = useGetCollectionOrdersQuery("collectionOrdersList", {
+  } = useGetCollectionOrdersTableQuery(tableParams, {
     pollingInterval: 60000,
     refetchOnFocus: true,
     refetchOnMountOrArgChange: 300,
@@ -95,7 +136,7 @@ const CollectionOrdersList = () => {
 
 
 
-  if ((isLoadingCO && !collectionOrders) || (isLoadingSummary && !ordersSummary)) return <LoadingSpinner />;
+  if ((isLoadingCO && !collectionOrdersTable) || (isLoadingSummary && !ordersSummary)) return <LoadingSpinner />;
 
   if (isErrorCO || isErrorSummary) {
     return (
@@ -109,33 +150,9 @@ const CollectionOrdersList = () => {
   }
 
   if (isSuccessCO && isSuccessSummary) {
-    const collectionOrderList = collectionOrders.ids.map(
-      (id) => collectionOrders.entities[id]
-    );
-
-    const statusWeight = {
-      new: 1,
-      audited: 2,
-      authorized: 3,
-      finalized: 4,
-    };
-
-    const sortedList = [...collectionOrderList].sort((a, b) => {
-      const weightA = statusWeight[a.status] || 5;
-      const weightB = statusWeight[b.status] || 5;
-      if (weightA !== weightB) {
-        return weightA - weightB;
-      }
-      return new Date(b.createdAt) - new Date(a.createdAt);
-    });
-
-    if (!collectionOrderList || collectionOrderList.length === 0) {
-      return (
-        <div className="text-center text-gray-500 dark:text-gray-400 p-6">
-          {t("no_collection_orders_found")}
-        </div>
-      );
-    }
+    const collectionOrderList = collectionOrdersTable?.data || [];
+    const sortedList = collectionOrderList;
+    const isArchiveScope = tableParams.scope === "archive";
 
     const collectMethodTranslations = {
       cash: t("cash"),
@@ -151,12 +168,35 @@ const CollectionOrdersList = () => {
       additional: t("additional"),
     };
 
+    const statusTranslations = {
+      new: t("status_new"),
+      audited: t("status_audited"),
+      authorized: t("status_authorized"),
+      finalized: t("status_finalized"),
+    };
+
     const truncateWords = (text, maxWords) => {
       if (!text) return "—";
       const words = text.split(/\s+/);
       if (words.length <= maxWords) return text;
       return words.slice(0, maxWords).join(" ") + " ...";
     };
+
+    const formatArchiveDate = (value) => {
+      if (!value) return "—";
+      const date = new Date(value);
+      return Number.isNaN(date.getTime()) ? "—" : date.toLocaleString();
+    };
+
+    const getDeletedByName = (item) =>
+      item.deletedBy?.ar_name ||
+      item.deletedBy?.en_name ||
+      item.deletedBy?.username ||
+      item.deletedByName ||
+      "—";
+
+    const getArchiveInfo = (item) =>
+      `${t("deleted_at")}: ${formatArchiveDate(item.deletedAt)}\n${t("deleted_by")}: ${getDeletedByName(item)}`;
 
     const columns = [
       { 
@@ -185,17 +225,31 @@ const CollectionOrdersList = () => {
       },
       { field: "collectingId", header: t("collecting_id"), nowrap: true },
       { field: "issuerName", header: t("issuer_collection"), nowrap: true },
-      { field: "collectedFrom", header: t("collected_from") },
+      {
+        field: "collectedFrom",
+        header: t("collected_from"),
+        filterType: "select",
+        filterOptions: Object.entries(collectedFromTranslations).map(([value, label]) => ({ value, label })),
+        body: (item) => collectedFromTranslations[item.collectedFrom] || item.collectedFrom || "—",
+      },
       { 
         field: "status", 
         header: t("status"), 
         nowrap: true,
-        body: (item) => getStatusBadge(item.statusKey)
+        filterType: "select",
+        filterOptions: Object.entries(statusTranslations).map(([value, label]) => ({ value, label })),
+        body: (item) => getStatusBadge(item.status)
       },
       { field: "dayName", header: t("day_name"), nowrap: true },
       { field: "dateHijri", header: t("date_hijri"), nowrap: true },
       { field: "dateAD", header: t("date_ad"), nowrap: true },
-      { field: "collectMethod", header: t("collect_method") },
+      {
+        field: "collectMethod",
+        header: t("collect_method"),
+        filterType: "select",
+        filterOptions: Object.entries(collectMethodTranslations).map(([value, label]) => ({ value, label })),
+        body: (item) => collectMethodTranslations[item.collectMethod] || item.collectMethod || "—",
+      },
       { field: "voucherNumber", header: t("voucher_number") },
       { field: "item", header: t("item") },
       { field: "receivingBankName", header: t("receiving_bank_name") },
@@ -218,9 +272,15 @@ const CollectionOrdersList = () => {
           </div>
         )
       },
-      { field: "createdAt", header: t("createdAt"), nowrap: true },
-      { field: "time", header: t("time"), nowrap: true },
-      { field: "actions", header: t("actions"), autoWidth: true },
+      {
+        field: "createdAt",
+        header: t("createdAt"),
+        nowrap: true,
+        filterType: "date",
+        body: (item) => item.createdAt ? new Date(item.createdAt).toLocaleDateString() : "—",
+      },
+      { field: "time", header: t("time"), nowrap: true, filterType: null },
+      { field: "actions", header: t("actions"), autoWidth: true, filterType: null },
     ];
 
     const getStatusBadge = (status) => {
@@ -266,21 +326,33 @@ const CollectionOrdersList = () => {
 
     const transformedData = sortedList.map((item) => ({
       ...item,
-      // Searchable fields (strings)
       issuerName: item.issuer?.ar_name || item.issuer?.username || "—",
-      collectedFrom: collectedFromTranslations[item.collectedFrom] || item.collectedFrom || "—",
-      status: (Object.values({
-        new: t("status_new"),
-        audited: t("status_audited"),
-        authorized: t("status_authorized"),
-        finalized: t("status_finalized"),
-      })[Object.keys({new:1,audited:1,authorized:1,finalized:1}).indexOf(item.status)] || item.status || "—"),
-      statusKey: item.status, // Used for Badge rendering logic
       dayName: convertDayNameToArabic(item.dayName),
-      collectMethod: collectMethodTranslations[item.collectMethod] || item.collectMethod || "—",
-      createdAt: new Date(item.createdAt).toLocaleDateString(),
-      time: new Date(item.createdAt).toLocaleTimeString(),
-      actions: (
+      time: item.createdAt ? new Date(item.createdAt).toLocaleTimeString() : "—",
+      deletedByName: getDeletedByName(item),
+      deletedAtText: formatArchiveDate(item.deletedAt),
+      actions: isArchiveScope ? (
+        <div className="flex items-center justify-center gap-2">
+          <button
+            type="button"
+            title={getArchiveInfo(item)}
+            onClick={() => setArchiveInfoItem(item)}
+            className="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-300 border border-amber-200 dark:border-amber-800 cursor-pointer hover:bg-amber-100 dark:hover:bg-amber-900/50 transition-all"
+          >
+            <AlertCircle size={18} />
+          </button>
+          {(canDeleteFinance || ((isFinanceEmployee || isFinanceSubAdmin) && item.issuer?.username === username)) && (
+            <button
+              type="button"
+              title={t("restore")}
+              onClick={() => setItemToRestore(item.id)}
+              className="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-300 border border-green-200 dark:border-green-800 cursor-pointer hover:bg-green-100 dark:hover:bg-green-900/50 transition-all font-bold text-xl leading-none"
+            >
+              +
+            </button>
+          )}
+        </div>
+      ) : (
         <div className="flex items-center gap-2">
           {(canEditFinance || ((isFinanceEmployee || isFinanceSubAdmin) && item.issuer?.username === username)) && (
             <Link
@@ -306,9 +378,32 @@ const CollectionOrdersList = () => {
       ),
     }));
 
+    const mapRowsForExport = (rows) =>
+      rows.map((item) => ({
+        ...item,
+        issuerName: item.issuer?.ar_name || item.issuer?.username || "—",
+        dayName: convertDayNameToArabic(item.dayName),
+        time: item.createdAt ? new Date(item.createdAt).toLocaleTimeString() : "—",
+        deletedByName: getDeletedByName(item),
+        deletedAtText: formatArchiveDate(item.deletedAt),
+        print: "",
+        attachments: "",
+        actions: isArchiveScope ? getArchiveInfo(item).replace(/\n/g, " | ") : "",
+      }));
+
+    const loadCollectionExportData = async (exportState) => {
+      const request = getCollectionOrdersExport(exportState);
+      try {
+        const result = await request.unwrap();
+        return mapRowsForExport(result?.data || []);
+      } finally {
+        request.unsubscribe?.();
+      }
+    };
+
     const purchaseSummary = ordersSummary?.purchase || {};
     const collectionSummary = ordersSummary?.collection || {};
-    const totalCollectionOrdersCount = collectionSummary.count ?? collectionOrderList.length;
+    const totalCollectionOrdersCount = collectionSummary.count ?? collectionOrdersTable?.totalRecords ?? 0;
     const totalCollectionAmount = collectionSummary.totalAmount || 0;
     const totalPurchaseAmount = purchaseSummary.totalAmount || 0;
     const balance = ordersSummary?.balance ?? totalCollectionAmount - totalPurchaseAmount;
@@ -658,6 +753,13 @@ const CollectionOrdersList = () => {
           columns={columns}
           title={t("collection_orders_list")}
           sumField="totalAmount"
+          serverSide
+          totalRecords={collectionOrdersTable?.totalRecords || 0}
+          serverTotalSum={collectionOrdersTable?.totalAmount || 0}
+          isServerLoading={isFetchingCO}
+          onServerStateChange={handleServerStateChange}
+          onExportData={loadCollectionExportData}
+          scopeOptions={ORDER_SCOPE_OPTIONS}
           onRefresh={async () => {
             await Promise.all([refetchCO(), refetchOrdersSummary()]);
           }}
@@ -669,13 +771,64 @@ const CollectionOrdersList = () => {
           onConfirm={async () => {
             if (itemToDelete) {
               await deleteCollectionOrder({ id: itemToDelete });
-              toast.success(t("collection_order_deleted_successfully"));
+              toast.success(t("collection_order_archived_successfully"));
               setShowDeleteModal(false);
               setItemToDelete(null);
             }
           }}
         />
-        {isRefreshing && <LoadingSpinner />}
+        <DeleteConfirmModal
+          isOpen={!!itemToRestore}
+          onCancel={() => setItemToRestore(null)}
+          title={t("confirm_restore_order")}
+          confirmLabel={t("restore")}
+          icon="+"
+          variant="restore"
+          onConfirm={async () => {
+            if (itemToRestore) {
+              await restoreCollectionOrder({ id: itemToRestore }).unwrap();
+              toast.success(t("collection_order_restored_successfully"));
+              setItemToRestore(null);
+            }
+          }}
+        />
+        {archiveInfoItem && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-black/20 p-4"
+            onClick={() => setArchiveInfoItem(null)}
+          >
+            <div
+              className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-6 w-full max-w-md border border-gray-100 dark:border-gray-700"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center gap-3 mb-5">
+                <div className="w-11 h-11 rounded-xl bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-300 flex items-center justify-center border border-amber-200 dark:border-amber-800">
+                  <AlertCircle size={22} />
+                </div>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+                  {t("archive_details")}
+                </h2>
+              </div>
+              <div className="space-y-3 text-sm">
+                <div className="flex justify-between gap-4 border-b border-gray-100 dark:border-gray-700 pb-3">
+                  <span className="font-semibold text-gray-500 dark:text-gray-400">{t("deleted_at")}</span>
+                  <span className="text-gray-900 dark:text-white text-end">{formatArchiveDate(archiveInfoItem.deletedAt)}</span>
+                </div>
+                <div className="flex justify-between gap-4">
+                  <span className="font-semibold text-gray-500 dark:text-gray-400">{t("deleted_by")}</span>
+                  <span className="text-gray-900 dark:text-white text-end">{getDeletedByName(archiveInfoItem)}</span>
+                </div>
+              </div>
+              <button
+                onClick={() => setArchiveInfoItem(null)}
+                className="mt-6 w-full cursor-pointer px-4 py-2.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-600 font-semibold transition-colors"
+              >
+                {t("close")}
+              </button>
+            </div>
+          </div>
+        )}
+        {(isRefreshing || isRestoring) && <LoadingSpinner />}
       </>
     );
   }

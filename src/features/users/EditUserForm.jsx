@@ -5,7 +5,11 @@ import {
   useGetUserQuery,
 } from "./usersApiSlice";
 import { useNavigate, useParams } from "react-router-dom";
-import { ROLES } from "../../config/roles";
+import {
+  ROLE_GROUPS,
+  ROLE_TRANSLATION_KEYS,
+  normalizeRoles,
+} from "../../config/roles";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import { ArrowLeft, ArrowRight } from "lucide-react";
@@ -67,7 +71,7 @@ const EditUserForm = () => {
       setAr_name(user.ar_name);
       setUsername(user.username);
       setEmail(user.email);
-      setRoles(user.roles);
+      setRoles(normalizeRoles(user.roles));
       setActive(user.isActive);
     }
   }, [user]);
@@ -105,12 +109,12 @@ const EditUserForm = () => {
   const onUsernameChanged = (e) => setUsername(e.target.value);
   const onEmailChanged = (e) => setEmail(e.target.value);
   const onPasswordChanged = (e) => setPassword(e.target.value);
-  const onRolesChanged = (e) => {
-    const values = Array.from(
-      e.target.selectedOptions,
-      (option) => option.value
+  const onRoleToggled = (role) => {
+    setRoles((prevRoles) =>
+      prevRoles.includes(role)
+        ? prevRoles.filter((currentRole) => currentRole !== role)
+        : [...prevRoles, role]
     );
-    setRoles(values);
   };
 
   const onSaveUserClicked = async (e) => {
@@ -128,15 +132,9 @@ const EditUserForm = () => {
     await updateUser(updatedUser);
   };
 
-  const options = Object.values(ROLES).map((role) => (
-    <option key={role} value={role}>
-      {role}
-    </option>
-  ));
-
   const canSave = password
-    ? [en_name, ar_name, username, validUsername, validPassword].every(Boolean)
-    : [en_name, ar_name, username, validUsername].every(Boolean);
+    ? [en_name, ar_name, username, roles.length, validUsername, validPassword].every(Boolean)
+    : [en_name, ar_name, username, roles.length, validUsername].every(Boolean);
 
   const errClass = isError ? "errmsg" : "offscreen";
   const validUsernameClass = !validUsername ? "border-red-500" : "";
@@ -261,19 +259,40 @@ const EditUserForm = () => {
                 </div>
 
                 {/* Roles */}
-                <div className="col-span-6 sm:col-span-3">
+                <div className="col-span-6">
                   <label className="text-sm font-medium dark:text-white text-gray-900 block mb-2">
                     {t("roles")}:
                   </label>
-                  <select
-                    id="roles"
-                    value={roles[0]}
-                    onChange={onRolesChanged}
-                    required
-                    className={`shadow-sm dark:bg-gray-800 dark:text-white bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg block w-full p-2.5 ${validRolesClass} cursor-pointer`}
+                  <div
+                    className={`grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3 rounded-lg border border-gray-300 bg-gray-50 p-3 ${validRolesClass} dark:bg-gray-800 dark:text-white`}
                   >
-                    {options}
-                  </select>
+                    {ROLE_GROUPS.map((group) => (
+                      <div
+                        key={group.labelKey}
+                        className="overflow-hidden rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900"
+                      >
+                        <div className="border-b border-gray-200 bg-gray-100 px-3 py-2 text-sm font-semibold text-gray-900 dark:border-gray-700 dark:bg-gray-800 dark:text-white">
+                          {t(group.labelKey)}
+                        </div>
+                        <div className="space-y-1 p-2">
+                          {group.roles.map((role) => (
+                            <label
+                              key={role}
+                              className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-gray-900 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700"
+                            >
+                              <input
+                                type="checkbox"
+                                checked={roles.includes(role)}
+                                onChange={() => onRoleToggled(role)}
+                                className="h-4 w-4 rounded border-gray-300 text-cyan-600 focus:ring-cyan-500"
+                              />
+                              <span>{t(ROLE_TRANSLATION_KEYS[role])}</span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
 

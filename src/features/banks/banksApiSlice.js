@@ -7,7 +7,7 @@ const initialState = banksAdapter.getInitialState();
 const buildBanksSummaryUrl = (arg = {}) => {
   const params = new URLSearchParams();
 
-  if (arg.dateBasis) params.set("dateBasis", arg.dateBasis);
+  params.set("dateBasis", "dateAD");
   if (arg.from) params.set("from", arg.from);
   if (arg.to) params.set("to", arg.to);
 

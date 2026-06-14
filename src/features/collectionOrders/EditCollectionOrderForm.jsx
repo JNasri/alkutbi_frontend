@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import {
   useGetCollectionOrderQuery,
   useGetCollectionOrderOptionsQuery,
@@ -83,6 +83,12 @@ const EditCollectionOrderForm = () => {
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [isNavigatingBack, setIsNavigatingBack] = useState(false);
+
+  const navigateToCollectionOrders = useCallback(() => {
+    setIsNavigatingBack(true);
+    setTimeout(() => navigate("/dashboard/collectionorders"), 0);
+  }, [navigate]);
 
   // Status options with roles restriction
   const statusOptions = useMemo(() => {
@@ -148,7 +154,7 @@ const EditCollectionOrderForm = () => {
       
       if (!isInitialLoad && !canEdit) {
         toast.error(t("no_permission_to_edit_this_order"));
-        navigate("/dashboard/collectionorders");
+        navigateToCollectionOrders();
         return;
       }
 
@@ -182,7 +188,7 @@ const EditCollectionOrderForm = () => {
       setExistingOrderPrintUrl(collectionOrder.orderPrintUrl || "");
       setIsInitialLoad(false);
     }
-  }, [collectionOrder, isAdmin, isFinanceAdmin, isFinanceEmployee, username, navigate, t]);
+  }, [collectionOrder, isAdmin, isFinanceAdmin, isFinanceEmployee, username, t, isInitialLoad, navigateToCollectionOrders]);
 
   // Auto-convert number to Arabic text
   useEffect(() => {
@@ -219,14 +225,14 @@ const EditCollectionOrderForm = () => {
   useEffect(() => {
     if (isSuccess) {
       toast.success(t("collection_order_updated_successfully"));
-      navigate("/dashboard/collectionorders");
+      navigateToCollectionOrders();
     } else if (isError) {
       toast.error(error?.data?.message || t("error_updating_collection_order"));
     }
 
     if (isDelSuccess) {
-      toast.success(t("collection_order_deleted_successfully"));
-      navigate("/dashboard/collectionorders");
+      toast.success(t("collection_order_archived_successfully"));
+      navigateToCollectionOrders();
     } else if (isDelError) {
       toast.error(
         delError?.data?.message || t("error_deleting_collection_order")
@@ -239,8 +245,8 @@ const EditCollectionOrderForm = () => {
     isDelSuccess,
     isDelError,
     delError,
-    navigate,
     t,
+    navigateToCollectionOrders,
   ]);
 
   const theme = useDarkMode();
@@ -310,12 +316,12 @@ const EditCollectionOrderForm = () => {
 
   return (
     <>
-      {(isUpdating || isDeleting) && <LoadingSpinner />}
+      {(isUpdating || isDeleting || isNavigatingBack) && <LoadingSpinner />}
       <p className={errClass}>{errMsg}</p>
 
       <div className="flex items-center gap-4 mb-4 p-1">
         <button
-          onClick={() => navigate("/dashboard/collectionorders")}
+          onClick={navigateToCollectionOrders}
           className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 border border-gray-500 hover:bg-gray-200 hover:text-gray-700 dark:border-white dark:bg-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white cursor-pointer"
         >
           {i18n.language === "ar" ? (

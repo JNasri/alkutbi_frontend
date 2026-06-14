@@ -13,12 +13,15 @@ import {
   Package,
   ShoppingCart,
   Coins,
+  ClipboardCheck,
   Landmark,
+  UserPlus,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Link, useLocation } from "react-router-dom";
 import useAuth from "../../hooks/useAuth";
 import { prefetchAllHandlers } from "../../hooks/usePrefetch";
+import { MONTHLY_REVIEW_ROLES } from "../../config/roles";
 
 const DashSidebar = () => {
   const [isOpen, setIsOpen] = useState(true);
@@ -32,7 +35,8 @@ const DashSidebar = () => {
     isSpecialPapersManager, 
     isSpecialPapersEmployee, 
     isOperationManager, 
-    isOperationEmployee 
+    isOperationEmployee,
+    roles,
   } = useAuth();
 
   const isArabic = i18n.language === "ar";
@@ -49,6 +53,9 @@ const DashSidebar = () => {
   const showSpecialPapers = isAdmin || isSpecialPapersManager || isSpecialPapersEmployee || isOperationManager || isOperationEmployee;
   const showFinance = isAdmin || isFinanceAdmin || isFinanceSubAdmin || isFinanceEmployee || isSpecialPapersManager;
   const showAssets = isAdmin || isOperationManager || isOperationEmployee || isSpecialPapersManager || isSpecialPapersEmployee;
+  const showMonthlyReviews = roles.some((role) =>
+    MONTHLY_REVIEW_ROLES.includes(role)
+  );
 
   const navItems = [
     { to: "/dashboard", icon: Home, label: t("home"), show: true, exact: true },
@@ -60,8 +67,10 @@ const DashSidebar = () => {
     { to: "/dashboard/deathcases", icon: Skull, label: t("death_cases"), show: showSpecialPapers },
     { to: "/dashboard/prisoncases", icon: ShieldAlert, label: t("prison_cases"), show: showSpecialPapers },
     { to: "/dashboard/assets", icon: Package, label: t("assets"), show: showAssets },
-    { to: "/dashboard/banks", icon: Landmark, label: t("banks"), show: isAdmin || isFinanceAdmin },
+    { to: "/dashboard/monthlyreviews", icon: ClipboardCheck, label: t("monthly_reviews"), show: showMonthlyReviews },
+    { to: "/dashboard/banks", icon: Landmark, label: t("banks"), show: isAdmin || isFinanceAdmin || isFinanceSubAdmin || isFinanceEmployee },
     { to: "/dashboard/logs", icon: Scroll, label: t("logs"), show: isAdmin || isFinanceAdmin},
+    { to: "/requestUser", icon: UserPlus, label: t("requests"), show: true, exact: true },
   ];
 
   return (

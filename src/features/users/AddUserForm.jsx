@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useAddNewUserMutation } from "./usersApiSlice";
 import { useNavigate } from "react-router-dom";
-import { ROLES } from "../../config/roles";
+import { ROLE_GROUPS, ROLE_TRANSLATION_KEYS } from "../../config/roles";
 import { useTranslation } from "react-i18next";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import i18n from "../../../i18n.js";
@@ -51,12 +51,12 @@ const AddUserForm = () => {
   const onUsernameChanged = (e) => setUsername(e.target.value);
   const onEmailChanged = (e) => setEmail(e.target.value);
   const onPasswordChanged = (e) => setPassword(e.target.value);
-  const onRolesChanged = (e) => {
-    const values = Array.from(
-      e.target.selectedOptions,
-      (option) => option.value
+  const onRoleToggled = (role) => {
+    setRoles((prevRoles) =>
+      prevRoles.includes(role)
+        ? prevRoles.filter((currentRole) => currentRole !== role)
+        : [...prevRoles, role]
     );
-    setRoles(values);
   };
 
   const canSave =
@@ -74,14 +74,6 @@ const AddUserForm = () => {
       }
     }
   };
-
-  const options = Object.values(ROLES).map((role) => {
-    return (
-      <option key={role} value={role}>
-        {role}
-      </option>
-    );
-  });
 
   const errClass = isError ? "errmsg" : "offscreen";
   const validUsernameClass = !validUsername ? "border-red-500" : "";
@@ -207,21 +199,40 @@ const AddUserForm = () => {
               </div>
 
               {/* Roles */}
-              <div className="col-span-6 sm:col-span-3">
+              <div className="col-span-6">
                 <label className="text-sm font-medium text-gray-900 dark:text-white block mb-2">
                   {t("roles")}
                 </label>
-                <select
-                  name="roles"
-                  id="roles"
-                  value={roles[0]}
-                  onChange={onRolesChanged}
-                  className={`shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg block w-full p-2.5 ${validRolesClass} dark:bg-gray-800 dark:text-white`}
-                  required
+                <div
+                  className={`grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3 rounded-lg border border-gray-300 bg-gray-50 p-3 ${validRolesClass} dark:bg-gray-800 dark:text-white`}
                 >
-                  <option value="">Select Role</option>
-                  {options}
-                </select>
+                  {ROLE_GROUPS.map((group) => (
+                    <div
+                      key={group.labelKey}
+                      className="overflow-hidden rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900"
+                    >
+                      <div className="border-b border-gray-200 bg-gray-100 px-3 py-2 text-sm font-semibold text-gray-900 dark:border-gray-700 dark:bg-gray-800 dark:text-white">
+                        {t(group.labelKey)}
+                      </div>
+                      <div className="space-y-1 p-2">
+                        {group.roles.map((role) => (
+                          <label
+                            key={role}
+                            className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-gray-900 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={roles.includes(role)}
+                              onChange={() => onRoleToggled(role)}
+                              className="h-4 w-4 rounded border-gray-300 text-cyan-600 focus:ring-cyan-500"
+                            />
+                            <span>{t(ROLE_TRANSLATION_KEYS[role])}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
 

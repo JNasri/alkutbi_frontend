@@ -1,10 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import {
   useAddNewCollectionOrderMutation,
   useGetCollectionOrderOptionsQuery,
 } from "./collectionOrdersApiSlice";
 import { useGetBanksQuery } from "../banks/banksApiSlice";
-import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { ArrowLeft, ArrowRight } from "lucide-react";
@@ -16,7 +15,6 @@ import Select from "react-select";
 import { numberToArabicText } from "../../utils/numberToArabicText";
 import moment from "moment-hijri";
 import ModernDatePicker from "../../components/ModernDatePicker";
-import { useCallback } from "react";
 import { useDropzone } from "react-dropzone";
 import { Paperclip, ExternalLink } from "lucide-react";
 import DuplicateConfirmModal from "../../components/DuplicateConfirmModal";
@@ -72,6 +70,12 @@ const AddCollectionOrderForm = () => {
   const [notes, setNotes] = useState("");
   const [receiptFile, setReceiptFile] = useState(null);
   const [orderPrintFile, setOrderPrintFile] = useState(null);
+  const [isNavigatingBack, setIsNavigatingBack] = useState(false);
+
+  const navigateToCollectionOrders = useCallback(() => {
+    setIsNavigatingBack(true);
+    setTimeout(() => navigate("/dashboard/collectionorders"), 0);
+  }, [navigate]);
 
   // Collect method options
   const collectMethodOptions = [
@@ -172,9 +176,9 @@ const AddCollectionOrderForm = () => {
       setReceiptFile(null);
       setOrderPrintFile(null);
       toast.success(t("collection_order_added_successfully"));
-      navigate("/dashboard/collectionorders");
+      navigateToCollectionOrders();
     }
-  }, [isSuccess, navigate, t]);
+  }, [isSuccess, navigateToCollectionOrders, t]);
 
   const onSaveCollectionOrderClicked = async (e) => {
     e.preventDefault();
@@ -262,7 +266,7 @@ const AddCollectionOrderForm = () => {
 
   return (
     <>
-      {(isLoading || areOptionsLoading || areBanksLoading) && <LoadingSpinner />}
+      {(isLoading || areOptionsLoading || areBanksLoading || isNavigatingBack) && <LoadingSpinner />}
       <p className={errClass}>{error?.data?.message}</p>
       <DuplicateConfirmModal
         isOpen={showDuplicateModal}
@@ -275,7 +279,7 @@ const AddCollectionOrderForm = () => {
         {/* Back Button */}
         <div className="relative group">
           <button
-            onClick={() => navigate("/dashboard/collectionorders")}
+            onClick={navigateToCollectionOrders}
             className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 border border-gray-500 hover:bg-gray-200 hover:text-gray-700 dark:border-white dark:bg-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white cursor-pointer"
           >
             {i18n.language === "ar" ? (

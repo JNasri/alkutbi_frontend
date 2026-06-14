@@ -38,7 +38,7 @@ const BanksList = () => {
     const to = formatDateParam(dateRange?.[1] || dateRange?.[0]);
 
     return {
-      dateBasis: "createdAt",
+      dateBasis: "dateAD",
       ...(from ? { from } : {}),
       ...(to ? { to } : {}),
     };
@@ -73,7 +73,18 @@ const BanksList = () => {
     const banksList = banksSummary || [];
 
     const columns = [
-      { field: "name", header: t("bank_name") },
+      {
+        field: "name",
+        header: t("bank_name"),
+        body: (row) =>
+          row.isVirtual ? (
+            <span className="text-gray-900 dark:text-white">
+              {row.name}
+            </span>
+          ) : (
+            row.name
+          ),
+      },
       { field: "ibanNumber", header: t("iban_number") },
       { field: "totalCollectionOrders", header: t("total_collection_orders") },
       { field: "totalPurchaseOrders", header: t("total_purchase_orders") },
@@ -88,13 +99,16 @@ const BanksList = () => {
       const fmt = (n) => n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
       return {
         ...bank,
+        ibanNumber: bank.ibanNumber || "-",
         totalCollectionOrders: fmt(coTotal),
         totalPurchaseOrders: fmt(poTotal),
         balance: fmt(balance),
       };
     }).map((bank) => ({
       ...bank,
-      actions: (
+      actions: bank.isVirtual ? (
+        <span className="text-gray-400">-</span>
+      ) : (
         <div className="flex items-center gap-2">
           {canManage && (
             <Link
