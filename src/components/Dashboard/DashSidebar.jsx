@@ -67,7 +67,7 @@ const DashSidebar = () => {
     { to: "/dashboard/deathcases", icon: Skull, label: t("death_cases"), show: showSpecialPapers },
     { to: "/dashboard/prisoncases", icon: ShieldAlert, label: t("prison_cases"), show: showSpecialPapers },
     { to: "/dashboard/assets", icon: Package, label: t("assets"), show: showAssets },
-    { to: "/dashboard/monthlyreviews", icon: ClipboardCheck, label: t("monthly_reviews"), show: showMonthlyReviews },
+    // { to: "/dashboard/monthlyreviews", icon: ClipboardCheck, label: t("monthly_reviews"), show: showMonthlyReviews },
     { to: "/dashboard/banks", icon: Landmark, label: t("banks"), show: isAdmin || isFinanceAdmin || isFinanceSubAdmin || isFinanceEmployee },
     { to: "/dashboard/logs", icon: Scroll, label: t("logs"), show: isAdmin || isFinanceAdmin},
     { to: "/requestUser", icon: UserPlus, label: t("requests"), show: true, exact: true },
