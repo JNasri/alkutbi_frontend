@@ -485,6 +485,7 @@
   "confirm_feature_request_subtitle": "راجع طلب الميزة قبل إرساله.",
   "feature_request_sent": "تم إرسال طلب الميزة بنجاح",
   "request_error": "تعذر إرسال الطلب",
+  "No_access_KPI": "غير مسموح",
   "no_permission_to_edit_this_order": "ليس لديك صلاحية لتعديل هذا الطلب",
   "no_permission_to_delete_this_order": "ليس لديك صلاحية لحذف هذا الطلب"
 }

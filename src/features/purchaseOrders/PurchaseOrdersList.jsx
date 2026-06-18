@@ -1,12 +1,12 @@
 import { useTranslation } from "react-i18next";
 import { useState, useMemo, useCallback } from "react";
 import toast from "react-hot-toast";
-import { 
+import {
   useGetPurchaseOrdersTableQuery,
   useLazyGetPurchaseOrdersExportQuery,
   useDeletePurchaseOrderMutation,
   useRestorePurchaseOrderMutation,
-  useAddBulkPurchaseOrdersMutation
+  useAddBulkPurchaseOrdersMutation,
 } from "./purchaseOrdersApiSlice";
 import { useGetBanksQuery } from "../banks/banksApiSlice";
 import { useGetOrdersSummaryQuery } from "../dashboard/dashboardApiSlice";
@@ -15,7 +15,17 @@ import DataTableWrapper from "../../components/DataTableWrapper";
 import LoadingSpinner from "../../components/LoadingSpinner";
 import { Link } from "react-router-dom";
 import { prefetchHandlers } from "../../hooks/usePrefetch";
-import { Plus, Paperclip, Pencil, Trash2, RefreshCw, Upload, X, CheckCircle, AlertCircle } from "lucide-react";
+import {
+  Plus,
+  Paperclip,
+  Pencil,
+  Trash2,
+  RefreshCw,
+  Upload,
+  X,
+  CheckCircle,
+  AlertCircle,
+} from "lucide-react";
 import PurchaseOrderPrint from "./PurchaseOrderPrint";
 import useAuth from "../../hooks/useAuth";
 import DeleteConfirmModal from "../../components/DeleteConfirmModal";
@@ -37,8 +47,17 @@ const AttachmentButton = ({ s3Key, iconColorClass, title }) => {
   };
 
   return (
-    <button onClick={handleClick} title={title} disabled={isLoading} className={`${iconColorClass} hover:opacity-80 transition disabled:opacity-50 cursor-pointer`}>
-      {isLoading ? <RefreshCw size={18} className="animate-spin" /> : <Paperclip size={20} />}
+    <button
+      onClick={handleClick}
+      title={title}
+      disabled={isLoading}
+      className={`${iconColorClass} hover:opacity-80 transition disabled:opacity-50 cursor-pointer`}
+    >
+      {isLoading ? (
+        <RefreshCw size={18} className="animate-spin" />
+      ) : (
+        <Paperclip size={20} />
+      )}
     </button>
   );
 };
@@ -51,12 +70,26 @@ const ORDER_SCOPE_OPTIONS = [
 
 const PurchaseOrdersList = () => {
   const { t } = useTranslation();
-  const { canEditFinance, canAddFinance, canDeleteFinance, isFinanceEmployee, isFinanceSubAdmin, username } = useAuth();
+  const {
+    canEditFinance,
+    canAddFinance,
+    canDeleteFinance,
+    isFinanceEmployee,
+    isFinanceSubAdmin,
+    isFinanceOutsider,
+    username,
+  } = useAuth();
+  const noAccessValue = t("no_access_value", {
+    defaultValue: t("No_access_KPI"),
+  });
+  const kpiValue = (value) => (isFinanceOutsider ? noAccessValue : value);
   const [deletePurchaseOrder] = useDeletePurchaseOrderMutation();
-  const [restorePurchaseOrder, { isLoading: isRestoring }] = useRestorePurchaseOrderMutation();
+  const [restorePurchaseOrder, { isLoading: isRestoring }] =
+    useRestorePurchaseOrderMutation();
   const [getPurchaseOrdersExport] = useLazyGetPurchaseOrdersExportQuery();
-  const [addBulkPurchaseOrders, { isLoading: isImporting }] = useAddBulkPurchaseOrdersMutation();
-  
+  const [addBulkPurchaseOrders, { isLoading: isImporting }] =
+    useAddBulkPurchaseOrdersMutation();
+
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
   const [itemToRestore, setItemToRestore] = useState(null);
@@ -114,11 +147,15 @@ const PurchaseOrdersList = () => {
     error: errorSummary,
     refetch: refetchOrdersSummary,
     isFetching: isFetchingSummary,
-  } = useGetOrdersSummaryQuery({ scope: "all", dateBasis: "createdAt" }, {
-    pollingInterval: 60000,
-    refetchOnFocus: true,
-    refetchOnMountOrArgChange: 300,
-  });
+  } = useGetOrdersSummaryQuery(
+    { scope: "all", dateBasis: "createdAt" },
+    {
+      skip: isFinanceOutsider,
+      pollingInterval: 60000,
+      refetchOnFocus: true,
+      refetchOnMountOrArgChange: 300,
+    },
+  );
 
   const { data: banksData } = useGetBanksQuery("banksList");
 
@@ -133,20 +170,25 @@ const PurchaseOrdersList = () => {
     return map;
   }, [banksData]);
 
-  if ((isLoadingPO && !purchaseOrdersTable) || (isLoadingSummary && !ordersSummary)) return <LoadingSpinner />;
+  if (
+    (isLoadingPO && !purchaseOrdersTable) ||
+    (!isFinanceOutsider && isLoadingSummary && !ordersSummary)
+  )
+    return <LoadingSpinner />;
 
-  if (isErrorPO || isErrorSummary) {
+  if (isErrorPO || (!isFinanceOutsider && isErrorSummary)) {
     return (
       <div
         className="p-4 mb-4 text-sm text-red-800 rounded-lg bg-red-50 dark:bg-gray-800 dark:text-red-400"
         role="alert"
       >
-        <span className="font-medium">Alert! :</span> {errorPO?.data?.message || errorSummary?.data?.message}
+        <span className="font-medium">Alert! :</span>{" "}
+        {errorPO?.data?.message || errorSummary?.data?.message}
       </div>
     );
   }
 
-  if (isSuccessPO && isSuccessSummary) {
+  if (isSuccessPO && (isFinanceOutsider || isSuccessSummary)) {
     const purchaseOrderList = purchaseOrdersTable?.data || [];
     const sortedList = purchaseOrderList;
     const isArchiveScope = tableParams.scope === "archive";
@@ -196,31 +238,48 @@ const PurchaseOrdersList = () => {
 
     const getArchiveInfo = (item) =>
       `${t("deleted_at")}: ${formatArchiveDate(item.deletedAt)}\n${t("deleted_by")}: ${getDeletedByName(item)}`;
+    const canManageOwnOrder = (item) =>
+      (isFinanceEmployee || isFinanceSubAdmin || isFinanceOutsider) &&
+      item.issuer?.username === username;
 
     const columns = [
-      { 
-        field: "print", 
-        header: t("print"), 
+      {
+        field: "print",
+        header: t("print"),
         autoWidth: true,
-        body: (item) => <PurchaseOrderPrint purchaseOrder={item} />
+        body: (item) => <PurchaseOrderPrint purchaseOrder={item} />,
       },
-      { 
-        field: "attachments", 
-        header: t("attachments"), 
+      {
+        field: "attachments",
+        header: t("attachments"),
         autoWidth: true,
         body: (item) => (
           <div className="flex items-center justify-center gap-2">
             {item.receiptUrl ? (
-              <AttachmentButton s3Key={item.receiptUrl} title={t("receipt")} iconColorClass="text-blue-500 hover:text-blue-700" />
+              <AttachmentButton
+                s3Key={item.receiptUrl}
+                title={t("receipt")}
+                iconColorClass="text-blue-500 hover:text-blue-700"
+              />
             ) : item.fileUrl ? (
-              <AttachmentButton s3Key={item.fileUrl} title={t("attachment")} iconColorClass="text-blue-500 hover:text-blue-700" />
+              <AttachmentButton
+                s3Key={item.fileUrl}
+                title={t("attachment")}
+                iconColorClass="text-blue-500 hover:text-blue-700"
+              />
             ) : null}
             {item.orderPrintUrl ? (
-              <AttachmentButton s3Key={item.orderPrintUrl} title={t("order_print")} iconColorClass="text-green-500 hover:text-green-700" />
+              <AttachmentButton
+                s3Key={item.orderPrintUrl}
+                title={t("order_print")}
+                iconColorClass="text-green-500 hover:text-green-700"
+              />
             ) : null}
-            {!item.receiptUrl && !item.orderPrintUrl && !item.fileUrl && <span className="text-gray-300">—</span>}
+            {!item.receiptUrl && !item.orderPrintUrl && !item.fileUrl && (
+              <span className="text-gray-300">—</span>
+            )}
           </div>
-        )
+        ),
       },
       { field: "purchasingId", header: t("purchasing_id"), nowrap: true },
       { field: "issuerName", header: t("issuer_purchase"), nowrap: true },
@@ -228,16 +287,23 @@ const PurchaseOrdersList = () => {
         field: "transactionType",
         header: t("transaction_type"),
         filterType: "select",
-        filterOptions: Object.entries(transactionTypeTranslations).map(([value, label]) => ({ value, label })),
-        body: (item) => transactionTypeTranslations[item.transactionType] || item.transactionType || "—",
+        filterOptions: Object.entries(transactionTypeTranslations).map(
+          ([value, label]) => ({ value, label }),
+        ),
+        body: (item) =>
+          transactionTypeTranslations[item.transactionType] ||
+          item.transactionType ||
+          "—",
       },
-      { 
-        field: "status", 
-        header: t("po_status"), 
+      {
+        field: "status",
+        header: t("po_status"),
         nowrap: true,
         filterType: "select",
-        filterOptions: Object.entries(statusTranslations).map(([value, label]) => ({ value, label })),
-        body: (item) => getStatusBadge(item.status)
+        filterOptions: Object.entries(statusTranslations).map(
+          ([value, label]) => ({ value, label }),
+        ),
+        body: (item) => getStatusBadge(item.status),
       },
       { field: "dayName", header: t("day_name"), nowrap: true },
       { field: "dateHijri", header: t("date_hijri"), nowrap: true },
@@ -246,8 +312,13 @@ const PurchaseOrdersList = () => {
         field: "paymentMethod",
         header: t("payment_method"),
         filterType: "select",
-        filterOptions: Object.entries(paymentMethodTranslations).map(([value, label]) => ({ value, label })),
-        body: (item) => paymentMethodTranslations[item.paymentMethod] || item.paymentMethod || "—",
+        filterOptions: Object.entries(paymentMethodTranslations).map(
+          ([value, label]) => ({ value, label }),
+        ),
+        body: (item) =>
+          paymentMethodTranslations[item.paymentMethod] ||
+          item.paymentMethod ||
+          "—",
       },
       { field: "bankNameFrom", header: t("bank_name_from") },
       { field: "ibanNumberFrom", header: t("iban_number_from") },
@@ -255,42 +326,47 @@ const PurchaseOrdersList = () => {
       { field: "ibanNumberTo", header: t("iban_number_to") },
       { field: "managementName", header: t("management_name") },
       { field: "supplier", header: t("supplier") },
-      { 
-        field: "item", 
+      {
+        field: "item",
         header: t("item"),
         body: (rowData) => (
-          <div title={rowData.item}>
-            {truncateWords(rowData.item, 20)}
-          </div>
-        )
+          <div title={rowData.item}>{truncateWords(rowData.item, 20)}</div>
+        ),
       },
-      { 
-        field: "totalAmount", 
-        header: t("total_amount"), 
+      {
+        field: "totalAmount",
+        header: t("total_amount"),
         nowrap: true,
-        body: (item) => item.totalAmount ? `${item.totalAmount.toLocaleString()} ${t("sar")}` : "—"
+        body: (item) =>
+          item.totalAmount
+            ? `${item.totalAmount.toLocaleString()} ${t("sar")}`
+            : "—",
       },
       { field: "totalAmountText", header: t("total_amount_text") },
       { field: "deductedFrom", header: t("deducted_from") },
       { field: "addedTo", header: t("added_to") },
-      { 
-        field: "notes", 
+      {
+        field: "notes",
         header: t("notes"),
         body: (rowData) => (
-          <div title={rowData.notes}>
-            {truncateWords(rowData.notes, 20)}
-          </div>
-        )
+          <div title={rowData.notes}>{truncateWords(rowData.notes, 20)}</div>
+        ),
       },
       {
         field: "createdAt",
         header: t("createdAt"),
         nowrap: true,
         filterType: "date",
-        body: (item) => item.createdAt ? new Date(item.createdAt).toLocaleDateString() : "—",
+        body: (item) =>
+          item.createdAt ? new Date(item.createdAt).toLocaleDateString() : "—",
       },
       { field: "time", header: t("time"), nowrap: true, filterType: null },
-      { field: "actions", header: t("actions"), autoWidth: true, filterType: null },
+      {
+        field: "actions",
+        header: t("actions"),
+        autoWidth: true,
+        filterType: null,
+      },
     ];
 
     const getStatusBadge = (status) => {
@@ -302,9 +378,11 @@ const PurchaseOrdersList = () => {
       };
 
       const config = statusConfig[status] || statusConfig.new;
-      
+
       return (
-        <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-white text-xs font-medium ${config.color}`}>
+        <span
+          className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-white text-xs font-medium ${config.color}`}
+        >
           <span className="w-2 h-2 rounded-full bg-white"></span>
           {config.label}
         </span>
@@ -314,22 +392,22 @@ const PurchaseOrdersList = () => {
     // Convert English day names to Arabic (in case old data has English names)
     const convertDayNameToArabic = (dayName) => {
       if (!dayName) return "—";
-      
+
       const dayMap = {
-        "Sunday": "الأحد",
-        "Monday": "الإثنين",
-        "Tuesday": "الثلاثاء",
-        "Wednesday": "الأربعاء",
-        "Thursday": "الخميس",
-        "Friday": "الجمعة",
-        "Saturday": "السبت",
+        Sunday: "الأحد",
+        Monday: "الإثنين",
+        Tuesday: "الثلاثاء",
+        Wednesday: "الأربعاء",
+        Thursday: "الخميس",
+        Friday: "الجمعة",
+        Saturday: "السبت",
       };
-      
+
       // If it's already in Arabic, return as is
       if (dayName.match(/[\u0600-\u06FF]/)) {
         return dayName;
       }
-      
+
       // Convert English to Arabic
       return dayMap[dayName] || dayName;
     };
@@ -338,7 +416,9 @@ const PurchaseOrdersList = () => {
       ...item,
       issuerName: item.issuer?.ar_name || item.issuer?.username || "—",
       dayName: convertDayNameToArabic(item.dayName),
-      time: item.createdAt ? new Date(item.createdAt).toLocaleTimeString() : "—",
+      time: item.createdAt
+        ? new Date(item.createdAt).toLocaleTimeString()
+        : "—",
       deletedByName: getDeletedByName(item),
       deletedAtText: formatArchiveDate(item.deletedAt),
       actions: isArchiveScope ? (
@@ -351,7 +431,7 @@ const PurchaseOrdersList = () => {
           >
             <AlertCircle size={18} />
           </button>
-          {(canDeleteFinance || ((isFinanceEmployee || isFinanceSubAdmin) && item.issuer?.username === username)) && (
+          {(canDeleteFinance || canManageOwnOrder(item)) && (
             <button
               type="button"
               title={t("restore")}
@@ -364,16 +444,19 @@ const PurchaseOrdersList = () => {
         </div>
       ) : (
         <div className="flex items-center gap-2">
-          {(canEditFinance || ((isFinanceEmployee || isFinanceSubAdmin) && item.issuer?.username === username)) && (
+          {(canEditFinance || canManageOwnOrder(item)) && (
             <Link
               to={`/dashboard/purchaseorders/edit/${item.id}`}
               {...prefetchHandlers(`/dashboard/purchaseorders/edit/${item.id}`)}
               className="inline-flex items-center gap-1.5 px-3 py-3 rounded-lg bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800 transition-all hover:bg-blue-100 dark:hover:bg-blue-900/50 hover:shadow-sm group font-medium"
             >
-              <Pencil size={14} className="group-hover:rotate-12 transition-transform" />
+              <Pencil
+                size={14}
+                className="group-hover:rotate-12 transition-transform"
+              />
             </Link>
           )}
-          {(canDeleteFinance || ((isFinanceEmployee || isFinanceSubAdmin) && item.issuer?.username === username)) && (
+          {(canDeleteFinance || canManageOwnOrder(item)) && (
             <button
               onClick={() => {
                 setItemToDelete(item.id);
@@ -381,7 +464,10 @@ const PurchaseOrdersList = () => {
               }}
               className="inline-flex items-center gap-1.5 px-3 py-3 rounded-lg bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800 transition-all hover:bg-red-100 dark:hover:bg-red-900/50 hover:shadow-sm group font-medium cursor-pointer"
             >
-              <Trash2 size={14} className="group-hover:scale-110 transition-transform" />
+              <Trash2
+                size={14}
+                className="group-hover:scale-110 transition-transform"
+              />
             </button>
           )}
         </div>
@@ -393,12 +479,16 @@ const PurchaseOrdersList = () => {
         ...item,
         issuerName: item.issuer?.ar_name || item.issuer?.username || "—",
         dayName: convertDayNameToArabic(item.dayName),
-        time: item.createdAt ? new Date(item.createdAt).toLocaleTimeString() : "—",
+        time: item.createdAt
+          ? new Date(item.createdAt).toLocaleTimeString()
+          : "—",
         deletedByName: getDeletedByName(item),
         deletedAtText: formatArchiveDate(item.deletedAt),
         print: "",
         attachments: "",
-        actions: isArchiveScope ? getArchiveInfo(item).replace(/\n/g, " | ") : "",
+        actions: isArchiveScope
+          ? getArchiveInfo(item).replace(/\n/g, " | ")
+          : "",
       }));
 
     const loadPurchaseExportData = async (exportState) => {
@@ -413,11 +503,14 @@ const PurchaseOrdersList = () => {
 
     const purchaseSummary = ordersSummary?.purchase || {};
     const collectionSummary = ordersSummary?.collection || {};
-    const totalPurchaseOrdersCount = purchaseSummary.count ?? purchaseOrdersTable?.totalRecords ?? 0;
+    const totalPurchaseOrdersCount =
+      purchaseSummary.count ?? purchaseOrdersTable?.totalRecords ?? 0;
     const totalPurchaseAmount = purchaseSummary.totalAmount || 0;
-    const totalPurchaseAmountWithoutVisa = purchaseSummary.totalAmountWithoutVisa || 0;
+    const totalPurchaseAmountWithoutVisa =
+      purchaseSummary.totalAmountWithoutVisa || 0;
     const totalCollectionAmount = collectionSummary.totalAmount || 0;
-    const balance = ordersSummary?.balance ?? totalCollectionAmount - totalPurchaseAmount;
+    const balance =
+      ordersSummary?.balance ?? totalCollectionAmount - totalPurchaseAmount;
 
     const handleExcelImport = (e) => {
       const file = e.target.files[0];
@@ -437,88 +530,148 @@ const PurchaseOrdersList = () => {
             return;
           }
 
-          const formattedOrders = rawData.map((row) => {
-            const adDate = row["AD Date"] || row["AD date"] || row["Date"] || row["التاريخ"];
-            const totalAmount = row["Total Amount"] || row["total amount"] || row["Amount"] || row["المبلغ"];
-            const transactionType = row["Transaction Type"] || row["transaction type"] || row["نوع المعاملة"] || "";
-            const item = row["Item"] || row["item"] || row["الصنف"] || "";
-            const notes = row["Notes"] || row["notes"] || row["الملاحظات"] || "";
-            const supplier = row["Supplier"] || row["supplier"] || row["المورد"] || "";
-            const managementName = row["Management Name"] || row["management name"] || row["اسم الإدارة"] || "";
-            const paymentMethod = row["Payment Method"] || row["payment method"] || row["طريقة الدفع"] || "";
-            const bankNameFrom = row["Bank Name (From)"] || row["bank name from"] || row["اسم البنك (من)"] || "";
-            const bankNameTo = row["Bank Name (To)"] || row["bank name to"] || row["اسم البنك (إلى)"] || "";
+          const formattedOrders = rawData
+            .map((row) => {
+              const adDate =
+                row["AD Date"] ||
+                row["AD date"] ||
+                row["Date"] ||
+                row["التاريخ"];
+              const totalAmount =
+                row["Total Amount"] ||
+                row["total amount"] ||
+                row["Amount"] ||
+                row["المبلغ"];
+              const transactionType =
+                row["Transaction Type"] ||
+                row["transaction type"] ||
+                row["نوع المعاملة"] ||
+                "";
+              const item = row["Item"] || row["item"] || row["الصنف"] || "";
+              const notes =
+                row["Notes"] || row["notes"] || row["الملاحظات"] || "";
+              const supplier =
+                row["Supplier"] || row["supplier"] || row["المورد"] || "";
+              const managementName =
+                row["Management Name"] ||
+                row["management name"] ||
+                row["اسم الإدارة"] ||
+                "";
+              const paymentMethod =
+                row["Payment Method"] ||
+                row["payment method"] ||
+                row["طريقة الدفع"] ||
+                "";
+              const bankNameFrom =
+                row["Bank Name (From)"] ||
+                row["bank name from"] ||
+                row["اسم البنك (من)"] ||
+                "";
+              const bankNameTo =
+                row["Bank Name (To)"] ||
+                row["bank name to"] ||
+                row["اسم البنك (إلى)"] ||
+                "";
 
-            if (!adDate || !totalAmount) return null;
+              if (!adDate || !totalAmount) return null;
 
-            let jsDate;
-            if (typeof adDate === "number") {
-              jsDate = new Date((adDate - 25569) * 86400 * 1000);
-            } else {
-              // Try DD-MM-YYYY or DD/MM/YYYY format first
-              const ddmmyyyy = String(adDate).match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})$/);
-              if (ddmmyyyy) {
-                jsDate = new Date(parseInt(ddmmyyyy[3]), parseInt(ddmmyyyy[2]) - 1, parseInt(ddmmyyyy[1]));
+              let jsDate;
+              if (typeof adDate === "number") {
+                jsDate = new Date((adDate - 25569) * 86400 * 1000);
               } else {
-                jsDate = new Date(adDate);
+                // Try DD-MM-YYYY or DD/MM/YYYY format first
+                const ddmmyyyy = String(adDate).match(
+                  /^(\d{1,2})[-/](\d{1,2})[-/](\d{4})$/,
+                );
+                if (ddmmyyyy) {
+                  jsDate = new Date(
+                    parseInt(ddmmyyyy[3]),
+                    parseInt(ddmmyyyy[2]) - 1,
+                    parseInt(ddmmyyyy[1]),
+                  );
+                } else {
+                  jsDate = new Date(adDate);
+                }
               }
-            }
 
-            if (isNaN(jsDate.getTime())) return null;
+              if (isNaN(jsDate.getTime())) return null;
 
-            const year = jsDate.getFullYear();
-            const month = String(jsDate.getMonth() + 1).padStart(2, "0");
-            const day = String(jsDate.getDate()).padStart(2, "0");
-            const dateAD = `${year}-${month}-${day}`;
+              const year = jsDate.getFullYear();
+              const month = String(jsDate.getMonth() + 1).padStart(2, "0");
+              const day = String(jsDate.getDate()).padStart(2, "0");
+              const dateAD = `${year}-${month}-${day}`;
 
-            const days = [
-              "الأحد", "الإثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"
-            ];
-            const dayName = days[jsDate.getDay()];
-            const dateHijri = moment(jsDate).format("iYYYY/iM/iD");
+              const days = [
+                "الأحد",
+                "الإثنين",
+                "الثلاثاء",
+                "الأربعاء",
+                "الخميس",
+                "الجمعة",
+                "السبت",
+              ];
+              const dayName = days[jsDate.getDay()];
+              const dateHijri = moment(jsDate).format("iYYYY/iM/iD");
 
-            const amountValue = typeof totalAmount === "string" 
-              ? parseFloat(totalAmount.replace(/,/g, "")) 
-              : parseFloat(totalAmount);
+              const amountValue =
+                typeof totalAmount === "string"
+                  ? parseFloat(totalAmount.replace(/,/g, ""))
+                  : parseFloat(totalAmount);
 
-            // Map transaction type from Excel (handle English/Arabic values)
-            const txMap = {
-              "cash deposit": "cash_deposit", "cash_deposit": "cash_deposit", "ايداع نقدي": "cash_deposit",
-              "expenses": "expenses", "مصروفات": "expenses",
-              "receivables": "receivables", "مستحقات": "receivables",
-              "custody": "custody", "عهدة": "custody",
-              "advance": "advance", "سلفة": "advance",
-              "payments": "payments", "مدفوعات": "payments",
-            };
-            const mappedTx = txMap[transactionType.toLowerCase()] || transactionType || "expenses";
+              // Map transaction type from Excel (handle English/Arabic values)
+              const txMap = {
+                "cash deposit": "cash_deposit",
+                cash_deposit: "cash_deposit",
+                "ايداع نقدي": "cash_deposit",
+                expenses: "expenses",
+                مصروفات: "expenses",
+                receivables: "receivables",
+                مستحقات: "receivables",
+                custody: "custody",
+                عهدة: "custody",
+                advance: "advance",
+                سلفة: "advance",
+                payments: "payments",
+                مدفوعات: "payments",
+              };
+              const mappedTx =
+                txMap[transactionType.toLowerCase()] ||
+                transactionType ||
+                "expenses";
 
-            // Map payment method from Excel
-            const pmMap = {
-              "cash": "cash", "نقدي": "cash",
-              "visa": "visa", "الفيزا": "visa",
-              "bank transfer": "bank_transfer", "bank_transfer": "bank_transfer", "تحويل بنكي": "bank_transfer",
-              "sadad": "sadad", "سداد": "sadad",
-            };
-            const mappedPm = pmMap[paymentMethod.toLowerCase()] || "cash";
+              // Map payment method from Excel
+              const pmMap = {
+                cash: "cash",
+                نقدي: "cash",
+                visa: "visa",
+                الفيزا: "visa",
+                "bank transfer": "bank_transfer",
+                bank_transfer: "bank_transfer",
+                "تحويل بنكي": "bank_transfer",
+                sadad: "sadad",
+                سداد: "sadad",
+              };
+              const mappedPm = pmMap[paymentMethod.toLowerCase()] || "cash";
 
-            return {
-              dateAD,
-              dayName,
-              dateHijri,
-              totalAmount: amountValue,
-              totalAmountText: numberToArabicText(amountValue),
-              transactionType: mappedTx,
-              paymentMethod: mappedPm,
-              bankNameFrom: bankNameFrom,
-              ibanNumberFrom: bankIbanMap[bankNameFrom.trim()] || "",
-              bankNameTo: bankNameTo,
-              managementName: managementName,
-              supplier: supplier,
-              item: item,
-              notes: notes,
-              status: "new"
-            };
-          }).filter(Boolean);
+              return {
+                dateAD,
+                dayName,
+                dateHijri,
+                totalAmount: amountValue,
+                totalAmountText: numberToArabicText(amountValue),
+                transactionType: mappedTx,
+                paymentMethod: mappedPm,
+                bankNameFrom: bankNameFrom,
+                ibanNumberFrom: bankIbanMap[bankNameFrom.trim()] || "",
+                bankNameTo: bankNameTo,
+                managementName: managementName,
+                supplier: supplier,
+                item: item,
+                notes: notes,
+                status: "new",
+              };
+            })
+            .filter(Boolean);
 
           if (formattedOrders.length === 0) {
             toast.error(t("no_valid_data_found"));
@@ -540,7 +693,9 @@ const PurchaseOrdersList = () => {
     const handleConfirmImport = async () => {
       try {
         await addBulkPurchaseOrders(parsedRecords).unwrap();
-        toast.success(t("bulk_import_success", { count: parsedRecords.length }));
+        toast.success(
+          t("bulk_import_success", { count: parsedRecords.length }),
+        );
         setShowImportPreview(false);
         setParsedRecords([]);
       } catch (error) {
@@ -576,7 +731,10 @@ const PurchaseOrdersList = () => {
                   </p>
                 </div>
                 <button
-                  onClick={() => { setShowImportPreview(false); setParsedRecords([]); }}
+                  onClick={() => {
+                    setShowImportPreview(false);
+                    setParsedRecords([]);
+                  }}
                   className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition cursor-pointer"
                 >
                   <X size={18} className="text-gray-500" />
@@ -588,30 +746,86 @@ const PurchaseOrdersList = () => {
                 <table className="w-full text-sm">
                   <thead className="sticky top-0 bg-gray-100 dark:bg-gray-700 z-10">
                     <tr>
-                      <th className="px-3 py-2 text-start font-semibold text-gray-700 dark:text-gray-300">#</th>
-                      <th className="px-3 py-2 text-start font-semibold text-gray-700 dark:text-gray-300">{t("transaction_type")}</th>
-                      <th className="px-3 py-2 text-start font-semibold text-gray-700 dark:text-gray-300">{t("date_ad")}</th>
-                      <th className="px-3 py-2 text-start font-semibold text-gray-700 dark:text-gray-300">{t("total_amount")}</th>
-                      <th className="px-3 py-2 text-start font-semibold text-gray-700 dark:text-gray-300">{t("item")}</th>
-                      <th className="px-3 py-2 text-start font-semibold text-gray-700 dark:text-gray-300">{t("bank_name_from")} / {t("iban_number_from")}</th>
-                      <th className="px-3 py-2 text-start font-semibold text-gray-700 dark:text-gray-300">{t("bank_name_to")}</th>
-                      <th className="px-3 py-2 text-start font-semibold text-gray-700 dark:text-gray-300">{t("notes")}</th>
+                      <th className="px-3 py-2 text-start font-semibold text-gray-700 dark:text-gray-300">
+                        #
+                      </th>
+                      <th className="px-3 py-2 text-start font-semibold text-gray-700 dark:text-gray-300">
+                        {t("transaction_type")}
+                      </th>
+                      <th className="px-3 py-2 text-start font-semibold text-gray-700 dark:text-gray-300">
+                        {t("date_ad")}
+                      </th>
+                      <th className="px-3 py-2 text-start font-semibold text-gray-700 dark:text-gray-300">
+                        {t("total_amount")}
+                      </th>
+                      <th className="px-3 py-2 text-start font-semibold text-gray-700 dark:text-gray-300">
+                        {t("item")}
+                      </th>
+                      <th className="px-3 py-2 text-start font-semibold text-gray-700 dark:text-gray-300">
+                        {t("bank_name_from")} / {t("iban_number_from")}
+                      </th>
+                      <th className="px-3 py-2 text-start font-semibold text-gray-700 dark:text-gray-300">
+                        {t("bank_name_to")}
+                      </th>
+                      <th className="px-3 py-2 text-start font-semibold text-gray-700 dark:text-gray-300">
+                        {t("notes")}
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
                     {parsedRecords.map((record, index) => (
-                      <tr key={index} className={`border-b border-gray-100 dark:border-gray-700 `}>
-                        <td className="px-3 py-2 text-gray-500 dark:text-gray-400 font-mono">{index + 1}</td>
-                        <td className="px-3 py-2 text-gray-900 dark:text-gray-100">{transactionTypeLabels[record.transactionType] || record.transactionType}</td>
-                        <td className="px-3 py-2 text-gray-900 dark:text-gray-100 whitespace-nowrap">{record.dateAD}</td>
-                        <td className="px-3 py-2 text-gray-900 dark:text-gray-100 whitespace-nowrap font-medium">{record.totalAmount?.toLocaleString()} {t("sar")}</td>
-                        <td className="px-3 py-2 text-gray-600 dark:text-gray-400 max-w-[150px] truncate" title={record.item}>{record.item || "—"}</td>
-                        <td className="px-3 py-2 text-gray-600 dark:text-gray-400 max-w-[200px]" title={record.ibanNumberFrom ? `${record.bankNameFrom} - ${record.ibanNumberFrom}` : record.bankNameFrom}>
-                          <div className="truncate">{record.bankNameFrom || "—"}</div>
-                          {record.ibanNumberFrom && <div className="truncate text-xs text-gray-400 dark:text-gray-500 mt-0.5 font-mono">{record.ibanNumberFrom}</div>}
+                      <tr
+                        key={index}
+                        className={`border-b border-gray-100 dark:border-gray-700 `}
+                      >
+                        <td className="px-3 py-2 text-gray-500 dark:text-gray-400 font-mono">
+                          {index + 1}
                         </td>
-                        <td className="px-3 py-2 text-gray-600 dark:text-gray-400 max-w-[200px] truncate" title={record.bankNameTo}>{record.bankNameTo || "—"}</td>
-                        <td className="px-3 py-2 text-gray-600 dark:text-gray-400 max-w-[200px] truncate" title={record.notes}>{record.notes || "—"}</td>
+                        <td className="px-3 py-2 text-gray-900 dark:text-gray-100">
+                          {transactionTypeLabels[record.transactionType] ||
+                            record.transactionType}
+                        </td>
+                        <td className="px-3 py-2 text-gray-900 dark:text-gray-100 whitespace-nowrap">
+                          {record.dateAD}
+                        </td>
+                        <td className="px-3 py-2 text-gray-900 dark:text-gray-100 whitespace-nowrap font-medium">
+                          {record.totalAmount?.toLocaleString()} {t("sar")}
+                        </td>
+                        <td
+                          className="px-3 py-2 text-gray-600 dark:text-gray-400 max-w-[150px] truncate"
+                          title={record.item}
+                        >
+                          {record.item || "—"}
+                        </td>
+                        <td
+                          className="px-3 py-2 text-gray-600 dark:text-gray-400 max-w-[200px]"
+                          title={
+                            record.ibanNumberFrom
+                              ? `${record.bankNameFrom} - ${record.ibanNumberFrom}`
+                              : record.bankNameFrom
+                          }
+                        >
+                          <div className="truncate">
+                            {record.bankNameFrom || "—"}
+                          </div>
+                          {record.ibanNumberFrom && (
+                            <div className="truncate text-xs text-gray-400 dark:text-gray-500 mt-0.5 font-mono">
+                              {record.ibanNumberFrom}
+                            </div>
+                          )}
+                        </td>
+                        <td
+                          className="px-3 py-2 text-gray-600 dark:text-gray-400 max-w-[200px] truncate"
+                          title={record.bankNameTo}
+                        >
+                          {record.bankNameTo || "—"}
+                        </td>
+                        <td
+                          className="px-3 py-2 text-gray-600 dark:text-gray-400 max-w-[200px] truncate"
+                          title={record.notes}
+                        >
+                          {record.notes || "—"}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -621,11 +835,20 @@ const PurchaseOrdersList = () => {
               {/* Modal Footer */}
               <div className="flex items-center justify-between p-5 border-t border-gray-200 dark:border-gray-700">
                 <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                  {t("total_amount")}: <span className="text-gray-900 dark:text-white font-bold">{parsedRecords.reduce((sum, r) => sum + (r.totalAmount || 0), 0).toLocaleString()} {t("sar")}</span>
+                  {t("total_amount")}:{" "}
+                  <span className="text-gray-900 dark:text-white font-bold">
+                    {parsedRecords
+                      .reduce((sum, r) => sum + (r.totalAmount || 0), 0)
+                      .toLocaleString()}{" "}
+                    {t("sar")}
+                  </span>
                 </p>
                 <div className="flex items-center gap-3">
                   <button
-                    onClick={() => { setShowImportPreview(false); setParsedRecords([]); }}
+                    onClick={() => {
+                      setShowImportPreview(false);
+                      setParsedRecords([]);
+                    }}
                     disabled={isImporting}
                     className="px-5 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition font-medium text-sm cursor-pointer disabled:opacity-50"
                   >
@@ -663,12 +886,20 @@ const PurchaseOrdersList = () => {
               <button
                 onClick={async () => {
                   setIsRefreshing(true);
-                  await Promise.all([refetchPO(), refetchOrdersSummary()]);
+                  await Promise.all([
+                    refetchPO(),
+                    isFinanceOutsider
+                      ? Promise.resolve()
+                      : refetchOrdersSummary(),
+                  ]);
                   setIsRefreshing(false);
                 }}
                 className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 border border-gray-500 hover:text-dark-900 hover:bg-gray-100 hover:text-gray-700 dark:border-white dark:bg-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white cursor-pointer transition-all active:scale-95"
               >
-                <RefreshCw size={20} className={`${(isFetchingPO || isFetchingSummary) ? "animate-spin" : ""}`} />
+                <RefreshCw
+                  size={20}
+                  className={`${isFetchingPO || (!isFinanceOutsider && isFetchingSummary) ? "animate-spin" : ""}`}
+                />
               </button>
               <div className="absolute end-full top-1/2 me-2 -translate-y-1/2 whitespace-nowrap px-3 py-1.5 text-sm text-gray-800 bg-gray-300 dark:bg-gray-200 dark:text-gray-800 rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-10 shadow-md font-medium">
                 {t("refresh")}
@@ -680,11 +911,17 @@ const PurchaseOrdersList = () => {
                 {(username === "Saleh" || username === "Nasri") && (
                   <div className="relative group">
                     <button
-                      onClick={() => document.getElementById("excel-bulk-import").click()}
+                      onClick={() =>
+                        document.getElementById("excel-bulk-import").click()
+                      }
                       disabled={isImporting}
                       className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 border border-gray-500 hover:text-dark-900 hover:bg-gray-100 hover:text-gray-700 dark:border-white dark:bg-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white cursor-pointer transition-all active:scale-95 disabled:opacity-50"
                     >
-                      {isImporting ? <RefreshCw className="animate-spin" size={20} /> : <Upload size={20} />}
+                      {isImporting ? (
+                        <RefreshCw className="animate-spin" size={20} />
+                      ) : (
+                        <Upload size={20} />
+                      )}
                     </button>
                     <input
                       type="file"
@@ -700,19 +937,19 @@ const PurchaseOrdersList = () => {
                 )}
 
                 <div className="relative group">
-                <Link
-                  to="/dashboard/purchaseorders/add"
-                  {...prefetchHandlers("/dashboard/purchaseorders/add")}
-                  className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 border border-gray-500 hover:text-dark-900 hover:bg-gray-100 hover:text-gray-700 dark:border-white dark:bg-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white cursor-pointer"
-                >
-                  <Plus size={20} />
-                </Link>
-                <div className="absolute end-full top-1/2 me-2 -translate-y-1/2 whitespace-nowrap px-3 py-1.5 text-sm text-gray-800 bg-gray-300 dark:bg-gray-200 dark:text-gray-800 rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-10 shadow-md font-medium">
-                  {t("add_purchase_order")}
+                  <Link
+                    to="/dashboard/purchaseorders/add"
+                    {...prefetchHandlers("/dashboard/purchaseorders/add")}
+                    className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 border border-gray-500 hover:text-dark-900 hover:bg-gray-100 hover:text-gray-700 dark:border-white dark:bg-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white cursor-pointer"
+                  >
+                    <Plus size={20} />
+                  </Link>
+                  <div className="absolute end-full top-1/2 me-2 -translate-y-1/2 whitespace-nowrap px-3 py-1.5 text-sm text-gray-800 bg-gray-300 dark:bg-gray-200 dark:text-gray-800 rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-10 shadow-md font-medium">
+                    {t("add_purchase_order")}
+                  </div>
                 </div>
-              </div>
-            </>
-          )}
+              </>
+            )}
           </div>
         </div>
 
@@ -724,7 +961,7 @@ const PurchaseOrdersList = () => {
               {t("total_purchase_orders")}
             </p>
             <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
-              {totalPurchaseOrdersCount}
+              {kpiValue(totalPurchaseOrdersCount)}
             </h3>
           </div>
 
@@ -734,7 +971,9 @@ const PurchaseOrdersList = () => {
               {t("total_amount_sum_no_visa")}
             </p>
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-              {totalPurchaseAmountWithoutVisa.toLocaleString()} {t("sar")}
+              {kpiValue(
+                `${totalPurchaseAmountWithoutVisa.toLocaleString()} ${t("sar")}`,
+              )}
             </h3>
           </div>
 
@@ -744,9 +983,11 @@ const PurchaseOrdersList = () => {
               {t("last_purchase_order_date")}
             </p>
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-              {sortedList.length > 0
-                ? new Date(sortedList[0].createdAt).toLocaleDateString()
-                : "—"}
+              {kpiValue(
+                sortedList.length > 0
+                  ? new Date(sortedList[0].createdAt).toLocaleDateString()
+                  : "-",
+              )}
             </h3>
           </div>
 
@@ -755,8 +996,10 @@ const PurchaseOrdersList = () => {
             <p className="text-sm text-gray-600 dark:text-gray-400">
               {t("total_balance")}
             </p>
-            <h3 className={`text-lg font-bold ${balance >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}>
-              {balance.toLocaleString()} {t("sar")}
+            <h3
+              className={`text-lg font-bold ${balance >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}
+            >
+              {kpiValue(`${balance.toLocaleString()} ${t("sar")}`)}
             </h3>
           </div>
         </div>
@@ -765,16 +1008,21 @@ const PurchaseOrdersList = () => {
           data={transformedData}
           columns={columns}
           title={t("purchase_orders_list")}
-          sumField="totalAmount"
+          sumField={isFinanceOutsider ? null : "totalAmount"}
           serverSide
           totalRecords={purchaseOrdersTable?.totalRecords || 0}
-          serverTotalSum={purchaseOrdersTable?.totalAmount || 0}
+          serverTotalSum={
+            isFinanceOutsider ? 0 : purchaseOrdersTable?.totalAmount || 0
+          }
           isServerLoading={isFetchingPO}
           onServerStateChange={handleServerStateChange}
           onExportData={loadPurchaseExportData}
           scopeOptions={ORDER_SCOPE_OPTIONS}
           onRefresh={async () => {
-            await Promise.all([refetchPO(), refetchOrdersSummary()]);
+            await Promise.all([
+              refetchPO(),
+              isFinanceOutsider ? Promise.resolve() : refetchOrdersSummary(),
+            ]);
           }}
         />
 
@@ -824,12 +1072,20 @@ const PurchaseOrdersList = () => {
               </div>
               <div className="space-y-3 text-sm">
                 <div className="flex justify-between gap-4 border-b border-gray-100 dark:border-gray-700 pb-3">
-                  <span className="font-semibold text-gray-500 dark:text-gray-400">{t("deleted_at")}</span>
-                  <span className="text-gray-900 dark:text-white text-end">{formatArchiveDate(archiveInfoItem.deletedAt)}</span>
+                  <span className="font-semibold text-gray-500 dark:text-gray-400">
+                    {t("deleted_at")}
+                  </span>
+                  <span className="text-gray-900 dark:text-white text-end">
+                    {formatArchiveDate(archiveInfoItem.deletedAt)}
+                  </span>
                 </div>
                 <div className="flex justify-between gap-4">
-                  <span className="font-semibold text-gray-500 dark:text-gray-400">{t("deleted_by")}</span>
-                  <span className="text-gray-900 dark:text-white text-end">{getDeletedByName(archiveInfoItem)}</span>
+                  <span className="font-semibold text-gray-500 dark:text-gray-400">
+                    {t("deleted_by")}
+                  </span>
+                  <span className="text-gray-900 dark:text-white text-end">
+                    {getDeletedByName(archiveInfoItem)}
+                  </span>
                 </div>
               </div>
               <button

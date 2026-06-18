@@ -52,7 +52,9 @@ const ORDER_SCOPE_OPTIONS = [
 
 const CollectionOrdersList = () => {
   const { t } = useTranslation();
-  const { canEditFinance, canAddFinance, canDeleteFinance, isFinanceEmployee, isFinanceSubAdmin, username } = useAuth();
+  const { canEditFinance, canAddFinance, canDeleteFinance, isFinanceEmployee, isFinanceSubAdmin, isFinanceOutsider, username } = useAuth();
+  const noAccessValue = t("no_access_value", { defaultValue: t("No_access_KPI") });
+  const kpiValue = (value) => (isFinanceOutsider ? noAccessValue : value);
   const [deleteCollectionOrder] = useDeleteCollectionOrderMutation();
   const [restoreCollectionOrder, { isLoading: isRestoring }] = useRestoreCollectionOrderMutation();
   const [getCollectionOrdersExport] = useLazyGetCollectionOrdersExportQuery();
@@ -116,6 +118,7 @@ const CollectionOrdersList = () => {
     refetch: refetchOrdersSummary,
     isFetching: isFetchingSummary,
   } = useGetOrdersSummaryQuery({ scope: "all", dateBasis: "createdAt" }, {
+    skip: isFinanceOutsider,
     pollingInterval: 60000,
     refetchOnFocus: true,
     refetchOnMountOrArgChange: 300,
@@ -136,9 +139,9 @@ const CollectionOrdersList = () => {
 
 
 
-  if ((isLoadingCO && !collectionOrdersTable) || (isLoadingSummary && !ordersSummary)) return <LoadingSpinner />;
+  if ((isLoadingCO && !collectionOrdersTable) || (!isFinanceOutsider && isLoadingSummary && !ordersSummary)) return <LoadingSpinner />;
 
-  if (isErrorCO || isErrorSummary) {
+  if (isErrorCO || (!isFinanceOutsider && isErrorSummary)) {
     return (
       <div
         className="p-4 mb-4 text-sm text-red-800 rounded-lg bg-red-50 dark:bg-gray-800 dark:text-red-400"
@@ -149,7 +152,7 @@ const CollectionOrdersList = () => {
     );
   }
 
-  if (isSuccessCO && isSuccessSummary) {
+  if (isSuccessCO && (isFinanceOutsider || isSuccessSummary)) {
     const collectionOrderList = collectionOrdersTable?.data || [];
     const sortedList = collectionOrderList;
     const isArchiveScope = tableParams.scope === "archive";
@@ -197,6 +200,9 @@ const CollectionOrdersList = () => {
 
     const getArchiveInfo = (item) =>
       `${t("deleted_at")}: ${formatArchiveDate(item.deletedAt)}\n${t("deleted_by")}: ${getDeletedByName(item)}`;
+    const canManageOwnOrder = (item) =>
+      (isFinanceEmployee || isFinanceSubAdmin || isFinanceOutsider) &&
+      item.issuer?.username === username;
 
     const columns = [
       { 
@@ -341,7 +347,7 @@ const CollectionOrdersList = () => {
           >
             <AlertCircle size={18} />
           </button>
-          {(canDeleteFinance || ((isFinanceEmployee || isFinanceSubAdmin) && item.issuer?.username === username)) && (
+          {(canDeleteFinance || canManageOwnOrder(item)) && (
             <button
               type="button"
               title={t("restore")}
@@ -354,7 +360,7 @@ const CollectionOrdersList = () => {
         </div>
       ) : (
         <div className="flex items-center gap-2">
-          {(canEditFinance || ((isFinanceEmployee || isFinanceSubAdmin) && item.issuer?.username === username)) && (
+          {(canEditFinance || canManageOwnOrder(item)) && (
             <Link
               to={`/dashboard/collectionorders/edit/${item.id}`}
               {...prefetchHandlers(`/dashboard/collectionorders/edit/${item.id}`)}
@@ -363,7 +369,7 @@ const CollectionOrdersList = () => {
               <Pencil size={14} className="group-hover:rotate-12 transition-transform" />
             </Link>
           )}
-          {(canDeleteFinance || ((isFinanceEmployee || isFinanceSubAdmin) && item.issuer?.username === username)) && (
+          {(canDeleteFinance || canManageOwnOrder(item)) && (
             <button
               onClick={() => {
                 setItemToDelete(item.id);
@@ -651,12 +657,15 @@ const CollectionOrdersList = () => {
               <button
                 onClick={async () => {
                   setIsRefreshing(true);
-                  await Promise.all([refetchCO(), refetchOrdersSummary()]);
+                  await Promise.all([
+                    refetchCO(),
+                    isFinanceOutsider ? Promise.resolve() : refetchOrdersSummary(),
+                  ]);
                   setIsRefreshing(false);
                 }}
                 className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 border border-gray-500 hover:text-dark-900 hover:bg-gray-100 hover:text-gray-700 dark:border-white dark:bg-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white cursor-pointer transition-all active:scale-95"
               >
-                <RefreshCw size={20} className={`${(isFetchingCO || isFetchingSummary) ? "animate-spin" : ""}`} />
+                <RefreshCw size={20} className={`${(isFetchingCO || (!isFinanceOutsider && isFetchingSummary)) ? "animate-spin" : ""}`} />
               </button>
               <div className="absolute end-full top-1/2 me-2 -translate-y-1/2 whitespace-nowrap px-3 py-1.5 text-sm text-gray-800 bg-gray-300 dark:bg-gray-200 dark:text-gray-800 rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-10 shadow-md font-medium">
                 {t("refresh")}
@@ -711,7 +720,7 @@ const CollectionOrdersList = () => {
               {t("total_collection_orders")}
             </p>
             <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
-              {totalCollectionOrdersCount}
+              {kpiValue(totalCollectionOrdersCount)}
             </h3>
           </div>
 
@@ -721,7 +730,7 @@ const CollectionOrdersList = () => {
               {t("total_amount_sum")}
             </p>
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-              {totalCollectionAmount.toLocaleString()} {t("sar")}
+              {kpiValue(`${totalCollectionAmount.toLocaleString()} ${t("sar")}`)}
             </h3>
           </div>
 
@@ -731,9 +740,9 @@ const CollectionOrdersList = () => {
               {t("last_collection_order_date")}
             </p>
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-              {sortedList.length > 0
+              {kpiValue(sortedList.length > 0
                 ? new Date(sortedList[0].createdAt).toLocaleDateString()
-                : "—"}
+                : "-")}
             </h3>
           </div>
 
@@ -743,7 +752,7 @@ const CollectionOrdersList = () => {
               {t("total_balance")}
             </p>
             <h3 className={`text-lg font-bold ${balance >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}>
-              {balance.toLocaleString()} {t("sar")}
+              {kpiValue(`${balance.toLocaleString()} ${t("sar")}`)}
             </h3>
           </div>
         </div>
@@ -752,16 +761,19 @@ const CollectionOrdersList = () => {
           data={transformedData}
           columns={columns}
           title={t("collection_orders_list")}
-          sumField="totalAmount"
+          sumField={isFinanceOutsider ? null : "totalAmount"}
           serverSide
           totalRecords={collectionOrdersTable?.totalRecords || 0}
-          serverTotalSum={collectionOrdersTable?.totalAmount || 0}
+          serverTotalSum={isFinanceOutsider ? 0 : collectionOrdersTable?.totalAmount || 0}
           isServerLoading={isFetchingCO}
           onServerStateChange={handleServerStateChange}
           onExportData={loadCollectionExportData}
           scopeOptions={ORDER_SCOPE_OPTIONS}
           onRefresh={async () => {
-            await Promise.all([refetchCO(), refetchOrdersSummary()]);
+            await Promise.all([
+              refetchCO(),
+              isFinanceOutsider ? Promise.resolve() : refetchOrdersSummary(),
+            ]);
           }}
         />
 

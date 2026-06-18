@@ -13,6 +13,7 @@ import LoadingSpinner from "../../components/LoadingSpinner";
 import CreatableSelect from "react-select/creatable";
 import Select from "react-select";
 import { numberToArabicText } from "../../utils/numberToArabicText";
+import { normalizeAmountInput } from "../../utils/normalizeAmountInput";
 import moment from "moment-hijri";
 import ModernDatePicker from "../../components/ModernDatePicker";
 import { useDropzone } from "react-dropzone";
@@ -577,10 +578,11 @@ const AddPurchaseOrderForm = () => {
                   {t("total_amount")}
                 </label>
                 <input
-                  type="number"
-                  step="0.01"
+                  type="text"
+                  inputMode="decimal"
+                  pattern="[0-9]*[.]?[0-9]*"
                   value={totalAmount}
-                  onChange={(e) => setTotalAmount(e.target.value)}
+                  onChange={(e) => setTotalAmount(normalizeAmountInput(e.target.value))}
                   className="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg block w-full p-2.5 dark:bg-gray-800 dark:text-white"
                 />
               </div>

@@ -247,7 +247,7 @@ function App() {
                       </Route>
                     </Route>
                     {/* /banks */}
-                    <Route element={<RequireAuth allowedRoles={[ROLES.Admin, ROLES.Finance_Manager, ROLES.Finance_Sub_Manager, ROLES.Finance_Employee, ROLES.Finance_Outsider]} />}>
+                    <Route element={<RequireAuth allowedRoles={[ROLES.Admin, ROLES.Finance_Manager, ROLES.Finance_Sub_Manager, ROLES.Finance_Employee]} />}>
                       <Route path="banks">
                         <Route index element={<BanksList />} />
                         <Route path="add" element={<AddBankForm />} />

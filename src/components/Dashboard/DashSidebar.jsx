@@ -32,6 +32,7 @@ const DashSidebar = () => {
     isFinanceAdmin, 
     isFinanceSubAdmin, 
     isFinanceEmployee, 
+    isFinanceOutsider,
     isSpecialPapersManager, 
     isSpecialPapersEmployee, 
     isOperationManager, 
@@ -51,7 +52,7 @@ const DashSidebar = () => {
 
   // Visibility logic
   const showSpecialPapers = isAdmin || isSpecialPapersManager || isSpecialPapersEmployee || isOperationManager || isOperationEmployee;
-  const showFinance = isAdmin || isFinanceAdmin || isFinanceSubAdmin || isFinanceEmployee || isSpecialPapersManager;
+  const showFinance = isAdmin || isFinanceAdmin || isFinanceSubAdmin || isFinanceEmployee || isFinanceOutsider || isSpecialPapersManager;
   const showAssets = isAdmin || isOperationManager || isOperationEmployee || isSpecialPapersManager || isSpecialPapersEmployee;
   const showMonthlyReviews = roles.some((role) =>
     MONTHLY_REVIEW_ROLES.includes(role)

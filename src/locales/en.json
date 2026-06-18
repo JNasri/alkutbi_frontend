@@ -478,6 +478,7 @@
   "confirm_feature_request_subtitle": "Review the feature request before sending it.",
   "feature_request_sent": "Feature request sent successfully",
   "request_error": "Could not send request",
+  "No_access_KPI": "No Access",
   "no_permission_to_edit_this_order": "You do not have permission to edit this order",
   "no_permission_to_delete_this_order": "You do not have permission to delete this order"
 }

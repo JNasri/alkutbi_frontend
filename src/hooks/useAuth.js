@@ -19,8 +19,7 @@ const useAuth = () => {
     const isFinanceAdmin = roles.includes(ROLES.Finance_Manager);
     const isFinanceSubAdmin = roles.includes(ROLES.Finance_Sub_Manager);
     const isFinanceOutsider = roles.includes(ROLES.Finance_Outsider);
-    const isFinanceEmployee =
-      roles.includes(ROLES.Finance_Employee) || isFinanceOutsider;
+    const isFinanceEmployee = roles.includes(ROLES.Finance_Employee);
     const isAgent = roles.includes(ROLES.Agent);
 
     let status = roles[0] || ROLES.Spectator;
@@ -38,8 +37,8 @@ const useAuth = () => {
     const canEditSpecialPapers = isAdmin || isSpecialPapersManager;
     const canAddSpecialPapers = isAdmin || isSpecialPapersManager || isSpecialPapersEmployee;
     const canEditFinance = isAdmin || isFinanceAdmin || isFinanceSubAdmin || isSpecialPapersManager;
-    const canAddFinance = isAdmin || isFinanceAdmin || isFinanceSubAdmin || isFinanceEmployee || isSpecialPapersManager;
-    const isFinanceRole = isFinanceAdmin || isFinanceSubAdmin || isFinanceEmployee || isSpecialPapersManager;
+    const canAddFinance = isAdmin || isFinanceAdmin || isFinanceSubAdmin || isFinanceEmployee || isFinanceOutsider || isSpecialPapersManager;
+    const isFinanceRole = isFinanceAdmin || isFinanceSubAdmin || isFinanceEmployee || isFinanceOutsider || isSpecialPapersManager;
     const canEditAssets = isAdmin || isSpecialPapersManager || isOperationManager;
     const canAddAssets = isAdmin || isSpecialPapersManager || isSpecialPapersEmployee || isOperationManager || isOperationEmployee;
     const canDeleteFinance = isAdmin || isFinanceAdmin;

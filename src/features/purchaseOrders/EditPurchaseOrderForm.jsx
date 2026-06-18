@@ -15,6 +15,7 @@ import LoadingSpinner from "../../components/LoadingSpinner";
 import CreatableSelect from "react-select/creatable";
 import Select from "react-select";
 import { numberToArabicText } from "../../utils/numberToArabicText";
+import { normalizeAmountInput } from "../../utils/normalizeAmountInput";
 import moment from "moment-hijri";
 import ModernDatePicker from "../../components/ModernDatePicker";
 import { useDropzone } from "react-dropzone";
@@ -26,7 +27,7 @@ const EditPurchaseOrderForm = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const { isFinanceEmployee, isFinanceSubAdmin, isFinanceAdmin, isAdmin, username } = useAuth();
+  const { isFinanceEmployee, isFinanceSubAdmin, isFinanceAdmin, isFinanceOutsider, isAdmin, username } = useAuth();
 
   const {
     data: purchaseOrder,
@@ -102,11 +103,11 @@ const EditPurchaseOrderForm = () => {
     ];
 
     // Finance employees and sub-admins cannot set status to finalized
-    if ((isFinanceEmployee || isFinanceSubAdmin) && !isFinanceAdmin && !isAdmin) {
+    if ((isFinanceEmployee || isFinanceSubAdmin || isFinanceOutsider) && !isFinanceAdmin && !isAdmin) {
       return options.filter(opt => opt.value !== "finalized");
     }
     return options;
-  }, [t, isFinanceEmployee, isFinanceAdmin, isAdmin]);
+  }, [t, isFinanceEmployee, isFinanceSubAdmin, isFinanceOutsider, isFinanceAdmin, isAdmin]);
 
   const paymentMethodOptions = [
     { value: "cash", label: t("cash") },
@@ -131,7 +132,10 @@ const EditPurchaseOrderForm = () => {
     if (purchaseOrder) {
       // Permission check - only creator or admin can edit
       const orderCreator = purchaseOrder.issuer?.username;
-      const canEdit = isAdmin || isFinanceAdmin || (isFinanceEmployee && orderCreator === username);
+      const canEdit =
+        isAdmin ||
+        isFinanceAdmin ||
+        ((isFinanceEmployee || isFinanceOutsider) && orderCreator === username);
       
       if (!isInitialLoad && !canEdit) {
         toast.error(t("no_permission_to_edit_this_order"));
@@ -164,7 +168,7 @@ const EditPurchaseOrderForm = () => {
       setExistingOrderPrintUrl(purchaseOrder.orderPrintUrl || "");
       setIsInitialLoad(false);
     }
-  }, [purchaseOrder, isAdmin, isFinanceAdmin, isFinanceEmployee, username, t, isInitialLoad, navigateToPurchaseOrders]);
+  }, [purchaseOrder, isAdmin, isFinanceAdmin, isFinanceEmployee, isFinanceOutsider, username, t, isInitialLoad, navigateToPurchaseOrders]);
 
   // Auto-convert number to Arabic text
   useEffect(() => {
@@ -277,7 +281,7 @@ const EditPurchaseOrderForm = () => {
     }
 
     // Role-based status validation
-    if (status === "finalized" && (isFinanceEmployee || isFinanceSubAdmin) && !isFinanceAdmin && !isAdmin) {
+    if (status === "finalized" && (isFinanceEmployee || isFinanceSubAdmin || isFinanceOutsider) && !isFinanceAdmin && !isAdmin) {
       return toast.error(t("no_permission_to_finalize_order"));
     }
 
@@ -615,10 +619,11 @@ const EditPurchaseOrderForm = () => {
                 {t("total_amount")}
               </label>
               <input
-                type="number"
-                step="0.01"
+                type="text"
+                inputMode="decimal"
+                pattern="[0-9]*[.]?[0-9]*"
                 value={totalAmount}
-                onChange={(e) => setTotalAmount(e.target.value)}
+                onChange={(e) => setTotalAmount(normalizeAmountInput(e.target.value))}
                 className="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg block w-full p-2.5 dark:bg-gray-800 dark:text-white"
               />
             </div>

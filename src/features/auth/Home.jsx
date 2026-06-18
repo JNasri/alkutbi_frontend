@@ -5,6 +5,7 @@ import { useEffect } from "react";
 import { selectCurrentUser } from "../../features/auth/authSlice";
 import { useGetDashboardSummaryQuery } from "../dashboard/dashboardApiSlice";
 import LoadingSpinner from "../../components/LoadingSpinner";
+import useAuth from "../../hooks/useAuth";
 import {
   Users,
   ShoppingCart,
@@ -29,8 +30,13 @@ const Home = () => {
   const { t, i18n } = useTranslation();
   const location = useLocation();
   const user = useSelector(selectCurrentUser);
+  const { isFinanceOutsider } = useAuth();
   const currentLang = i18n.language;
   const userName = currentLang === "ar" ? user?.ar_name : user?.en_name;
+  const noAccessValue = t("no_access_value", {
+    defaultValue: t("No_access_KPI"),
+  });
+  const kpiValue = (value) => (isFinanceOutsider ? noAccessValue : value);
 
   // Data queries
   const {
@@ -39,16 +45,17 @@ const Home = () => {
     isLoading,
     refetch,
   } = useGetDashboardSummaryQuery(undefined, {
+    skip: isFinanceOutsider,
     pollingInterval: 60000,
     refetchOnFocus: true,
     refetchOnMountOrArgChange: true,
   });
 
   useEffect(() => {
-    refetch();
-  }, [location.key, refetch]);
+    if (!isFinanceOutsider) refetch();
+  }, [location.key, refetch, isFinanceOutsider]);
 
-  if (isLoading) return <LoadingSpinner />;
+  if (!isFinanceOutsider && isLoading) return <LoadingSpinner />;
 
   // Financial Calculations mapped from DB Aggregation
   const balance = isSuccess ? dStat.balance : 0;
@@ -66,17 +73,17 @@ const Home = () => {
   const managementCards = [
     {
       label: t("total_users"),
-      value: isSuccess ? dStat.usersCount : 0,
+      value: kpiValue(isSuccess ? dStat.usersCount : 0),
       icon: Users,
     },
     {
       label: t("audit_logs"),
-      value: isSuccess ? dStat.logsCount : 0,
+      value: kpiValue(isSuccess ? dStat.logsCount : 0),
       icon: Scroll,
     },
     {
       label: t("total_assets"),
-      value: isSuccess ? dStat.assetsCount : 0,
+      value: kpiValue(isSuccess ? dStat.assetsCount : 0),
       icon: Package,
     },
   ];
@@ -84,24 +91,26 @@ const Home = () => {
   const poCards = [
     {
       label: t("total_purchase_orders"),
-      value: isSuccess ? dStat.purchaseOrdersCount : 0,
+      value: kpiValue(isSuccess ? dStat.purchaseOrdersCount : 0),
       icon: ShoppingCart,
     },
     {
       label: t("purchase_orders_without_visa"),
-      value: `${totalPurchaseAmountWithoutVisa.toLocaleString()} ${t("sar")}`,
+      value: kpiValue(
+        `${totalPurchaseAmountWithoutVisa.toLocaleString()} ${t("sar")}`,
+      ),
       color: "text-red-600 dark:text-red-400",
       icon: TrendingDown,
     },
     {
       label: t("purchase_cash_total"),
-      value: `${purchaseCashTotal.toLocaleString()} ${t("sar")}`,
+      value: kpiValue(`${purchaseCashTotal.toLocaleString()} ${t("sar")}`),
       color: "text-red-500",
       icon: Wallet,
     },
     {
       label: t("purchase_non_cash_total"),
-      value: `${purchaseNonCashTotal.toLocaleString()} ${t("sar")}`,
+      value: kpiValue(`${purchaseNonCashTotal.toLocaleString()} ${t("sar")}`),
       color: "text-red-500",
       icon: CreditCard,
     },
@@ -110,24 +119,24 @@ const Home = () => {
   const coCards = [
     {
       label: t("total_collection_orders"),
-      value: isSuccess ? dStat.collectionOrdersCount : 0,
+      value: kpiValue(isSuccess ? dStat.collectionOrdersCount : 0),
       icon: Coins,
     },
     {
       label: t("collection_orders"),
-      value: `${totalCollectionAmount.toLocaleString()} ${t("sar")}`,
+      value: kpiValue(`${totalCollectionAmount.toLocaleString()} ${t("sar")}`),
       color: "text-green-600 dark:text-green-400",
       icon: TrendingUp,
     },
     {
       label: t("collection_cash_total"),
-      value: `${collectionCashTotal.toLocaleString()} ${t("sar")}`,
+      value: kpiValue(`${collectionCashTotal.toLocaleString()} ${t("sar")}`),
       color: "text-green-500",
       icon: CircleDollarSign,
     },
     {
       label: t("collection_bank_total"),
-      value: `${collectionBankTotal.toLocaleString()} ${t("sar")}`,
+      value: kpiValue(`${collectionBankTotal.toLocaleString()} ${t("sar")}`),
       color: "text-green-500",
       icon: Landmark,
     },
@@ -136,22 +145,22 @@ const Home = () => {
   const specialPapersCards = [
     {
       label: t("total_incomings"),
-      value: isSuccess ? dStat.incomingsCount : 0,
+      value: kpiValue(isSuccess ? dStat.incomingsCount : 0),
       icon: FileText,
     },
     {
       label: t("total_outgoings"),
-      value: isSuccess ? dStat.outgoingsCount : 0,
+      value: kpiValue(isSuccess ? dStat.outgoingsCount : 0),
       icon: FileText,
     },
     {
       label: t("total_deathcases"),
-      value: isSuccess ? dStat.deathcasesCount : 0,
+      value: kpiValue(isSuccess ? dStat.deathcasesCount : 0),
       icon: Skull,
     },
     {
       label: t("total_prisoncases"),
-      value: isSuccess ? dStat.prisoncasesCount : 0,
+      value: kpiValue(isSuccess ? dStat.prisoncasesCount : 0),
       icon: ShieldAlert,
     },
   ];
@@ -228,7 +237,7 @@ const Home = () => {
           <h3
             className={`text-2xl font-black text-blue-700 dark:text-blue-100`}
           >
-            {`${balance.toLocaleString()} ${t("sar")}`}
+            {kpiValue(`${balance.toLocaleString()} ${t("sar")}`)}
           </h3>
         </div>
       </div>
