@@ -7,36 +7,36 @@ const CollectionOrderPrint = ({ collectionOrder }) => {
 
   const handlePrint = () => {
     setIsLoading(true);
-    
+
     // Create a hidden iframe
-    const iframe = document.createElement('iframe');
-    iframe.style.position = 'fixed';
-    iframe.style.right = '0';
-    iframe.style.bottom = '0';
-    iframe.style.width = '0';
-    iframe.style.height = '0';
-    iframe.style.border = 'none';
-    
+    const iframe = document.createElement("iframe");
+    iframe.style.position = "fixed";
+    iframe.style.right = "0";
+    iframe.style.bottom = "0";
+    iframe.style.width = "0";
+    iframe.style.height = "0";
+    iframe.style.border = "none";
+
     document.body.appendChild(iframe);
-    
+
     const printContent = generatePrintContent(collectionOrder);
     const iframeDoc = iframe.contentWindow.document;
-    
+
     iframeDoc.open();
     iframeDoc.write(printContent);
     iframeDoc.close();
-    
+
     // Wait for content to load then print
     iframe.onload = () => {
       setTimeout(() => {
         iframe.contentWindow.focus();
         iframe.contentWindow.print();
-        
+
         // Hide spinner after print dialog opens
         setTimeout(() => {
           setIsLoading(false);
         }, 500);
-        
+
         // Remove iframe after printing
         setTimeout(() => {
           document.body.removeChild(iframe);
@@ -65,18 +65,21 @@ const CollectionOrderPrint = ({ collectionOrder }) => {
     // Convert Arabic/Hindi numerals to English numerals
     const toEnglishNumbers = (str) => {
       if (!str) return str;
-      const arabicNumbers = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
-      const hindiNumbers = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
-      
-      return String(str).split('').map(char => {
-        const arabicIndex = arabicNumbers.indexOf(char);
-        if (arabicIndex !== -1) return arabicIndex.toString();
-        const hindiIndex = hindiNumbers.indexOf(char);
-        if (hindiIndex !== -1) return hindiIndex.toString();
-        return char;
-      }).join('');
+      const arabicNumbers = ["٠", "١", "٢", "٣", "٤", "٥", "٦", "٧", "٨", "٩"];
+      const hindiNumbers = ["۰", "۱", "۲", "۳", "۴", "۵", "۶", "۷", "۸", "۹"];
+
+      return String(str)
+        .split("")
+        .map((char) => {
+          const arabicIndex = arabicNumbers.indexOf(char);
+          if (arabicIndex !== -1) return arabicIndex.toString();
+          const hindiIndex = hindiNumbers.indexOf(char);
+          if (hindiIndex !== -1) return hindiIndex.toString();
+          return char;
+        })
+        .join("");
     };
-    
+
     return `
 <!DOCTYPE html>
 <html dir="rtl" lang="ar">
@@ -307,64 +310,100 @@ const CollectionOrderPrint = ({ collectionOrder }) => {
     
     <!-- Data Table -->
     <table class="data-table">
-      ${order.collectedFrom ? `
+      ${
+        order.collectedFrom
+          ? `
       <tr>
         <td><strong>مجال التحصيل</strong></td>
         <td>${collectedFromArabic[order.collectedFrom] || order.collectedFrom}</td>
       </tr>
-      ` : ""}
+      `
+          : ""
+      }
       <tr>
         <td>طريقة التحصيل</td>
         <td>${collectMethodArabic[order.collectMethod] || order.collectMethod || "—"}</td>
       </tr>
-      ${order.voucherNumber ? `
+      ${
+        order.voucherNumber
+          ? `
       <tr>
         <td>رقم السند</td>
         <td>${order.voucherNumber}</td>
       </tr>
-      ` : ""}
-      ${order.item ? `
+      `
+          : ""
+      }
+      ${
+        order.item
+          ? `
       <tr>
         <td>الصنف</td>
         <td>${order.item}</td>
       </tr>
-      ` : ""}
-      ${order.receivingBankName ? `
+      `
+          : ""
+      }
+      ${
+        order.receivingBankName
+          ? `
       <tr>
         <td>اسم البنك المستقبل</td>
         <td>${order.receivingBankName}</td>
       </tr>
-      ` : ""}
-      ${order.totalAmount ? `
+      `
+          : ""
+      }
+      ${
+        order.totalAmount
+          ? `
       <tr>
         <td>المبلغ الإجمالي</td>
         <td><span class="english-numbers">${toEnglishNumbers(order.totalAmount.toLocaleString())}</span> ريال سعودي</td>
       </tr>
-      ` : ""}
-      ${order.totalAmountText ? `
+      `
+          : ""
+      }
+      ${
+        order.totalAmountText
+          ? `
       <tr>
         <td>المبلغ كتابة</td>
         <td>${order.totalAmountText}</td>
       </tr>
-      ` : ""}
-      ${order.deductedFrom ? `
+      `
+          : ""
+      }
+      ${
+        order.deductedFrom
+          ? `
       <tr>
         <td>يخصم من</td>
         <td>${order.deductedFrom}</td>
       </tr>
-      ` : ""}
-      ${order.addedTo ? `
+      `
+          : ""
+      }
+      ${
+        order.addedTo
+          ? `
       <tr>
         <td>يضاف إلى</td>
         <td>${order.addedTo}</td>
       </tr>
-      ` : ""}
-      ${order.notes ? `
+      `
+          : ""
+      }
+      ${
+        order.notes
+          ? `
       <tr>
         <td>ملاحظات</td>
         <td>${order.notes}</td>
       </tr>
-      ` : ""}
+      `
+          : ""
+      }
     </table>
     
     <!-- Signatures Section -->
@@ -395,6 +434,16 @@ const CollectionOrderPrint = ({ collectionOrder }) => {
         <strong>نائب مدير الموارد البشرية والمالية</strong>
         أ. رزان الريس
       </div>
+      ${
+        order.receivingBankName === "بنك الإنماء"
+          ? `
+      <div>
+        <strong>إدارة النقل</strong>
+        أ. مؤيد مياجان
+      </div>
+      `
+          : ``
+      }
       <div>
         <strong>رئيس مجلس الإدارة</strong>
         م. عبدالرزاق بديع الكتبي

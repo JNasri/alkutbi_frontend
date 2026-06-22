@@ -7,36 +7,36 @@ const PurchaseOrderPrint = ({ purchaseOrder }) => {
 
   const handlePrint = () => {
     setIsLoading(true);
-    
+
     // Create a hidden iframe
-    const iframe = document.createElement('iframe');
-    iframe.style.position = 'fixed';
-    iframe.style.right = '0';
-    iframe.style.bottom = '0';
-    iframe.style.width = '0';
-    iframe.style.height = '0';
-    iframe.style.border = 'none';
-    
+    const iframe = document.createElement("iframe");
+    iframe.style.position = "fixed";
+    iframe.style.right = "0";
+    iframe.style.bottom = "0";
+    iframe.style.width = "0";
+    iframe.style.height = "0";
+    iframe.style.border = "none";
+
     document.body.appendChild(iframe);
-    
+
     const printContent = generatePrintContent(purchaseOrder);
     const iframeDoc = iframe.contentWindow.document;
-    
+
     iframeDoc.open();
     iframeDoc.write(printContent);
     iframeDoc.close();
-    
+
     // Wait for content to load then print
     iframe.onload = () => {
       setTimeout(() => {
         iframe.contentWindow.focus();
         iframe.contentWindow.print();
-        
+
         // Hide spinner after print dialog opens
         setTimeout(() => {
           setIsLoading(false);
         }, 500);
-        
+
         // Remove iframe after printing
         setTimeout(() => {
           document.body.removeChild(iframe);
@@ -66,16 +66,19 @@ const PurchaseOrderPrint = ({ purchaseOrder }) => {
     // Convert Arabic/Hindi numerals to English numerals
     const toEnglishNumbers = (str) => {
       if (!str) return str;
-      const arabicNumbers = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
-      const hindiNumbers = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
-      
-      return String(str).split('').map(char => {
-        const arabicIndex = arabicNumbers.indexOf(char);
-        if (arabicIndex !== -1) return arabicIndex.toString();
-        const hindiIndex = hindiNumbers.indexOf(char);
-        if (hindiIndex !== -1) return hindiIndex.toString();
-        return char;
-      }).join('');
+      const arabicNumbers = ["٠", "١", "٢", "٣", "٤", "٥", "٦", "٧", "٨", "٩"];
+      const hindiNumbers = ["۰", "۱", "۲", "۳", "۴", "۵", "۶", "۷", "۸", "۹"];
+
+      return String(str)
+        .split("")
+        .map((char) => {
+          const arabicIndex = arabicNumbers.indexOf(char);
+          if (arabicIndex !== -1) return arabicIndex.toString();
+          const hindiIndex = hindiNumbers.indexOf(char);
+          if (hindiIndex !== -1) return hindiIndex.toString();
+          return char;
+        })
+        .join("");
     };
 
     return `
@@ -308,76 +311,120 @@ const PurchaseOrderPrint = ({ purchaseOrder }) => {
     
     <!-- Data Table -->
     <table class="data-table">
-      ${order.transactionType ? `
+      ${
+        order.transactionType
+          ? `
       <tr>
         <td><strong>نوع المعاملة</strong></td>
         <td>${transactionTypeArabic[order.transactionType] || order.transactionType}</td>
       </tr>
-      ` : ""}
+      `
+          : ""
+      }
       <tr>
         <td>طريقة الدفع</td>
         <td>${paymentMethodArabic[order.paymentMethod] || order.paymentMethod || "—"}</td>
       </tr>
-      ${(order.bankNameFrom || order.ibanNumberFrom) ? `
+      ${
+        order.bankNameFrom || order.ibanNumberFrom
+          ? `
       <tr>
         <td>البنك / الآيبان (من)</td>
         <td>${[order.bankNameFrom, order.ibanNumberFrom].filter(Boolean).join(" - ")}</td>
       </tr>
-      ` : ""}
-      ${(order.bankNameTo || order.ibanNumberTo) ? `
+      `
+          : ""
+      }
+      ${
+        order.bankNameTo || order.ibanNumberTo
+          ? `
       <tr>
         <td>البنك / الآيبان (إلى)</td>
         <td>${[order.bankNameTo, order.ibanNumberTo].filter(Boolean).join(" - ")}</td>
       </tr>
-      ` : ""}
-      ${order.managementName ? `
+      `
+          : ""
+      }
+      ${
+        order.managementName
+          ? `
       <tr>
         <td>اسم الإدارة</td>
         <td>${order.managementName}</td>
       </tr>
-      ` : ""}
-      ${order.supplier ? `
+      `
+          : ""
+      }
+      ${
+        order.supplier
+          ? `
       <tr>
         <td>المورد</td>
         <td>${order.supplier}</td>
       </tr>
-      ` : ""}
-      ${order.item ? `
+      `
+          : ""
+      }
+      ${
+        order.item
+          ? `
       <tr>
         <td>الصنف</td>
         <td>${order.item}</td>
       </tr>
-      ` : ""}
-      ${order.totalAmount ? `
+      `
+          : ""
+      }
+      ${
+        order.totalAmount
+          ? `
       <tr>
         <td>المبلغ الإجمالي</td>
         <td><span class="english-numbers">${toEnglishNumbers(order.totalAmount.toLocaleString())}</span> ريال سعودي</td>
       </tr>
-      ` : ""}
-      ${order.totalAmountText ? `
+      `
+          : ""
+      }
+      ${
+        order.totalAmountText
+          ? `
       <tr>
         <td>المبلغ كتابة</td>
         <td>${order.totalAmountText}</td>
       </tr>
-      ` : ""}
-      ${order.deductedFrom ? `
+      `
+          : ""
+      }
+      ${
+        order.deductedFrom
+          ? `
       <tr>
         <td>يخصم من</td>
         <td>${order.deductedFrom}</td>
       </tr>
-      ` : ""}
-      ${order.addedTo ? `
+      `
+          : ""
+      }
+      ${
+        order.addedTo
+          ? `
       <tr>
         <td>يضاف إلى</td>
         <td>${order.addedTo}</td>
       </tr>
-      ` : ""}
-      ${order.notes ? `
+      `
+          : ""
+      }
+      ${
+        order.notes
+          ? `
       <tr>
         <td>ملاحظات</td>
         <td>${order.notes}</td>
       </tr>
-      ` : ""}
+      `
+          : ""
+      }
     </table>
     
     <!-- Signatures Section -->
@@ -408,8 +455,18 @@ const PurchaseOrderPrint = ({ purchaseOrder }) => {
         <strong>نائب مدير الموارد البشرية والمالية</strong>
         أ. رزان الريس
       </div>
+      ${
+        order.bankNameFrom === "بنك الإنماء"
+          ? `
       <div>
-        <strong>رئيس مجلس الإدارة</strong>
+      <strong>إدارة النقل</strong>
+        أ. مؤيد مياجان
+      </div>
+      `
+          : ``
+      } 
+      <div>   
+      <strong>رئيس مجلس الإدارة</strong>
         م. عبدالرزاق بديع الكتبي
       </div>
     </div>
