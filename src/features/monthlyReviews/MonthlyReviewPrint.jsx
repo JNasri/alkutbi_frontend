@@ -5,84 +5,82 @@ import LoadingSpinner from "../../components/LoadingSpinner";
 const questionText = {
   q1: {
     ar: "هل يحقق الموظف الأهداف المطلوبة ضمن الفترة المحددة؟",
-    en: "Does the employee achieve the required goals within the specified timeframe?",
   },
   q2: {
     ar: "هل يلتزم الموظف بالمواعيد المقررة؟",
-    en: "Does the employee adhere to task schedules and timelines?",
   },
   q3: {
     ar: "ما مدى سرعة إنجاز المهام المقررة؟",
-    en: "How quickly does the employee complete assigned tasks?",
   },
   q4: {
     ar: "هل ينهي الأعمال المطلوبة دون متابعة مستمرة؟",
-    en: "Does the employee complete required work without continuous supervision?",
   },
   q5: {
     ar: "هل يتقن العمل بدقة عالية؟",
-    en: "Does the employee perform work with a high level of accuracy?",
   },
   q6: {
     ar: "هل يقل معدل الأخطاء في عمله؟",
-    en: "Does the employee maintain a low error rate in their work?",
   },
   q7: {
     ar: "هل يحافظ على جودة العمل تحت الضغط؟",
-    en: "Does the employee maintain work quality under pressure?",
   },
   q8: {
     ar: "ما مدى اعتمادية العمل الذي يقدمه دون الحاجة إلى مراجعة متكررة؟",
-    en: "How reliable is the employee's work without requiring frequent review?",
   },
   q9: {
     ar: "هل يتقبل التغييرات في بيئة العمل بشكل إيجابي؟",
-    en: "Does the employee respond positively to changes in the work environment?",
   },
   q10: {
     ar: "هل يستطيع التعامل مع أكثر من مهمة عند الحاجة؟",
-    en: "Can the employee handle multiple tasks when needed?",
   },
   q11: {
     ar: "ما مدى تعاونه مع الأقسام المختلفة؟",
-    en: "How well does the employee collaborate with different departments?",
   },
   q12: {
     ar: "هل يبادر بتقديم حلول عند وجود تحديات؟",
-    en: "Does the employee proactively suggest solutions when challenges arise?",
   },
   q13: {
     ar: "هل يسعى باستمرار لتطوير مهاراته؟",
-    en: "Does the employee continuously seek to develop their skills?",
   },
   q14: {
     ar: "ما مدى استجابته لفرص التعلم والتطوير؟",
-    en: "How responsive is the employee to learning and development opportunities?",
   },
   q15: {
     ar: "هل يشارك المعرفة والخبرات مع زملائه؟",
-    en: "Does the employee share knowledge and experience with colleagues?",
   },
   q16: {
     ar: "ما مدى تقبله للتوجيه المهني؟",
-    en: "How receptive is the employee to professional guidance and feedback?",
   },
   q17: {
     ar: "هل يلتزم بالحضور والانصراف الرسمي؟",
-    en: "Does the employee adhere to official working hours?",
   },
   q18: {
     ar: "هل يلتزم بأنظمة ولوائح الشركة؟",
-    en: "Does the employee comply with company policies and regulations?",
   },
   q19: {
     ar: "هل يلتزم بإبلاغ الإدارة عن التأخير أو الغياب؟",
-    en: "How consistently does the employee inform management of delays or absences?",
   },
   q20: {
     ar: "هل يلتزم بالمظهر المهني المطلوب؟",
-    en: "Does the employee maintain the required professional appearance or dress code?",
   },
+};
+
+const arabicMonthFormatter = new Intl.DateTimeFormat("ar-SA-u-ca-gregory", {
+  month: "long",
+  year: "numeric",
+});
+
+const departmentArabicLabels = {
+  finance: "المالية",
+  operation: "التشغيل",
+  special_papers: "الاتصالات الإدارية",
+  marketing: "التسويق",
+  quality: "الجودة",
+  transport: "النقل",
+  makkah: "مكة",
+  airport: "المطار",
+  madinah: "المدينة",
+  hotel: "الفنادق",
 };
 
 const escapeHtml = (value) =>
@@ -102,21 +100,66 @@ const formatDate = (dateValue) => {
   return date.toISOString().slice(0, 10);
 };
 
-const renderQuestions = (questions, answers, startIndex = 0) =>
+const formatArabicMonth = (monthValue) => {
+  const value = String(monthValue || "");
+  const match = /^(\d{4})-(\d{2})$/.exec(value);
+
+  if (!match) return value || "—";
+
+  const monthDate = new Date(Number(match[1]), Number(match[2]) - 1, 1);
+  return Number.isNaN(monthDate.getTime())
+    ? value
+    : arabicMonthFormatter.format(monthDate);
+};
+
+const getArabicDepartmentName = (monthlyReview) => {
+  const departmentKey = monthlyReview.departmentKey;
+  const normalizedDepartmentName = String(monthlyReview.departmentName || "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "_");
+
+  return (
+    departmentArabicLabels[departmentKey] ||
+    departmentArabicLabels[normalizedDepartmentName] ||
+    monthlyReview.departmentName ||
+    monthlyReview.departmentKey ||
+    "—"
+  );
+};
+
+const renderScoreScale = (value) => {
+  const selectedScore = Number(value);
+
+  return `
+    <div class="score-scale" aria-label="Score ${escapeHtml(value || "—")} out of 5">
+      ${[1, 2, 3, 4, 5]
+        .map(
+          (score) => `
+            <span class="score-option ${
+              score === selectedScore ? "score-option-selected" : ""
+            }">${score}</span>
+          `,
+        )
+        .join("")}
+    </div>
+  `;
+};
+
+const renderQuestionCards = (questions, answers, startIndex = 0) =>
   questions
     .map((question, index) => {
       const text = questionText[question.key] || {};
       return `
-        <tr>
-          <td class="question-number"><span>${startIndex + index + 1}</span></td>
-          <td class="question-text">
+        <div class="question-card">
+          <div class="question-row">
+            <span class="question-number">${startIndex + index + 1}</span>
             <div class="question-copy">
               <div class="question-ar">${escapeHtml(text.ar || question.key)}</div>
-              <div class="question-en">${escapeHtml(text.en || question.key)}</div>
             </div>
-          </td>
-          <td class="score"><span class="score-badge">${escapeHtml(answers?.[question.key] || "—")}</span></td>
-        </tr>
+          </div>
+          <div class="score">${renderScoreScale(answers?.[question.key])}</div>
+        </div>
       `;
     })
     .join("");
@@ -160,14 +203,16 @@ const MonthlyReviewPrint = ({
   };
 
   const generatePrintContent = (monthlyReview, reviewQuestions, signatures) => {
-    const firstPageQuestions = reviewQuestions.slice(0, 10);
-    const secondPageQuestions = reviewQuestions.slice(10, 20);
+    const printableQuestions = reviewQuestions.slice(0, 20);
     const employeeName = getArabicName(monthlyReview.employee);
     const managerName = getArabicName(monthlyReview.reviewer);
     const belalName = getArabicName(signatures?.belal, "بلال");
     const chairmanName = getArabicName(signatures?.chairman);
-    const department = monthlyReview.departmentName || monthlyReview.departmentKey || "—";
-    const printDate = formatDate(monthlyReview.updatedAt || monthlyReview.createdAt);
+    const department = getArabicDepartmentName(monthlyReview);
+    const monthLabel = formatArabicMonth(monthlyReview.month);
+    const printDate = formatDate(
+      monthlyReview.updatedAt || monthlyReview.createdAt,
+    );
 
     return `
 <!DOCTYPE html>
@@ -188,8 +233,7 @@ const MonthlyReviewPrint = ({
     @media print {
       @page { margin: 0; }
       body { margin: 0; padding: 0; }
-      .page-container { page-break-after: always; }
-      .page-container:last-child { page-break-after: auto; }
+      .page-container { page-break-after: auto; }
     }
     body {
       font-family: 'GE SS Two', 'Segoe UI', 'Traditional Arabic', Tahoma, sans-serif;
@@ -198,6 +242,8 @@ const MonthlyReviewPrint = ({
       color: #000;
       font-size: 12px;
       line-height: 1.35;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
     }
     .page-container {
       width: 210mm;
@@ -219,173 +265,180 @@ const MonthlyReviewPrint = ({
       width: 100%;
     }
     .content-area {
-      padding: 8px 18px 62px;
+      padding: 4px 14px 50px;
     }
     .main-title {
       text-align: center;
-      font-size: 22px;
+      font-size: 18px;
       font-weight: 700;
-      margin: 4px 0 8px;
+      margin: 1px 0 4px;
     }
     .meta-table {
-      width: 92%;
-      margin: 0 auto 8px;
+      width: 94%;
+      margin: 0 auto 5px;
       border-collapse: collapse;
     }
     .meta-table td {
       border: 1px solid #333;
-      padding: 5px 6px;
+      padding: 3px 5px;
       vertical-align: middle;
+      font-size: 10.5px;
     }
     .meta-table td:nth-child(odd) {
       background: #f0f0f0;
       font-weight: 700;
       text-align: center;
     }
-    .questions-table {
-      width: 92%;
-      margin: 0 auto 8px;
-      border-collapse: separate;
-      border-spacing: 0 4px;
-      table-layout: fixed;
+    .questions-grid {
+      width: 94%;
+      margin: 0 auto 4px;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 4px;
     }
-    .questions-table th {
-      border: 0;
-      background: #132945;
-      color: #fff;
-      font-weight: 700;
-      text-align: center;
-      padding: 6px 7px;
-      vertical-align: middle;
-    }
-    .questions-table th:first-child {
-      border-radius: 0 8px 8px 0;
-    }
-    .questions-table th:last-child {
-      border-radius: 8px 0 0 8px;
-    }
-    .questions-table td {
-      border-top: 1px solid #d4dbe6;
-      border-bottom: 1px solid #d4dbe6;
+    .question-card {
+      min-height: 44px;
+      border: 1px solid #d4dbe6;
+      border-radius: 8px;
       background: #fff;
-      padding: 5px 7px;
-      vertical-align: middle;
+      padding: 3px 5px;
+      break-inside: avoid;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
     }
-    .questions-table tbody tr:nth-child(odd) td {
+    .question-card:nth-child(4n + 1),
+    .question-card:nth-child(4n + 2) {
       background: #f7f9fc;
     }
-    .questions-table tbody tr td:first-child {
-      border-right: 1px solid #d4dbe6;
-      border-radius: 0 8px 8px 0;
-    }
-    .questions-table tbody tr td:last-child {
-      border-left: 1px solid #d4dbe6;
-      border-radius: 8px 0 0 8px;
+    .question-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 4px;
     }
     .question-number {
-      width: 44px;
-      text-align: center;
-      font-family: Arial, Tahoma, sans-serif;
-    }
-    .question-number span {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: 25px;
-      height: 25px;
+      flex: 0 0 14px;
+      width: 14px;
+      height: 14px;
       border: 1px solid #8a98aa;
       border-radius: 50%;
       background: #fff;
       color: #132945;
-      font-size: 11px;
+      font-family: Arial, Tahoma, sans-serif;
+      font-size: 10px;
       font-weight: 700;
     }
-    .question-text {
-      width: auto;
-      text-align: right;
-    }
     .question-copy {
-      border-right: 3px solid #b9975b;
-      padding: 1px 8px 2px 0;
+      flex: 1;
+      border-right: 2px solid #b9975b;
+      padding: 0 5px 0 0;
     }
     .question-ar {
       font-weight: 700;
       color: #111827;
-      font-size: 12px;
-      line-height: 1.25;
-      margin-bottom: 2px;
-    }
-    .question-en {
-      direction: ltr;
-      text-align: left;
-      font-family: Georgia, 'Times New Roman', serif;
-      font-style: italic;
-      font-size: 10.5px;
-      line-height: 1.18;
-      color: #374151;
+      font-size: 16px;
+      line-height: 1.13;
     }
     .score {
-      width: 58px;
       text-align: center;
       font-family: Arial, Tahoma, sans-serif;
       font-weight: 700;
+      margin-top: 2px;
     }
-    .score-badge {
+    .score-scale {
+      direction: ltr;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      white-space: nowrap;
+    }
+    .score-option {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: 30px;
-      height: 30px;
+      width: 12px;
+      height: 12px;
+      border: 1px solid #c8d0db;
       border-radius: 50%;
-      border: 1px solid #132945;
-      background: #132945;
-      color: #fff;
-      font-size: 14px;
+      background: #fff;
+      color: #132945;
+      font-size: 7px;
       line-height: 1;
     }
+    .score-option-selected {
+      width: 16px;
+      height: 16px;
+      border: 2px solid #132945;
+      background: #b9975b;
+      color: #fff;
+      font-size: 8.8px;
+      box-shadow: 0 0 0 1px rgba(185, 151, 91, 0.2);
+    }
     .summary-row {
-      width: 92%;
-      margin: 8px auto;
+      width: 94%;
+      margin: 4px auto;
       display: flex;
-      gap: 8px;
+      gap: 6px;
       justify-content: center;
     }
     .summary-box {
-      min-width: 145px;
+      min-width: 135px;
       border: 1px solid #333;
-      padding: 6px 10px;
+      padding: 3px 8px;
       text-align: center;
       font-weight: 700;
       background: #f7f7f7;
+      font-size: 10.5px;
     }
     .notes-box {
-      width: 92%;
-      min-height: 62px;
-      margin: 8px auto;
+      width: 94%;
+      min-height: 34px;
+      margin: 4px auto;
       border: 1px solid #333;
-      padding: 7px 9px;
+      padding: 4px 7px;
+      font-size: 10px;
     }
     .notes-title {
       font-weight: 700;
-      margin-bottom: 4px;
+      margin-bottom: 2px;
     }
     .signatures {
-      width: 92%;
-      margin: 12px auto 0;
+      width: 94%;
+      margin: 5px auto 0;
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       gap: 8px;
       text-align: center;
-      font-size: 12px;
+      font-size: 10px;
     }
     .signature-box {
-      border-top: 1px solid #333;
-      padding-top: 7px;
-      min-height: 52px;
+      border: 1px solid #333;
+      border-radius: 8px;
+      min-height: 56px;
+      padding: 5px 7px 4px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
     }
     .signature-title {
       font-weight: 700;
-      margin-bottom: 5px;
+      margin-bottom: 2px;
+    }
+    .signature-name {
+      min-height: 13px;
+      font-weight: 600;
+      overflow-wrap: anywhere;
+    }
+    .signature-line {
+      border-top: 1px solid #333;
+      margin-top: 5px;
+      padding-top: 2px;
+      font-size: 9px;
+      color: #333;
     }
     .english-numbers {
       font-family: Arial, Tahoma, sans-serif;
@@ -404,7 +457,7 @@ const MonthlyReviewPrint = ({
           <td>التاريخ</td>
           <td><span class="english-numbers">${escapeHtml(printDate)}</span></td>
           <td>الشهر</td>
-          <td><span class="english-numbers">${escapeHtml(monthlyReview.month || "—")}</span></td>
+          <td>${escapeHtml(monthLabel)}</td>
         </tr>
         <tr>
           <td>الإدارة</td>
@@ -413,41 +466,12 @@ const MonthlyReviewPrint = ({
           <td>${escapeHtml(employeeName)}</td>
         </tr>
       </table>
-      <table class="questions-table">
-        <thead>
-          <tr>
-            <th>م</th>
-            <th>السؤال</th>
-            <th>النقاط</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${renderQuestions(firstPageQuestions, monthlyReview.answers)}
-        </tbody>
-      </table>
-    </div>
-    <div class="company-footer"><img src="/templates/footer_alkutbi.png" alt="Company Footer"></div>
-  </div>
-
-  <div class="page-container">
-    <div class="company-header"><img src="/templates/header_alkutbi.png" alt="Company Header"></div>
-    <div class="content-area">
-      <h1 class="main-title">التقييم الشهري للموظف</h1>
-      <table class="questions-table">
-        <thead>
-          <tr>
-            <th>م</th>
-            <th>السؤال</th>
-            <th>النقاط</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${renderQuestions(secondPageQuestions, monthlyReview.answers, 10)}
-        </tbody>
-      </table>
+      <div class="questions-grid">
+        ${renderQuestionCards(printableQuestions, monthlyReview.answers)}
+      </div>
       <div class="summary-row">
-        <div class="summary-box">الإجمالي: <span class="english-numbers">${escapeHtml(monthlyReview.totalScore || 0)}</span> / 100</div>
-        <div class="summary-box">المتوسط: <span class="english-numbers">${escapeHtml(monthlyReview.averageScore || 0)}</span> / 5</div>
+        <div class="summary-box">الإجمالي: <span class="english-numbers">${escapeHtml(monthlyReview.totalScore || 0)}</span> / ${100}</div>
+        <div class="summary-box">المتوسط: <span class="english-numbers">${escapeHtml(monthlyReview.averageScore || 0)}</span> / ${5}</div>
       </div>
       <div class="notes-box">
         <div class="notes-title">ملاحظات</div>
@@ -456,15 +480,18 @@ const MonthlyReviewPrint = ({
       <div class="signatures">
         <div class="signature-box">
           <div class="signature-title">مدير القسم</div>
-          <div>${escapeHtml(managerName)}</div>
+          <div class="signature-name">${escapeHtml(managerName)}</div>
+          <div class="signature-line">التوقيع</div>
         </div>
         <div class="signature-box">
           <div class="signature-title">المراجعة</div>
-          <div>${escapeHtml(belalName)}</div>
+          <div class="signature-name">${escapeHtml(belalName)}</div>
+          <div class="signature-line">التوقيع</div>
         </div>
         <div class="signature-box">
           <div class="signature-title">رئيس مجلس الإدارة</div>
-          <div>${escapeHtml(chairmanName)}</div>
+          <div class="signature-name">${escapeHtml(chairmanName)}</div>
+          <div class="signature-line">التوقيع</div>
         </div>
       </div>
     </div>

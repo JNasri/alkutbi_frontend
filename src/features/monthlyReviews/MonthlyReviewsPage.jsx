@@ -373,7 +373,7 @@ const MonthlyReviewsPage = () => {
                   <th className="px-3 py-2 text-start">{t("department")}</th>
                   <th className="px-3 py-2 text-start">{t("total_score")}</th>
                   <th className="px-3 py-2 text-start">{t("average_score")}</th>
-                  <th className="px-3 py-2 text-start">{t("updatedAt")}</th>
+                  <th className="px-3 py-2 text-start">{t("print")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
@@ -391,9 +391,12 @@ const MonthlyReviewsPage = () => {
                     <td className="px-3 py-2">{review.totalScore}/100</td>
                     <td className="px-3 py-2">{review.averageScore}/5</td>
                     <td className="px-3 py-2">
-                      {review.updatedAt
-                        ? new Date(review.updatedAt).toLocaleDateString()
-                        : "-"}
+                      <MonthlyReviewPrint
+                        review={review}
+                        questions={questions}
+                        signatureUsers={data?.signatureUsers}
+                        buttonLabel={t("print")}
+                      />
                     </td>
                   </tr>
                 ))}

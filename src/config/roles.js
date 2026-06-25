@@ -141,14 +141,14 @@ export const ROLE_GROUPS = [
 export const ROLE_DISPLAY_ORDER = ROLE_GROUPS.flatMap((group) => group.roles);
 
 const ROLE_ORDER_INDEX = new Map(
-  ROLE_DISPLAY_ORDER.map((role, index) => [role, index])
+  ROLE_DISPLAY_ORDER.map((role, index) => [role, index]),
 );
 
 export const sortRoles = (roles = []) =>
   normalizeRoles(roles).sort(
     (firstRole, secondRole) =>
       (ROLE_ORDER_INDEX.get(firstRole) ?? Number.MAX_SAFE_INTEGER) -
-      (ROLE_ORDER_INDEX.get(secondRole) ?? Number.MAX_SAFE_INTEGER)
+      (ROLE_ORDER_INDEX.get(secondRole) ?? Number.MAX_SAFE_INTEGER),
   );
 
 export const ROLE_OPTIONS = ROLE_DISPLAY_ORDER.map((role) => ({
@@ -159,7 +159,6 @@ export const ROLE_OPTIONS = ROLE_DISPLAY_ORDER.map((role) => ({
 export const MONTHLY_REVIEW_ROLES = [
   ROLES.Admin,
   ROLES.Chairman,
-  ROLES.Chairman_Helper,
   ROLES.Operation_Manager,
   ROLES.Special_Papers_Manager,
   ROLES.Finance_Manager,

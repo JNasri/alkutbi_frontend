@@ -27,15 +27,15 @@ const DashSidebar = () => {
   const [isOpen, setIsOpen] = useState(true);
   const { t, i18n } = useTranslation();
   const location = useLocation();
-  const { 
-    isAdmin, 
-    isFinanceAdmin, 
-    isFinanceSubAdmin, 
-    isFinanceEmployee, 
+  const {
+    isAdmin,
+    isFinanceAdmin,
+    isFinanceSubAdmin,
+    isFinanceEmployee,
     isFinanceOutsider,
-    isSpecialPapersManager, 
-    isSpecialPapersEmployee, 
-    isOperationManager, 
+    isSpecialPapersManager,
+    isSpecialPapersEmployee,
+    isOperationManager,
     isOperationEmployee,
     roles,
   } = useAuth();
@@ -51,27 +51,99 @@ const DashSidebar = () => {
     location.pathname === path || location.pathname.startsWith(path + "/");
 
   // Visibility logic
-  const showSpecialPapers = isAdmin || isSpecialPapersManager || isSpecialPapersEmployee || isOperationManager || isOperationEmployee;
-  const showFinance = isAdmin || isFinanceAdmin || isFinanceSubAdmin || isFinanceEmployee || isFinanceOutsider || isSpecialPapersManager;
-  const showAssets = isAdmin || isOperationManager || isOperationEmployee || isSpecialPapersManager || isSpecialPapersEmployee;
+  const showSpecialPapers =
+    isAdmin ||
+    isSpecialPapersManager ||
+    isSpecialPapersEmployee ||
+    isOperationManager ||
+    isOperationEmployee;
+  const showFinance =
+    isAdmin ||
+    isFinanceAdmin ||
+    isFinanceSubAdmin ||
+    isFinanceEmployee ||
+    isFinanceOutsider ||
+    isSpecialPapersManager;
+  const showAssets =
+    isAdmin ||
+    isOperationManager ||
+    isOperationEmployee ||
+    isSpecialPapersManager ||
+    isSpecialPapersEmployee;
   const showMonthlyReviews = roles.some((role) =>
-    MONTHLY_REVIEW_ROLES.includes(role)
+    MONTHLY_REVIEW_ROLES.includes(role),
   );
 
   const navItems = [
     { to: "/dashboard", icon: Home, label: t("home"), show: true, exact: true },
     { to: "/dashboard/users", icon: Users, label: t("users"), show: isAdmin },
-    { to: "/dashboard/incomings", icon: FileText, label: t("incomings"), show: showSpecialPapers },
-    { to: "/dashboard/outgoings", icon: FileText, label: t("outgoings"), show: showSpecialPapers },
-    { to: "/dashboard/purchaseorders", icon: ShoppingCart, label: t("purchase_orders"), show: showFinance },
-    { to: "/dashboard/collectionorders", icon: Coins, label: t("collection_orders"), show: showFinance },
-    { to: "/dashboard/deathcases", icon: Skull, label: t("death_cases"), show: showSpecialPapers },
-    { to: "/dashboard/prisoncases", icon: ShieldAlert, label: t("prison_cases"), show: showSpecialPapers },
-    { to: "/dashboard/assets", icon: Package, label: t("assets"), show: showAssets },
-    // { to: "/dashboard/monthlyreviews", icon: ClipboardCheck, label: t("monthly_reviews"), show: showMonthlyReviews },
-    { to: "/dashboard/banks", icon: Landmark, label: t("banks"), show: isAdmin || isFinanceAdmin || isFinanceSubAdmin || isFinanceEmployee },
-    { to: "/dashboard/logs", icon: Scroll, label: t("logs"), show: isAdmin || isFinanceAdmin},
-    { to: "/requestUser", icon: UserPlus, label: t("requests"), show: true, exact: true },
+    {
+      to: "/dashboard/incomings",
+      icon: FileText,
+      label: t("incomings"),
+      show: showSpecialPapers,
+    },
+    {
+      to: "/dashboard/outgoings",
+      icon: FileText,
+      label: t("outgoings"),
+      show: showSpecialPapers,
+    },
+    {
+      to: "/dashboard/purchaseorders",
+      icon: ShoppingCart,
+      label: t("purchase_orders"),
+      show: showFinance,
+    },
+    {
+      to: "/dashboard/collectionorders",
+      icon: Coins,
+      label: t("collection_orders"),
+      show: showFinance,
+    },
+    {
+      to: "/dashboard/deathcases",
+      icon: Skull,
+      label: t("death_cases"),
+      show: showSpecialPapers,
+    },
+    {
+      to: "/dashboard/prisoncases",
+      icon: ShieldAlert,
+      label: t("prison_cases"),
+      show: showSpecialPapers,
+    },
+    {
+      to: "/dashboard/assets",
+      icon: Package,
+      label: t("assets"),
+      show: showAssets,
+    },
+    {
+      to: "/dashboard/monthlyreviews",
+      icon: ClipboardCheck,
+      label: t("monthly_reviews"),
+      show: isAdmin,
+    },
+    {
+      to: "/dashboard/banks",
+      icon: Landmark,
+      label: t("banks"),
+      show: isAdmin || isFinanceAdmin || isFinanceSubAdmin || isFinanceEmployee,
+    },
+    {
+      to: "/dashboard/logs",
+      icon: Scroll,
+      label: t("logs"),
+      show: isAdmin || isFinanceAdmin,
+    },
+    {
+      to: "/requestUser",
+      icon: UserPlus,
+      label: t("requests"),
+      show: true,
+      exact: true,
+    },
   ];
 
   return (
@@ -100,10 +172,10 @@ const DashSidebar = () => {
         <nav className="mt-2 space-y-1 px-2">
           {navItems.map((item) => {
             if (!item.show) return null;
-            const active = item.exact 
+            const active = item.exact
               ? location.pathname === item.to
               : isActive(item.to);
-            
+
             return (
               <div key={item.to} className="relative group">
                 <Link
@@ -116,7 +188,9 @@ const DashSidebar = () => {
                   }`}
                 >
                   <item.icon size={20} className="flex-shrink-0" />
-                  {isOpen && <span className="text-sm truncate">{item.label}</span>}
+                  {isOpen && (
+                    <span className="text-sm truncate">{item.label}</span>
+                  )}
                 </Link>
 
                 {/* Tooltip for collapsed state */}

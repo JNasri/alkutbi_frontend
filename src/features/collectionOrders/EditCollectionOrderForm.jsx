@@ -154,6 +154,7 @@ const EditCollectionOrderForm = () => {
       const canEdit =
         isAdmin ||
         isFinanceAdmin ||
+        isFinanceSubAdmin ||
         ((isFinanceEmployee || isFinanceOutsider) && orderCreator === username);
       
       if (!isInitialLoad && !canEdit) {
@@ -192,7 +193,7 @@ const EditCollectionOrderForm = () => {
       setExistingOrderPrintUrl(collectionOrder.orderPrintUrl || "");
       setIsInitialLoad(false);
     }
-  }, [collectionOrder, isAdmin, isFinanceAdmin, isFinanceEmployee, isFinanceOutsider, username, t, isInitialLoad, navigateToCollectionOrders]);
+  }, [collectionOrder, isAdmin, isFinanceAdmin, isFinanceSubAdmin, isFinanceEmployee, isFinanceOutsider, username, t, isInitialLoad, navigateToCollectionOrders]);
 
   // Auto-convert number to Arabic text
   useEffect(() => {

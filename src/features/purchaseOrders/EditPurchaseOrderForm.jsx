@@ -27,7 +27,14 @@ const EditPurchaseOrderForm = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const { isFinanceEmployee, isFinanceSubAdmin, isFinanceAdmin, isFinanceOutsider, isAdmin, username } = useAuth();
+  const {
+    isFinanceEmployee,
+    isFinanceSubAdmin,
+    isFinanceAdmin,
+    isFinanceOutsider,
+    isAdmin,
+    username,
+  } = useAuth();
 
   const {
     data: purchaseOrder,
@@ -103,11 +110,22 @@ const EditPurchaseOrderForm = () => {
     ];
 
     // Finance employees and sub-admins cannot set status to finalized
-    if ((isFinanceEmployee || isFinanceSubAdmin || isFinanceOutsider) && !isFinanceAdmin && !isAdmin) {
-      return options.filter(opt => opt.value !== "finalized");
+    if (
+      (isFinanceEmployee || isFinanceSubAdmin || isFinanceOutsider) &&
+      !isFinanceAdmin &&
+      !isAdmin
+    ) {
+      return options.filter((opt) => opt.value !== "finalized");
     }
     return options;
-  }, [t, isFinanceEmployee, isFinanceSubAdmin, isFinanceOutsider, isFinanceAdmin, isAdmin]);
+  }, [
+    t,
+    isFinanceEmployee,
+    isFinanceSubAdmin,
+    isFinanceOutsider,
+    isFinanceAdmin,
+    isAdmin,
+  ]);
 
   const paymentMethodOptions = [
     { value: "cash", label: t("cash") },
@@ -135,8 +153,9 @@ const EditPurchaseOrderForm = () => {
       const canEdit =
         isAdmin ||
         isFinanceAdmin ||
+        isFinanceSubAdmin ||
         ((isFinanceEmployee || isFinanceOutsider) && orderCreator === username);
-      
+
       if (!isInitialLoad && !canEdit) {
         toast.error(t("no_permission_to_edit_this_order"));
         navigateToPurchaseOrders();
@@ -164,11 +183,24 @@ const EditPurchaseOrderForm = () => {
       setDeductedFrom(purchaseOrder.deductedFrom || "");
       setAddedTo(purchaseOrder.addedTo || "");
       setNotes(purchaseOrder.notes || "");
-      setExistingReceiptUrl(purchaseOrder.receiptUrl || purchaseOrder.fileUrl || "");
+      setExistingReceiptUrl(
+        purchaseOrder.receiptUrl || purchaseOrder.fileUrl || "",
+      );
       setExistingOrderPrintUrl(purchaseOrder.orderPrintUrl || "");
       setIsInitialLoad(false);
     }
-  }, [purchaseOrder, isAdmin, isFinanceAdmin, isFinanceEmployee, isFinanceOutsider, username, t, isInitialLoad, navigateToPurchaseOrders]);
+  }, [
+    purchaseOrder,
+    isAdmin,
+    isFinanceAdmin,
+    isFinanceSubAdmin,
+    isFinanceEmployee,
+    isFinanceOutsider,
+    username,
+    t,
+    isInitialLoad,
+    navigateToPurchaseOrders,
+  ]);
 
   // Auto-convert number to Arabic text
   useEffect(() => {
@@ -183,7 +215,7 @@ const EditPurchaseOrderForm = () => {
   useEffect(() => {
     if (dateAD && !isInitialLoad) {
       const selectedDate = new Date(dateAD);
-      
+
       // Get Arabic day name
       const days = [
         "الأحد",
@@ -195,7 +227,7 @@ const EditPurchaseOrderForm = () => {
         "السبت",
       ];
       setDayName(days[selectedDate.getDay()]);
-      
+
       // Get Hijri date
       const hijriDate = moment(dateAD).format("iYYYY/iM/iD");
       setDateHijri(hijriDate);
@@ -215,7 +247,7 @@ const EditPurchaseOrderForm = () => {
       navigateToPurchaseOrders();
     } else if (isDelError) {
       toast.error(
-        delError?.data?.message || t("error_deleting_purchase_order")
+        delError?.data?.message || t("error_deleting_purchase_order"),
       );
     }
   }, [
@@ -242,14 +274,20 @@ const EditPurchaseOrderForm = () => {
   ];
 
   // Dropzone configuration for Receipt
-  const { getRootProps: getReceiptRootProps, getInputProps: getReceiptInputProps } = useDropzone({
+  const {
+    getRootProps: getReceiptRootProps,
+    getInputProps: getReceiptInputProps,
+  } = useDropzone({
     onDrop: (acceptedFiles) => setReceiptFile(acceptedFiles[0]),
     multiple: false,
     maxFiles: 1,
   });
 
   // Dropzone configuration for Order Print
-  const { getRootProps: getOrderPrintRootProps, getInputProps: getOrderPrintInputProps } = useDropzone({
+  const {
+    getRootProps: getOrderPrintRootProps,
+    getInputProps: getOrderPrintInputProps,
+  } = useDropzone({
     onDrop: (acceptedFiles) => setOrderPrintFile(acceptedFiles[0]),
     multiple: false,
     maxFiles: 1,
@@ -265,7 +303,11 @@ const EditPurchaseOrderForm = () => {
     if (!isBanksSuccess) return [];
     return (banksData?.ids || []).map((id) => {
       const bank = banksData.entities[id];
-      return { label: bank.name, value: bank.name, ibanNumber: bank.ibanNumber };
+      return {
+        label: bank.name,
+        value: bank.name,
+        ibanNumber: bank.ibanNumber,
+      };
     });
   }, [banksData, isBanksSuccess]);
 
@@ -281,11 +323,14 @@ const EditPurchaseOrderForm = () => {
     }
 
     // Role-based status validation
-    if (status === "finalized" && (isFinanceEmployee || isFinanceSubAdmin || isFinanceOutsider) && !isFinanceAdmin && !isAdmin) {
+    if (
+      status === "finalized" &&
+      (isFinanceEmployee || isFinanceSubAdmin || isFinanceOutsider) &&
+      !isFinanceAdmin &&
+      !isAdmin
+    ) {
       return toast.error(t("no_permission_to_finalize_order"));
     }
-
-
 
     const purchaseOrderData = {
       id,
@@ -320,7 +365,8 @@ const EditPurchaseOrderForm = () => {
   const errClass = isError || isDelError ? "errmsg" : "offscreen";
   const errMsg = error?.data?.message || delError?.data?.message || "";
 
-  if (isFetching || areOptionsLoading || areBanksLoading) return <LoadingSpinner />;
+  if (isFetching || areOptionsLoading || areBanksLoading)
+    return <LoadingSpinner />;
   if (fetchError || !purchaseOrder)
     return <p className="p-4">{t("error_loading_purchase_order")}</p>;
 
@@ -343,16 +389,19 @@ const EditPurchaseOrderForm = () => {
             <ArrowLeft size={20} />
           )}
         </button>
-         <label htmlFor="purchasingId" className="text-4xl font-bold text-gray-800 dark:text-white">
+        <label
+          htmlFor="purchasingId"
+          className="text-4xl font-bold text-gray-800 dark:text-white"
+        >
           {t("edit_purchase_order")}
-         </label>
-         <input
-           type="text"
-           id="purchasingId"
-           value={purchasingId}
-           onChange={(e) => setPurchasingId(e.target.value)}
-           className="text-xl sm:text-3xl font-bold bg-transparent border-b border-gray-400 dark:border-gray-500 focus:outline-none focus:border-black dark:focus:border-white text-gray-900 dark:text-white"
-         />
+        </label>
+        <input
+          type="text"
+          id="purchasingId"
+          value={purchasingId}
+          onChange={(e) => setPurchasingId(e.target.value)}
+          className="text-xl sm:text-3xl font-bold bg-transparent border-b border-gray-400 dark:border-gray-500 focus:outline-none focus:border-black dark:focus:border-white text-gray-900 dark:text-white"
+        />
       </div>
       <div className="bg-white dark:bg-gray-700 border-gray-500 rounded-3xl shadow p-6 space-y-6">
         <form onSubmit={onSaveClicked}>
@@ -375,10 +424,10 @@ const EditPurchaseOrderForm = () => {
                         option.color === "blue"
                           ? "bg-blue-500"
                           : option.color === "orange"
-                          ? "bg-orange-500"
-                          : option.color === "yellow"
-                          ? "bg-yellow-500"
-                          : "bg-green-500"
+                            ? "bg-orange-500"
+                            : option.color === "yellow"
+                              ? "bg-yellow-500"
+                              : "bg-green-500"
                       }`}
                     ></span>
                     <span>{option.label}</span>
@@ -396,8 +445,12 @@ const EditPurchaseOrderForm = () => {
                 isSearchable={false}
                 isClearable
                 options={transactionTypeOptions}
-                value={transactionTypeOptions.find((opt) => opt.value === transactionType)}
-                onChange={(selected) => setTransactionType(selected?.value || "")}
+                value={transactionTypeOptions.find(
+                  (opt) => opt.value === transactionType,
+                )}
+                onChange={(selected) =>
+                  setTransactionType(selected?.value || "")
+                }
                 styles={customSelectStyles}
                 placeholder={t("choose")}
               />
@@ -451,7 +504,7 @@ const EditPurchaseOrderForm = () => {
                 isSearchable={false}
                 options={paymentMethodOptions}
                 value={paymentMethodOptions.find(
-                  (opt) => opt.value === paymentMethod
+                  (opt) => opt.value === paymentMethod,
                 )}
                 onChange={(selected) =>
                   setPaymentMethod(selected?.value || "cash")
@@ -469,7 +522,12 @@ const EditPurchaseOrderForm = () => {
                 <Select
                   isClearable
                   options={bankOptions}
-                  value={bankOptions.find((opt) => opt.value === bankNameFrom) || (bankNameFrom ? { label: bankNameFrom, value: bankNameFrom } : null)}
+                  value={
+                    bankOptions.find((opt) => opt.value === bankNameFrom) ||
+                    (bankNameFrom
+                      ? { label: bankNameFrom, value: bankNameFrom }
+                      : null)
+                  }
                   onChange={(selected) => {
                     setBankNameFrom(selected?.value || "");
                     setIbanNumberFrom(selected?.ibanNumber || "");
@@ -513,7 +571,9 @@ const EditPurchaseOrderForm = () => {
                   options={bankNameToOptions}
                   onChange={(newValue) => setBankNameTo(newValue?.value || "")}
                   onCreateOption={(inputValue) => setBankNameTo(inputValue)}
-                  value={bankNameTo ? { value: bankNameTo, label: bankNameTo } : null}
+                  value={
+                    bankNameTo ? { value: bankNameTo, label: bankNameTo } : null
+                  }
                   styles={customSelectStyles}
                 />
               </div>
@@ -533,9 +593,15 @@ const EditPurchaseOrderForm = () => {
                   }
                   isClearable
                   options={ibanNumberToOptions}
-                  onChange={(newValue) => setIbanNumberTo(newValue?.value || "")}
+                  onChange={(newValue) =>
+                    setIbanNumberTo(newValue?.value || "")
+                  }
                   onCreateOption={(inputValue) => setIbanNumberTo(inputValue)}
-                  value={ibanNumberTo ? { value: ibanNumberTo, label: ibanNumberTo } : null}
+                  value={
+                    ibanNumberTo
+                      ? { value: ibanNumberTo, label: ibanNumberTo }
+                      : null
+                  }
                   styles={customSelectStyles}
                 />
               </div>
@@ -623,7 +689,9 @@ const EditPurchaseOrderForm = () => {
                 inputMode="decimal"
                 pattern="[0-9]*[.]?[0-9]*"
                 value={totalAmount}
-                onChange={(e) => setTotalAmount(normalizeAmountInput(e.target.value))}
+                onChange={(e) =>
+                  setTotalAmount(normalizeAmountInput(e.target.value))
+                }
                 className="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg block w-full p-2.5 dark:bg-gray-800 dark:text-white"
               />
             </div>
@@ -707,17 +775,19 @@ const EditPurchaseOrderForm = () => {
               <label className="text-sm font-medium text-gray-900 dark:text-white block mb-2">
                 {t("receipt")} ({t("optional")})
               </label>
-              
+
               {/* Show existing receipt if any */}
               {existingReceiptUrl && (
                 <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg flex items-center justify-between">
                   <div className="flex items-center gap-2 text-blue-700 dark:text-blue-300">
                     <ExternalLink size={18} />
-                    <span className="text-sm font-medium">Existing Receipt:</span>
+                    <span className="text-sm font-medium">
+                      Existing Receipt:
+                    </span>
                   </div>
-                  <a 
-                    href={existingReceiptUrl} 
-                    target="_blank" 
+                  <a
+                    href={existingReceiptUrl}
+                    target="_blank"
                     rel="noopener noreferrer"
                     className="text-sm text-blue-600 dark:text-blue-400 hover:underline font-bold"
                   >
@@ -733,8 +803,12 @@ const EditPurchaseOrderForm = () => {
                 <input {...getReceiptInputProps()} />
                 {receiptFile ? (
                   <div className="text-center">
-                    <p className="text-gray-700 dark:text-gray-300 font-medium">New File Selected:</p>
-                    <p className="text-blue-600 dark:text-blue-400 truncate max-w-xs">{receiptFile.name}</p>
+                    <p className="text-gray-700 dark:text-gray-300 font-medium">
+                      New File Selected:
+                    </p>
+                    <p className="text-blue-600 dark:text-blue-400 truncate max-w-xs">
+                      {receiptFile.name}
+                    </p>
                     <button
                       type="button"
                       onClick={(e) => {
@@ -748,11 +822,23 @@ const EditPurchaseOrderForm = () => {
                   </div>
                 ) : (
                   <div className="flex flex-col items-center gap-2">
-                    <svg className="h-8 w-8 text-gray-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 15a4 4 0 004 4h10a4 4 0 004-4m-7-3l-3-3m0 0l-3 3m3-3v12" />
+                    <svg
+                      className="h-8 w-8 text-gray-400"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M3 15a4 4 0 004 4h10a4 4 0 004-4m-7-3l-3-3m0 0l-3 3m3-3v12"
+                      />
                     </svg>
                     <p className="text-gray-600 dark:text-gray-400 text-center">
-                      {existingReceiptUrl ? "Click or drag to replace the current receipt" : t("receipt")}
+                      {existingReceiptUrl
+                        ? "Click or drag to replace the current receipt"
+                        : t("receipt")}
                     </p>
                   </div>
                 )}
@@ -764,17 +850,19 @@ const EditPurchaseOrderForm = () => {
               <label className="text-sm font-medium text-gray-900 dark:text-white block mb-2">
                 {t("order_print")} ({t("optional")})
               </label>
-              
+
               {/* Show existing order print if any */}
               {existingOrderPrintUrl && (
                 <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg flex items-center justify-between">
                   <div className="flex items-center gap-2 text-blue-700 dark:text-blue-300">
                     <ExternalLink size={18} />
-                    <span className="text-sm font-medium">Existing Order Print:</span>
+                    <span className="text-sm font-medium">
+                      Existing Order Print:
+                    </span>
                   </div>
-                  <a 
-                    href={existingOrderPrintUrl} 
-                    target="_blank" 
+                  <a
+                    href={existingOrderPrintUrl}
+                    target="_blank"
                     rel="noopener noreferrer"
                     className="text-sm text-blue-600 dark:text-blue-400 hover:underline font-bold"
                   >
@@ -790,8 +878,12 @@ const EditPurchaseOrderForm = () => {
                 <input {...getOrderPrintInputProps()} />
                 {orderPrintFile ? (
                   <div className="text-center">
-                    <p className="text-gray-700 dark:text-gray-300 font-medium">New File Selected:</p>
-                    <p className="text-blue-600 dark:text-blue-400 truncate max-w-xs">{orderPrintFile.name}</p>
+                    <p className="text-gray-700 dark:text-gray-300 font-medium">
+                      New File Selected:
+                    </p>
+                    <p className="text-blue-600 dark:text-blue-400 truncate max-w-xs">
+                      {orderPrintFile.name}
+                    </p>
                     <button
                       type="button"
                       onClick={(e) => {
@@ -805,11 +897,23 @@ const EditPurchaseOrderForm = () => {
                   </div>
                 ) : (
                   <div className="flex flex-col items-center gap-2">
-                    <svg className="h-8 w-8 text-gray-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 15a4 4 0 004 4h10a4 4 0 004-4m-7-3l-3-3m0 0l-3 3m3-3v12" />
+                    <svg
+                      className="h-8 w-8 text-gray-400"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M3 15a4 4 0 004 4h10a4 4 0 004-4m-7-3l-3-3m0 0l-3 3m3-3v12"
+                      />
                     </svg>
                     <p className="text-gray-600 dark:text-gray-400 text-center">
-                      {existingOrderPrintUrl ? "Click or drag to replace the current order print" : t("order_print")}
+                      {existingOrderPrintUrl
+                        ? "Click or drag to replace the current order print"
+                        : t("order_print")}
                     </p>
                   </div>
                 )}
