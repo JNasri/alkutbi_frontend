@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { useState, useMemo, useCallback } from "react";
+import { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import toast from "react-hot-toast";
 import {
   useGetPurchaseOrdersTableQuery,
@@ -7,6 +7,7 @@ import {
   useDeletePurchaseOrderMutation,
   useRestorePurchaseOrderMutation,
   useAddBulkPurchaseOrdersMutation,
+  useUpdatePurchaseOrderStatusMutation,
 } from "./purchaseOrdersApiSlice";
 import { useGetBanksQuery } from "../banks/banksApiSlice";
 import { useGetOrdersSummaryQuery } from "../dashboard/dashboardApiSlice";
@@ -67,6 +68,8 @@ const ORDER_SCOPE_OPTIONS = [
   { value: "all", labelKey: "all" },
   { value: "archive", labelKey: "archive" },
 ];
+const STATUS_BOX_WIDTH = 144;
+const STATUS_BOX_HEIGHT = 132;
 
 const PurchaseOrdersList = () => {
   const { t } = useTranslation();
@@ -74,6 +77,8 @@ const PurchaseOrdersList = () => {
     canEditFinance,
     canAddFinance,
     canDeleteFinance,
+    isAdmin,
+    isFinanceAdmin,
     isFinanceEmployee,
     isFinanceSubAdmin,
     isFinanceOutsider,
@@ -90,12 +95,19 @@ const PurchaseOrdersList = () => {
   const [getPurchaseOrdersExport] = useLazyGetPurchaseOrdersExportQuery();
   const [addBulkPurchaseOrders, { isLoading: isImporting }] =
     useAddBulkPurchaseOrdersMutation();
+  const [updatePurchaseOrderStatus, { isLoading: isUpdatingStatus }] =
+    useUpdatePurchaseOrderStatusMutation();
+  const canChangePurchaseOrderStatus = isAdmin || isFinanceAdmin;
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
   const [itemToRestore, setItemToRestore] = useState(null);
   const [archiveInfoItem, setArchiveInfoItem] = useState(null);
+  const [statusChangeItem, setStatusChangeItem] = useState(null);
+  const [statusDraft, setStatusDraft] = useState("new");
+  const [statusBoxPosition, setStatusBoxPosition] = useState(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const statusBoxRef = useRef(null);
 
   // Excel import preview state
   const [showImportPreview, setShowImportPreview] = useState(false);
@@ -171,6 +183,103 @@ const PurchaseOrdersList = () => {
     return map;
   }, [banksData]);
 
+  const getOrderId = (item) => item?.id || item?._id;
+
+  const getStatusBoxPosition = (button) => {
+    const rect = button.getBoundingClientRect();
+    const gap = 8;
+    const fitsRight = rect.right + gap + STATUS_BOX_WIDTH <= window.innerWidth;
+    const left = fitsRight
+      ? rect.right + gap
+      : Math.max(gap, rect.left - STATUS_BOX_WIDTH - gap);
+    const top = Math.min(
+      Math.max(gap, rect.top + rect.height / 2 - STATUS_BOX_HEIGHT / 2),
+      window.innerHeight - STATUS_BOX_HEIGHT - gap,
+    );
+
+    return {
+      top,
+      left,
+      placement: fitsRight ? "right" : "left",
+    };
+  };
+
+  const toggleStatusChangeBox = (item, event) => {
+    if (isUpdatingStatus) return;
+
+    const currentId = getOrderId(statusChangeItem);
+    const nextId = getOrderId(item);
+
+    if (currentId && currentId === nextId) {
+      setStatusChangeItem(null);
+      setStatusDraft("new");
+      setStatusBoxPosition(null);
+      return;
+    }
+
+    setStatusChangeItem(item);
+    setStatusDraft(item.status || "new");
+    setStatusBoxPosition(getStatusBoxPosition(event.currentTarget));
+  };
+
+  const closeStatusChangeBox = () => {
+    if (isUpdatingStatus) return;
+    setStatusChangeItem(null);
+    setStatusDraft("new");
+    setStatusBoxPosition(null);
+  };
+
+  const handleStatusOptionClick = async (status) => {
+    if (!statusChangeItem) return;
+
+    if (status === statusChangeItem.status) {
+      closeStatusChangeBox();
+      return;
+    }
+
+    try {
+      setStatusDraft(status);
+      await updatePurchaseOrderStatus({
+        id: getOrderId(statusChangeItem),
+        status,
+      }).unwrap();
+
+      toast.success(t("purchase_order_status_updated_successfully"));
+      setStatusChangeItem(null);
+      setStatusDraft("new");
+      setStatusBoxPosition(null);
+    } catch (error) {
+      toast.error(
+        error?.data?.message || t("error_updating_purchase_order_status"),
+      );
+    }
+  };
+
+  useEffect(() => {
+    if (!statusChangeItem) return undefined;
+
+    const handlePointerDown = (event) => {
+      if (statusBoxRef.current?.contains(event.target)) return;
+      closeStatusChangeBox();
+    };
+    const handleEscape = (event) => {
+      if (event.key === "Escape") closeStatusChangeBox();
+    };
+    const handleWindowMove = () => closeStatusChangeBox();
+
+    document.addEventListener("pointerdown", handlePointerDown);
+    document.addEventListener("keydown", handleEscape);
+    window.addEventListener("scroll", handleWindowMove, true);
+    window.addEventListener("resize", handleWindowMove);
+
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown);
+      document.removeEventListener("keydown", handleEscape);
+      window.removeEventListener("scroll", handleWindowMove, true);
+      window.removeEventListener("resize", handleWindowMove);
+    };
+  }, [statusChangeItem, isUpdatingStatus]);
+
   if (
     (isLoadingPO && !purchaseOrdersTable) ||
     (canViewFinanceKpis && isLoadingSummary && !ordersSummary)
@@ -216,6 +325,12 @@ const PurchaseOrdersList = () => {
       authorized: t("status_authorized"),
       finalized: t("status_finalized"),
     };
+    const statusChangeOptions = ["new", "authorized", "finalized"].map(
+      (value) => ({
+        value,
+        label: statusTranslations[value],
+      }),
+    );
 
     const truncateWords = (text, maxWords) => {
       if (!text) return "—";
@@ -304,7 +419,35 @@ const PurchaseOrdersList = () => {
         filterOptions: Object.entries(statusTranslations).map(
           ([value, label]) => ({ value, label }),
         ),
-        body: (item) => getStatusBadge(item.status),
+        body: (item) => {
+          const isStatusBoxOpen =
+            getOrderId(statusChangeItem) === getOrderId(item);
+
+          return (
+            <div className="inline-flex items-center justify-center gap-2">
+              {getStatusBadge(item.status)}
+              {canChangePurchaseOrderStatus && !isArchiveScope && (
+                <button
+                  type="button"
+                  title={t("change_purchase_order_status")}
+                  onClick={(event) => toggleStatusChangeBox(item, event)}
+                  disabled={isUpdatingStatus}
+                  className={`inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border text-slate-600 transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-600 disabled:cursor-not-allowed disabled:opacity-60 dark:text-slate-300 dark:hover:border-blue-700 dark:hover:bg-blue-900/30 dark:hover:text-blue-300 ${
+                    isStatusBoxOpen
+                      ? "border-blue-300 bg-blue-50 dark:border-blue-700 dark:bg-blue-900/30"
+                      : "border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900"
+                  }`}
+                >
+                  {isUpdatingStatus && isStatusBoxOpen ? (
+                    <RefreshCw size={14} className="animate-spin" />
+                  ) : (
+                    <RefreshCw size={14} />
+                  )}
+                </button>
+              )}
+            </div>
+          );
+        },
       },
       { field: "dayName", header: t("day_name"), nowrap: true },
       { field: "dateHijri", header: t("date_hijri"), nowrap: true },
@@ -1054,6 +1197,53 @@ const PurchaseOrdersList = () => {
             }
           }}
         />
+        {statusChangeItem && statusBoxPosition && (
+          <div
+            ref={statusBoxRef}
+            style={{
+              top: statusBoxPosition.top,
+              left: statusBoxPosition.left,
+              width: STATUS_BOX_WIDTH,
+            }}
+            className="fixed z-[9999] rounded-xl border border-slate-200 bg-white p-1.5 text-start shadow-xl shadow-slate-900/15 dark:border-slate-700 dark:bg-slate-900 dark:shadow-black/30"
+          >
+            <div
+              className={`absolute top-1/2 h-3 w-3 -translate-y-1/2 rotate-45 border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900 ${
+                statusBoxPosition.placement === "right"
+                  ? "left-0 -translate-x-1/2"
+                  : "right-0 translate-x-1/2"
+              }`}
+            />
+            <div className="relative grid gap-1">
+              {statusChangeOptions.map((option) => {
+                const selected = statusChangeItem.status === option.value;
+                const saving =
+                  isUpdatingStatus && statusDraft === option.value;
+
+                return (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => handleStatusOptionClick(option.value)}
+                    disabled={isUpdatingStatus}
+                    className={`flex cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-70 ${
+                      selected
+                        ? "bg-blue-50 text-blue-700 dark:bg-blue-900/40 dark:text-blue-200"
+                        : "text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
+                    }`}
+                  >
+                    <span>{option.label}</span>
+                    {saving ? (
+                      <RefreshCw size={13} className="animate-spin" />
+                    ) : selected ? (
+                      <CheckCircle size={14} />
+                    ) : null}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
         {archiveInfoItem && (
           <div
             className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-black/20 p-4"

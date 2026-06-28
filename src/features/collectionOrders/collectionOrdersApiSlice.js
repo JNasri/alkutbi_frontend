@@ -154,6 +154,20 @@ export const collectionOrdersApiSlice = apiSlice.injectEndpoints({
       ],
     }),
 
+    updateCollectionOrderStatus: builder.mutation({
+      query: ({ id, status }) => ({
+        url: "/collectionorders/status",
+        method: "PATCH",
+        body: { id, status },
+      }),
+      invalidatesTags: (result, error, arg) => [
+        { type: "CollectionOrder", id: arg.id },
+        { type: "CollectionOrder", id: "LIST" },
+        { type: "Dashboard", id: "ORDERS_SUMMARY" },
+        { type: "Bank", id: "SUMMARY" },
+      ],
+    }),
+
     deleteCollectionOrder: builder.mutation({
       query: ({ id }) => ({
         url: "/collectionorders",
@@ -208,6 +222,7 @@ export const {
   useGetCollectionOrderQuery,
   useAddNewCollectionOrderMutation,
   useUpdateCollectionOrderMutation,
+  useUpdateCollectionOrderStatusMutation,
   useDeleteCollectionOrderMutation,
   useRestoreCollectionOrderMutation,
   useAddBulkCollectionOrdersMutation,

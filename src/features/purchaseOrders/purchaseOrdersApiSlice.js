@@ -168,6 +168,20 @@ export const purchaseOrdersApiSlice = apiSlice.injectEndpoints({
       ],
     }),
 
+    updatePurchaseOrderStatus: builder.mutation({
+      query: ({ id, status }) => ({
+        url: "/purchaseorders/status",
+        method: "PATCH",
+        body: { id, status },
+      }),
+      invalidatesTags: (result, error, arg) => [
+        { type: "PurchaseOrder", id: arg.id },
+        { type: "PurchaseOrder", id: "LIST" },
+        { type: "Dashboard", id: "ORDERS_SUMMARY" },
+        { type: "Bank", id: "SUMMARY" },
+      ],
+    }),
+
     deletePurchaseOrder: builder.mutation({
       query: ({ id }) => ({
         url: "/purchaseorders",
@@ -209,6 +223,7 @@ export const {
   useAddNewPurchaseOrderMutation,
   useAddBulkPurchaseOrdersMutation,
   useUpdatePurchaseOrderMutation,
+  useUpdatePurchaseOrderStatusMutation,
   useDeletePurchaseOrderMutation,
   useRestorePurchaseOrderMutation,
 } = purchaseOrdersApiSlice;
