@@ -77,12 +77,13 @@ const PurchaseOrdersList = () => {
     isFinanceEmployee,
     isFinanceSubAdmin,
     isFinanceOutsider,
+    canViewFinanceKpis,
     username,
   } = useAuth();
   const noAccessValue = t("no_access_value", {
     defaultValue: t("No_access_KPI"),
   });
-  const kpiValue = (value) => (isFinanceOutsider ? noAccessValue : value);
+  const kpiValue = (value) => (canViewFinanceKpis ? value : noAccessValue);
   const [deletePurchaseOrder] = useDeletePurchaseOrderMutation();
   const [restorePurchaseOrder, { isLoading: isRestoring }] =
     useRestorePurchaseOrderMutation();
@@ -150,7 +151,7 @@ const PurchaseOrdersList = () => {
   } = useGetOrdersSummaryQuery(
     { scope: "all", dateBasis: "createdAt" },
     {
-      skip: isFinanceOutsider,
+      skip: !canViewFinanceKpis,
       pollingInterval: 60000,
       refetchOnFocus: true,
       refetchOnMountOrArgChange: 300,
@@ -172,11 +173,11 @@ const PurchaseOrdersList = () => {
 
   if (
     (isLoadingPO && !purchaseOrdersTable) ||
-    (!isFinanceOutsider && isLoadingSummary && !ordersSummary)
+    (canViewFinanceKpis && isLoadingSummary && !ordersSummary)
   )
     return <LoadingSpinner />;
 
-  if (isErrorPO || (!isFinanceOutsider && isErrorSummary)) {
+  if (isErrorPO || (canViewFinanceKpis && isErrorSummary)) {
     return (
       <div
         className="p-4 mb-4 text-sm text-red-800 rounded-lg bg-red-50 dark:bg-gray-800 dark:text-red-400"
@@ -188,7 +189,7 @@ const PurchaseOrdersList = () => {
     );
   }
 
-  if (isSuccessPO && (isFinanceOutsider || isSuccessSummary)) {
+  if (isSuccessPO && (!canViewFinanceKpis || isSuccessSummary)) {
     const purchaseOrderList = purchaseOrdersTable?.data || [];
     const sortedList = purchaseOrderList;
     const isArchiveScope = tableParams.scope === "archive";
@@ -888,7 +889,7 @@ const PurchaseOrdersList = () => {
                   setIsRefreshing(true);
                   await Promise.all([
                     refetchPO(),
-                    isFinanceOutsider
+                    !canViewFinanceKpis
                       ? Promise.resolve()
                       : refetchOrdersSummary(),
                   ]);
@@ -898,7 +899,7 @@ const PurchaseOrdersList = () => {
               >
                 <RefreshCw
                   size={20}
-                  className={`${isFetchingPO || (!isFinanceOutsider && isFetchingSummary) ? "animate-spin" : ""}`}
+                  className={`${isFetchingPO || (canViewFinanceKpis && isFetchingSummary) ? "animate-spin" : ""}`}
                 />
               </button>
               <div className="absolute end-full top-1/2 me-2 -translate-y-1/2 whitespace-nowrap px-3 py-1.5 text-sm text-gray-800 bg-gray-300 dark:bg-gray-200 dark:text-gray-800 rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-10 shadow-md font-medium">
@@ -1008,11 +1009,11 @@ const PurchaseOrdersList = () => {
           data={transformedData}
           columns={columns}
           title={t("purchase_orders_list")}
-          sumField={isFinanceOutsider ? null : "totalAmount"}
+          sumField={canViewFinanceKpis ? "totalAmount" : null}
           serverSide
           totalRecords={purchaseOrdersTable?.totalRecords || 0}
           serverTotalSum={
-            isFinanceOutsider ? 0 : purchaseOrdersTable?.totalAmount || 0
+            canViewFinanceKpis ? purchaseOrdersTable?.totalAmount || 0 : 0
           }
           isServerLoading={isFetchingPO}
           onServerStateChange={handleServerStateChange}
@@ -1021,7 +1022,7 @@ const PurchaseOrdersList = () => {
           onRefresh={async () => {
             await Promise.all([
               refetchPO(),
-              isFinanceOutsider ? Promise.resolve() : refetchOrdersSummary(),
+              canViewFinanceKpis ? refetchOrdersSummary() : Promise.resolve(),
             ]);
           }}
         />

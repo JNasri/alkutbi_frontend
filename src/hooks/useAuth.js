@@ -39,6 +39,7 @@ const useAuth = () => {
     const canEditFinance = isAdmin || isFinanceAdmin || isFinanceSubAdmin || isSpecialPapersManager;
     const canAddFinance = isAdmin || isFinanceAdmin || isFinanceSubAdmin || isFinanceEmployee || isFinanceOutsider || isSpecialPapersManager;
     const isFinanceRole = isFinanceAdmin || isFinanceSubAdmin || isFinanceEmployee || isFinanceOutsider || isSpecialPapersManager;
+    const canViewFinanceKpis = isAdmin || isFinanceAdmin || isFinanceSubAdmin || isFinanceEmployee;
     const canEditAssets = isAdmin || isSpecialPapersManager || isOperationManager;
     const canAddAssets = isAdmin || isSpecialPapersManager || isSpecialPapersEmployee || isOperationManager || isOperationEmployee;
     const canDeleteFinance = isAdmin || isFinanceAdmin;
@@ -66,6 +67,7 @@ const useAuth = () => {
       canEditFinance,
       canAddFinance,
       isFinanceRole,
+      canViewFinanceKpis,
       canEditAssets,
       canAddAssets,
       canDeleteFinance,
@@ -96,6 +98,7 @@ const useAuth = () => {
     canAddFinance: false,
     canDeleteFinance: false,
     isFinanceRole: false,
+    canViewFinanceKpis: false,
     canEditAssets: false,
     canAddAssets: false,
     canDeleteSpecialPapers: false,

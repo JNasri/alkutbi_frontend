@@ -52,9 +52,9 @@ const ORDER_SCOPE_OPTIONS = [
 
 const CollectionOrdersList = () => {
   const { t } = useTranslation();
-  const { canEditFinance, canAddFinance, canDeleteFinance, isFinanceEmployee, isFinanceSubAdmin, isFinanceOutsider, username } = useAuth();
+  const { canEditFinance, canAddFinance, canDeleteFinance, isFinanceEmployee, isFinanceSubAdmin, isFinanceOutsider, canViewFinanceKpis, username } = useAuth();
   const noAccessValue = t("no_access_value", { defaultValue: t("No_access_KPI") });
-  const kpiValue = (value) => (isFinanceOutsider ? noAccessValue : value);
+  const kpiValue = (value) => (canViewFinanceKpis ? value : noAccessValue);
   const [deleteCollectionOrder] = useDeleteCollectionOrderMutation();
   const [restoreCollectionOrder, { isLoading: isRestoring }] = useRestoreCollectionOrderMutation();
   const [getCollectionOrdersExport] = useLazyGetCollectionOrdersExportQuery();
@@ -118,7 +118,7 @@ const CollectionOrdersList = () => {
     refetch: refetchOrdersSummary,
     isFetching: isFetchingSummary,
   } = useGetOrdersSummaryQuery({ scope: "all", dateBasis: "createdAt" }, {
-    skip: isFinanceOutsider,
+    skip: !canViewFinanceKpis,
     pollingInterval: 60000,
     refetchOnFocus: true,
     refetchOnMountOrArgChange: 300,
@@ -139,9 +139,9 @@ const CollectionOrdersList = () => {
 
 
 
-  if ((isLoadingCO && !collectionOrdersTable) || (!isFinanceOutsider && isLoadingSummary && !ordersSummary)) return <LoadingSpinner />;
+  if ((isLoadingCO && !collectionOrdersTable) || (canViewFinanceKpis && isLoadingSummary && !ordersSummary)) return <LoadingSpinner />;
 
-  if (isErrorCO || (!isFinanceOutsider && isErrorSummary)) {
+  if (isErrorCO || (canViewFinanceKpis && isErrorSummary)) {
     return (
       <div
         className="p-4 mb-4 text-sm text-red-800 rounded-lg bg-red-50 dark:bg-gray-800 dark:text-red-400"
@@ -152,7 +152,7 @@ const CollectionOrdersList = () => {
     );
   }
 
-  if (isSuccessCO && (isFinanceOutsider || isSuccessSummary)) {
+  if (isSuccessCO && (!canViewFinanceKpis || isSuccessSummary)) {
     const collectionOrderList = collectionOrdersTable?.data || [];
     const sortedList = collectionOrderList;
     const isArchiveScope = tableParams.scope === "archive";
@@ -659,13 +659,13 @@ const CollectionOrdersList = () => {
                   setIsRefreshing(true);
                   await Promise.all([
                     refetchCO(),
-                    isFinanceOutsider ? Promise.resolve() : refetchOrdersSummary(),
+                    canViewFinanceKpis ? refetchOrdersSummary() : Promise.resolve(),
                   ]);
                   setIsRefreshing(false);
                 }}
                 className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 border border-gray-500 hover:text-dark-900 hover:bg-gray-100 hover:text-gray-700 dark:border-white dark:bg-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white cursor-pointer transition-all active:scale-95"
               >
-                <RefreshCw size={20} className={`${(isFetchingCO || (!isFinanceOutsider && isFetchingSummary)) ? "animate-spin" : ""}`} />
+                <RefreshCw size={20} className={`${(isFetchingCO || (canViewFinanceKpis && isFetchingSummary)) ? "animate-spin" : ""}`} />
               </button>
               <div className="absolute end-full top-1/2 me-2 -translate-y-1/2 whitespace-nowrap px-3 py-1.5 text-sm text-gray-800 bg-gray-300 dark:bg-gray-200 dark:text-gray-800 rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-10 shadow-md font-medium">
                 {t("refresh")}
@@ -761,10 +761,10 @@ const CollectionOrdersList = () => {
           data={transformedData}
           columns={columns}
           title={t("collection_orders_list")}
-          sumField={isFinanceOutsider ? null : "totalAmount"}
+          sumField={canViewFinanceKpis ? "totalAmount" : null}
           serverSide
           totalRecords={collectionOrdersTable?.totalRecords || 0}
-          serverTotalSum={isFinanceOutsider ? 0 : collectionOrdersTable?.totalAmount || 0}
+          serverTotalSum={canViewFinanceKpis ? collectionOrdersTable?.totalAmount || 0 : 0}
           isServerLoading={isFetchingCO}
           onServerStateChange={handleServerStateChange}
           onExportData={loadCollectionExportData}
@@ -772,7 +772,7 @@ const CollectionOrdersList = () => {
           onRefresh={async () => {
             await Promise.all([
               refetchCO(),
-              isFinanceOutsider ? Promise.resolve() : refetchOrdersSummary(),
+              canViewFinanceKpis ? refetchOrdersSummary() : Promise.resolve(),
             ]);
           }}
         />

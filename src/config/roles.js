@@ -1,3 +1,5 @@
+import managerRoles from "./managerRoles.json";
+
 export const ROLES = {
   Admin: "Admin",
   Operation_Manager: "Operation Manager",
@@ -156,18 +158,4 @@ export const ROLE_OPTIONS = ROLE_DISPLAY_ORDER.map((role) => ({
   labelKey: ROLE_TRANSLATION_KEYS[role],
 }));
 
-export const MONTHLY_REVIEW_ROLES = [
-  ROLES.Admin,
-  ROLES.Chairman,
-  ROLES.Operation_Manager,
-  ROLES.Special_Papers_Manager,
-  ROLES.Finance_Manager,
-  ROLES.Finance_Sub_Manager,
-  ROLES.Marketing_Manager,
-  ROLES.Quality_Manager,
-  ROLES.Transport_Manager,
-  ROLES.Makkah_Manager,
-  ROLES.Airport_Manager,
-  ROLES.Madinah_Manager,
-  ROLES.Hotel_Manager,
-];
+export const MONTHLY_REVIEW_ROLES = normalizeRoles(managerRoles);

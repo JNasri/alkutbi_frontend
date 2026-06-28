@@ -65,12 +65,12 @@ const questionText = {
   },
 };
 
-const arabicMonthFormatter = new Intl.DateTimeFormat("ar-SA-u-ca-gregory", {
+const arabicMonthNameFormatter = new Intl.DateTimeFormat("ar-SA-u-ca-gregory", {
   month: "long",
-  year: "numeric",
 });
 
 const departmentArabicLabels = {
+  chairman: "مجلس الإدارة",
   finance: "المالية",
   operation: "التشغيل",
   special_papers: "الاتصالات الإدارية",
@@ -83,13 +83,24 @@ const departmentArabicLabels = {
   hotel: "الفنادق",
 };
 
-const escapeHtml = (value) =>
+const toEnglishDigits = (value) =>
   String(value ?? "")
+    .replace(/[٠-٩]/g, (digit) => String(digit.charCodeAt(0) - 0x0660))
+    .replace(/[۰-۹]/g, (digit) => String(digit.charCodeAt(0) - 0x06f0));
+
+const escapeHtml = (value) =>
+  toEnglishDigits(value)
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
+
+const renderEnglishNumber = (value, extraClass = "") =>
+  `<span class="english-numbers ${extraClass}" dir="ltr" lang="en">${escapeHtml(value)}</span>`;
+
+const renderEnglishNumberExpression = (value, total) =>
+  `<span class="english-numbers number-expression" dir="ltr" lang="en">${escapeHtml(value)} / ${escapeHtml(total)}</span>`;
 
 const getArabicName = (user, fallback = "—") =>
   user?.ar_name || user?.en_name || user?.username || fallback;
@@ -100,16 +111,19 @@ const formatDate = (dateValue) => {
   return date.toISOString().slice(0, 10);
 };
 
-const formatArabicMonth = (monthValue) => {
-  const value = String(monthValue || "");
+const renderArabicMonth = (monthValue) => {
+  const value = toEnglishDigits(monthValue || "");
   const match = /^(\d{4})-(\d{2})$/.exec(value);
 
-  if (!match) return value || "—";
+  if (!match) return escapeHtml(value || "—");
 
   const monthDate = new Date(Number(match[1]), Number(match[2]) - 1, 1);
-  return Number.isNaN(monthDate.getTime())
-    ? value
-    : arabicMonthFormatter.format(monthDate);
+  if (Number.isNaN(monthDate.getTime())) return escapeHtml(value);
+
+  return `${escapeHtml(arabicMonthNameFormatter.format(monthDate))} ${renderEnglishNumber(
+    match[1],
+    "month-year",
+  )}`;
 };
 
 const getArabicDepartmentName = (monthlyReview) => {
@@ -136,9 +150,9 @@ const renderScoreScale = (value) => {
       ${[1, 2, 3, 4, 5]
         .map(
           (score) => `
-            <span class="score-option ${
+            <span class="score-option english-numbers ${
               score === selectedScore ? "score-option-selected" : ""
-            }">${score}</span>
+            }" dir="ltr" lang="en">${escapeHtml(score)}</span>
           `,
         )
         .join("")}
@@ -153,7 +167,9 @@ const renderQuestionCards = (questions, answers, startIndex = 0) =>
       return `
         <div class="question-card">
           <div class="question-row">
-            <span class="question-number">${startIndex + index + 1}</span>
+            <span class="question-number english-numbers" dir="ltr" lang="en">${escapeHtml(
+              startIndex + index + 1,
+            )}</span>
             <div class="question-copy">
               <div class="question-ar">${escapeHtml(text.ar || question.key)}</div>
             </div>
@@ -209,7 +225,7 @@ const MonthlyReviewPrint = ({
     const belalName = getArabicName(signatures?.belal, "بلال");
     const chairmanName = getArabicName(signatures?.chairman);
     const department = getArabicDepartmentName(monthlyReview);
-    const monthLabel = formatArabicMonth(monthlyReview.month);
+    const monthHtml = renderArabicMonth(monthlyReview.month);
     const printDate = formatDate(
       monthlyReview.updatedAt || monthlyReview.createdAt,
     );
@@ -441,9 +457,17 @@ const MonthlyReviewPrint = ({
       color: #333;
     }
     .english-numbers {
-      font-family: Arial, Tahoma, sans-serif;
+      font-family: Arial, Tahoma, sans-serif !important;
       direction: ltr;
-      unicode-bidi: embed;
+      unicode-bidi: isolate;
+      font-variant-numeric: lining-nums tabular-nums;
+      font-feature-settings: "lnum" 1, "tnum" 1;
+    }
+    .number-expression {
+      display: inline-block;
+      min-width: 48px;
+      text-align: center;
+      white-space: nowrap;
     }
   </style>
 </head>
@@ -455,9 +479,9 @@ const MonthlyReviewPrint = ({
       <table class="meta-table">
         <tr>
           <td>التاريخ</td>
-          <td><span class="english-numbers">${escapeHtml(printDate)}</span></td>
+          <td>${renderEnglishNumber(printDate)}</td>
           <td>الشهر</td>
-          <td>${escapeHtml(monthLabel)}</td>
+          <td>${monthHtml}</td>
         </tr>
         <tr>
           <td>الإدارة</td>
@@ -470,8 +494,8 @@ const MonthlyReviewPrint = ({
         ${renderQuestionCards(printableQuestions, monthlyReview.answers)}
       </div>
       <div class="summary-row">
-        <div class="summary-box">الإجمالي: <span class="english-numbers">${escapeHtml(monthlyReview.totalScore || 0)}</span> / ${100}</div>
-        <div class="summary-box">المتوسط: <span class="english-numbers">${escapeHtml(monthlyReview.averageScore || 0)}</span> / ${5}</div>
+        <div class="summary-box">الإجمالي: ${renderEnglishNumberExpression(monthlyReview.totalScore || 0, 100)}</div>
+        <div class="summary-box">المتوسط: ${renderEnglishNumberExpression(monthlyReview.averageScore || 0, 5)}</div>
       </div>
       <div class="notes-box">
         <div class="notes-title">ملاحظات</div>

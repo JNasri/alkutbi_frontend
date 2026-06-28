@@ -123,7 +123,7 @@ const DashSidebar = () => {
       to: "/dashboard/monthlyreviews",
       icon: ClipboardCheck,
       label: t("monthly_reviews"),
-      show: isAdmin,
+      show: showMonthlyReviews,
     },
     {
       to: "/dashboard/banks",

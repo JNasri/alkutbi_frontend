@@ -20,10 +20,21 @@ export const monthlyReviewsApiSlice = apiSlice.injectEndpoints({
         { type: "MonthlyReview", id: "LIST" },
       ],
     }),
+    deleteMonthlyReview: builder.mutation({
+      query: ({ id }) => ({
+        url: `/monthlyreviews/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: (result, error, arg) => [
+        { type: "MonthlyReview", id: arg.month },
+        { type: "MonthlyReview", id: "LIST" },
+      ],
+    }),
   }),
 });
 
 export const {
   useGetMonthlyReviewWorkspaceQuery,
   useSaveMonthlyReviewMutation,
+  useDeleteMonthlyReviewMutation,
 } = monthlyReviewsApiSlice;

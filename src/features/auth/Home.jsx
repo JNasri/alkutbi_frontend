@@ -30,13 +30,13 @@ const Home = () => {
   const { t, i18n } = useTranslation();
   const location = useLocation();
   const user = useSelector(selectCurrentUser);
-  const { isFinanceOutsider } = useAuth();
+  const { canViewFinanceKpis } = useAuth();
   const currentLang = i18n.language;
   const userName = currentLang === "ar" ? user?.ar_name : user?.en_name;
   const noAccessValue = t("no_access_value", {
     defaultValue: t("No_access_KPI"),
   });
-  const kpiValue = (value) => (isFinanceOutsider ? noAccessValue : value);
+  const kpiValue = (value) => (canViewFinanceKpis ? value : noAccessValue);
 
   // Data queries
   const {
@@ -45,17 +45,17 @@ const Home = () => {
     isLoading,
     refetch,
   } = useGetDashboardSummaryQuery(undefined, {
-    skip: isFinanceOutsider,
+    skip: !canViewFinanceKpis,
     pollingInterval: 60000,
     refetchOnFocus: true,
     refetchOnMountOrArgChange: true,
   });
 
   useEffect(() => {
-    if (!isFinanceOutsider) refetch();
-  }, [location.key, refetch, isFinanceOutsider]);
+    if (canViewFinanceKpis) refetch();
+  }, [location.key, refetch, canViewFinanceKpis]);
 
-  if (!isFinanceOutsider && isLoading) return <LoadingSpinner />;
+  if (canViewFinanceKpis && isLoading) return <LoadingSpinner />;
 
   // Financial Calculations mapped from DB Aggregation
   const balance = isSuccess ? dStat.balance : 0;

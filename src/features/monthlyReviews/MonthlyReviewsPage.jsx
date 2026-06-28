@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { RefreshCw, Save, Star, X } from "lucide-react";
+import { RefreshCw, Save, Star, Trash2, X } from "lucide-react";
 import toast from "react-hot-toast";
 import LoadingSpinner from "../../components/LoadingSpinner";
+import DeleteConfirmModal from "../../components/DeleteConfirmModal";
 import {
   useGetMonthlyReviewWorkspaceQuery,
+  useDeleteMonthlyReviewMutation,
   useSaveMonthlyReviewMutation,
 } from "./monthlyReviewsApiSlice";
 import MonthlyReviewPrint from "./MonthlyReviewPrint";
@@ -36,6 +38,7 @@ const fallbackQuestions = Array.from({ length: 20 }, (_, index) => ({
 }));
 
 const departmentLabelKeys = {
+  chairman: "role_group_chairman",
   finance: "role_group_finance",
   operation: "role_group_operation",
   special_papers: "role_group_special_papers",
@@ -64,6 +67,7 @@ const MonthlyReviewsPage = () => {
   const [notes, setNotes] = useState("");
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [lastSavedReview, setLastSavedReview] = useState(null);
+  const [reviewToDelete, setReviewToDelete] = useState(null);
 
   const {
     data,
@@ -76,6 +80,8 @@ const MonthlyReviewsPage = () => {
 
   const [saveMonthlyReview, { isLoading: isSaving }] =
     useSaveMonthlyReviewMutation();
+  const [deleteMonthlyReview, { isLoading: isDeleting }] =
+    useDeleteMonthlyReviewMutation();
 
   const questions = data?.questions?.length ? data.questions : fallbackQuestions;
   const employees = data?.eligibleEmployees || [];
@@ -155,24 +161,21 @@ const MonthlyReviewsPage = () => {
     }
   };
 
-  const selectedReview =
-    lastSavedReview?.employee?.id === selectedEmployeeId
-      ? lastSavedReview
-      : selectedEmployee?.currentReview;
+  const onConfirmDeleteClicked = async () => {
+    if (!reviewToDelete) return;
 
-  const printableReview = selectedReview
-    ? {
-        ...selectedReview,
-        employee:
-          selectedReview.employee && typeof selectedReview.employee === "object"
-            ? selectedReview.employee
-            : selectedEmployee,
-        reviewer:
-          selectedReview.reviewer && typeof selectedReview.reviewer === "object"
-            ? selectedReview.reviewer
-            : data?.reviewer,
-      }
-    : null;
+    try {
+      await deleteMonthlyReview({ id: reviewToDelete.id, month }).unwrap();
+      setLastSavedReview((currentReview) =>
+        currentReview?.id === reviewToDelete.id ? null : currentReview,
+      );
+      setReviewToDelete(null);
+      toast.success(t("monthly_review_deleted"));
+      refetch();
+    } catch (err) {
+      toast.error(err?.data?.message || t("monthly_review_delete_error"));
+    }
+  };
 
   if (isLoading && !data) return <LoadingSpinner />;
 
@@ -186,7 +189,7 @@ const MonthlyReviewsPage = () => {
 
   return (
     <>
-      {(isFetching || isSaving) && <LoadingSpinner />}
+      {(isFetching || isSaving || isDeleting) && <LoadingSpinner />}
       <div className="space-y-5">
         <div className="flex flex-col gap-3 p-1 md:flex-row md:items-center">
           <div>
@@ -238,21 +241,29 @@ const MonthlyReviewsPage = () => {
                   const isReviewed =
                     Boolean(employee.currentReview) ||
                     lastSavedReview?.employee?.id === employee.id;
+                  const reviewStateClass = isReviewed
+                    ? "border-green-300 bg-green-50 text-green-950 hover:bg-green-100 dark:border-green-700 dark:bg-green-950/40 dark:text-green-100 dark:hover:bg-green-900/50"
+                    : "border-gray-200 bg-white text-gray-800 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-700";
+                  const selectedClass = isSelected
+                    ? "ring-2 ring-cyan-500 ring-offset-1 ring-offset-white dark:ring-cyan-300 dark:ring-offset-gray-800"
+                    : "";
                   return (
                     <button
                       key={employee.id}
                       type="button"
                       onClick={() => setSelectedEmployeeId(employee.id)}
-                      className={`w-full cursor-pointer rounded-lg border px-3 py-2 text-start transition ${
-                        isSelected
-                          ? "border-cyan-500 bg-cyan-50 text-cyan-900 dark:border-cyan-400 dark:bg-cyan-950 dark:text-cyan-100"
-                          : "border-gray-200 bg-white text-gray-800 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-700"
-                      }`}
+                      className={`w-full cursor-pointer rounded-lg border px-3 py-2 text-start transition ${reviewStateClass} ${selectedClass}`}
                     >
                       <span className="block text-sm font-semibold">
                         {getDisplayName(employee, i18n.language)}
                       </span>
-                      <span className="mt-1 block text-xs text-gray-500 dark:text-gray-400">
+                      <span
+                        className={`mt-1 block text-xs ${
+                          isReviewed
+                            ? "font-semibold text-green-700 dark:text-green-300"
+                            : "text-gray-500 dark:text-gray-400"
+                        }`}
+                      >
                         {isReviewed ? t("reviewed") : t("not_reviewed")}
                       </span>
                     </button>
@@ -287,7 +298,7 @@ const MonthlyReviewsPage = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+            <div className="grid grid-cols-1 gap-3 lg:grid-flow-col lg:grid-cols-2 lg:grid-rows-10">
               {questions.map((question, index) => (
                 <div
                   key={question.key}
@@ -348,14 +359,6 @@ const MonthlyReviewsPage = () => {
                 <Save size={18} />
                 {t("save_review")}
               </button>
-              {printableReview && (
-                <MonthlyReviewPrint
-                  review={printableReview}
-                  questions={questions}
-                  signatureUsers={data?.signatureUsers}
-                  buttonLabel={t("print")}
-                />
-              )}
             </div>
           </section>
         </div>
@@ -373,7 +376,7 @@ const MonthlyReviewsPage = () => {
                   <th className="px-3 py-2 text-start">{t("department")}</th>
                   <th className="px-3 py-2 text-start">{t("total_score")}</th>
                   <th className="px-3 py-2 text-start">{t("average_score")}</th>
-                  <th className="px-3 py-2 text-start">{t("print")}</th>
+                  <th className="px-3 py-2 text-start">{t("actions")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
@@ -391,12 +394,22 @@ const MonthlyReviewsPage = () => {
                     <td className="px-3 py-2">{review.totalScore}/100</td>
                     <td className="px-3 py-2">{review.averageScore}/5</td>
                     <td className="px-3 py-2">
+                      <div className="flex items-center gap-2">
                       <MonthlyReviewPrint
                         review={review}
                         questions={questions}
                         signatureUsers={data?.signatureUsers}
                         buttonLabel={t("print")}
                       />
+                        <button
+                          type="button"
+                          onClick={() => setReviewToDelete(review)}
+                          className="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg border border-red-200 bg-red-50 text-red-600 transition hover:bg-red-100 dark:border-red-800 dark:bg-red-900/30 dark:text-red-300 dark:hover:bg-red-900/50"
+                          title={t("remove_review")}
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -481,6 +494,13 @@ const MonthlyReviewsPage = () => {
             </div>
           </div>
         )}
+        <DeleteConfirmModal
+          isOpen={!!reviewToDelete}
+          onCancel={() => setReviewToDelete(null)}
+          onConfirm={onConfirmDeleteClicked}
+          title={t("confirm_delete_monthly_review")}
+          confirmLabel={t("remove_review")}
+        />
       </div>
     </>
   );
