@@ -10,6 +10,7 @@ import {
   useSaveMonthlyReviewMutation,
 } from "./monthlyReviewsApiSlice";
 import MonthlyReviewPrint from "./MonthlyReviewPrint";
+import { normalizeRoles, ROLE_GROUPS } from "../../config/roles";
 
 const currentMonth = () => new Date().toISOString().slice(0, 7);
 
@@ -51,13 +52,52 @@ const departmentLabelKeys = {
   hotel: "role_group_hotel",
 };
 
+// Frontend-only monthly review visibility exclusions.
+// Add usernames exactly as they appear in User.username under the department label key.
+// Matching is case-insensitive.
+const hiddenMonthlyReviewUsernamesByDepartmentLabelKey = {
+  role_group_finance: ["Ameer", "Rahili", "Tasnim"],
+};
+
+const normalizeUsername = (username = "") =>
+  String(username).trim().toLowerCase();
+
+const getDepartmentLabelKeysForUser = (user) => {
+  const userRoles = normalizeRoles(user?.roles);
+
+  return ROLE_GROUPS.filter((group) =>
+    group.roles.some((role) => userRoles.includes(role)),
+  ).map((group) => group.labelKey);
+};
+
+const shouldHideMonthlyReviewUser = (
+  user,
+  departmentLabelKeyFallback = null,
+) => {
+  const username = normalizeUsername(user?.username);
+  if (!username) return false;
+
+  const labelKeys = departmentLabelKeyFallback
+    ? [departmentLabelKeyFallback]
+    : getDepartmentLabelKeysForUser(user);
+
+  return labelKeys.some((labelKey) =>
+    (hiddenMonthlyReviewUsernamesByDepartmentLabelKey[labelKey] || [])
+      .map(normalizeUsername)
+      .includes(username),
+  );
+};
+
 const getDisplayName = (user, language) =>
   language?.startsWith("ar")
     ? user?.ar_name || user?.en_name || user?.username || "-"
     : user?.en_name || user?.ar_name || user?.username || "-";
 
 const calculateTotal = (questions, answers) =>
-  questions.reduce((total, question) => total + Number(answers[question.key] || 0), 0);
+  questions.reduce(
+    (total, question) => total + Number(answers[question.key] || 0),
+    0,
+  );
 
 const MonthlyReviewsPage = () => {
   const { t, i18n } = useTranslation();
@@ -69,30 +109,43 @@ const MonthlyReviewsPage = () => {
   const [lastSavedReview, setLastSavedReview] = useState(null);
   const [reviewToDelete, setReviewToDelete] = useState(null);
 
-  const {
-    data,
-    isLoading,
-    isFetching,
-    isError,
-    error,
-    refetch,
-  } = useGetMonthlyReviewWorkspaceQuery(month);
+  const { data, isLoading, isFetching, isError, error, refetch } =
+    useGetMonthlyReviewWorkspaceQuery(month);
 
   const [saveMonthlyReview, { isLoading: isSaving }] =
     useSaveMonthlyReviewMutation();
   const [deleteMonthlyReview, { isLoading: isDeleting }] =
     useDeleteMonthlyReviewMutation();
 
-  const questions = data?.questions?.length ? data.questions : fallbackQuestions;
-  const employees = data?.eligibleEmployees || [];
+  const questions = data?.questions?.length
+    ? data.questions
+    : fallbackQuestions;
+  const employees = useMemo(
+    () =>
+      (data?.eligibleEmployees || []).filter(
+        (employee) => !shouldHideMonthlyReviewUser(employee),
+      ),
+    [data?.eligibleEmployees],
+  );
+  const visibleReviews = useMemo(
+    () =>
+      (data?.reviews || []).filter(
+        (review) =>
+          !shouldHideMonthlyReviewUser(
+            review.employee,
+            departmentLabelKeys[review.departmentKey],
+          ),
+      ),
+    [data?.reviews],
+  );
   const monthOptions = useMemo(
     () => buildMonthOptions(i18n.language),
-    [i18n.language]
+    [i18n.language],
   );
 
   const selectedEmployee = useMemo(
     () => employees.find((employee) => employee.id === selectedEmployeeId),
-    [employees, selectedEmployeeId]
+    [employees, selectedEmployeeId],
   );
 
   useEffect(() => {
@@ -104,7 +157,7 @@ const MonthlyReviewsPage = () => {
     setSelectedEmployeeId((currentId) =>
       employees.some((employee) => employee.id === currentId)
         ? currentId
-        : employees[0].id
+        : employees[0].id,
     );
   }, [employees]);
 
@@ -123,7 +176,9 @@ const MonthlyReviewsPage = () => {
     setLastSavedReview(null);
   }, [month, selectedEmployeeId]);
 
-  const answeredCount = questions.filter((question) => answers[question.key]).length;
+  const answeredCount = questions.filter(
+    (question) => answers[question.key],
+  ).length;
   const totalScore = calculateTotal(questions, answers);
   const averageScore = answeredCount
     ? Math.round((totalScore / answeredCount) * 100) / 100
@@ -219,7 +274,10 @@ const MonthlyReviewsPage = () => {
               className="inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border border-gray-300 bg-white text-gray-700 transition hover:bg-gray-100 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
               title={t("refresh")}
             >
-              <RefreshCw size={18} className={isFetching ? "animate-spin" : ""} />
+              <RefreshCw
+                size={18}
+                className={isFetching ? "animate-spin" : ""}
+              />
             </button>
           </div>
         </div>
@@ -328,7 +386,10 @@ const MonthlyReviewsPage = () => {
                               : "border-gray-200 bg-white text-gray-700 hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
                           }`}
                         >
-                          <Star size={14} className={active ? "fill-current" : ""} />
+                          <Star
+                            size={14}
+                            className={active ? "fill-current" : ""}
+                          />
                           <span className="ms-1">{score}</span>
                         </button>
                       );
@@ -380,7 +441,7 @@ const MonthlyReviewsPage = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                {(data?.reviews || []).map((review) => (
+                {visibleReviews.map((review) => (
                   <tr key={review.id} className="dark:text-gray-100">
                     <td className="px-3 py-2">
                       {getDisplayName(review.employee, i18n.language)}
@@ -389,18 +450,21 @@ const MonthlyReviewsPage = () => {
                       {getDisplayName(review.reviewer, i18n.language)}
                     </td>
                     <td className="px-3 py-2">
-                      {t(departmentLabelKeys[review.departmentKey] || review.departmentName)}
+                      {t(
+                        departmentLabelKeys[review.departmentKey] ||
+                          review.departmentName,
+                      )}
                     </td>
                     <td className="px-3 py-2">{review.totalScore}/100</td>
                     <td className="px-3 py-2">{review.averageScore}/5</td>
                     <td className="px-3 py-2">
                       <div className="flex items-center gap-2">
-                      <MonthlyReviewPrint
-                        review={review}
-                        questions={questions}
-                        signatureUsers={data?.signatureUsers}
-                        buttonLabel={t("print")}
-                      />
+                        <MonthlyReviewPrint
+                          review={review}
+                          questions={questions}
+                          signatureUsers={data?.signatureUsers}
+                          buttonLabel={t("print")}
+                        />
                         <button
                           type="button"
                           onClick={() => setReviewToDelete(review)}
@@ -413,7 +477,7 @@ const MonthlyReviewsPage = () => {
                     </td>
                   </tr>
                 ))}
-                {!data?.reviews?.length && (
+                {!visibleReviews.length && (
                   <tr>
                     <td
                       colSpan={6}
@@ -456,10 +520,15 @@ const MonthlyReviewsPage = () => {
                 </div>
                 <div className="flex justify-between gap-3">
                   <span className="font-semibold">{t("select_date")}</span>
-                  <span>{monthOptions.find((item) => item.value === month)?.label || month}</span>
+                  <span>
+                    {monthOptions.find((item) => item.value === month)?.label ||
+                      month}
+                  </span>
                 </div>
                 <div className="flex justify-between gap-3">
-                  <span className="font-semibold">{t("answered_questions_label")}</span>
+                  <span className="font-semibold">
+                    {t("answered_questions_label")}
+                  </span>
                   <span>
                     {answeredCount}/{questions.length}
                   </span>
