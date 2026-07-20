@@ -19,7 +19,7 @@ const questionText = {
     ar: "هل يتقن العمل بدقة عالية؟",
   },
   q6: {
-    ar: "هل يقل معدل الأخطاء في عمله؟",
+    ar: "هل انخفض عدد الأخطاء في أداءه؟",
   },
   q7: {
     ar: "هل يحافظ على جودة العمل تحت الضغط؟",
@@ -58,7 +58,7 @@ const questionText = {
     ar: "هل يلتزم بأنظمة ولوائح الشركة؟",
   },
   q19: {
-    ar: "هل يلتزم بإبلاغ الإدارة عن التأخير أو الغياب؟",
+    ar: "هل يلتزم بإبلاغ الإدارة عند التأخير أو الغياب؟",
   },
   q20: {
     ar: "هل يلتزم بالمظهر المهني المطلوب؟",
@@ -142,21 +142,15 @@ const getArabicDepartmentName = (monthlyReview) => {
   );
 };
 
-const renderScoreScale = (value) => {
+const renderSelectedScore = (value) => {
   const selectedScore = Number(value);
+  const displayScore =
+    Number.isFinite(selectedScore) && selectedScore > 0 ? selectedScore : "—";
 
   return `
-    <div class="score-scale" aria-label="Score ${escapeHtml(value || "—")} out of 5">
-      ${[1, 2, 3, 4, 5]
-        .map(
-          (score) => `
-            <span class="score-option english-numbers ${
-              score === selectedScore ? "score-option-selected" : ""
-            }" dir="ltr" lang="en">${escapeHtml(score)}</span>
-          `,
-        )
-        .join("")}
-    </div>
+    <span class="selected-score english-numbers" dir="ltr" lang="en">${escapeHtml(
+      displayScore,
+    )}</span>
   `;
 };
 
@@ -173,8 +167,8 @@ const renderQuestionCards = (questions, answers, startIndex = 0) =>
             <div class="question-copy">
               <div class="question-ar">${escapeHtml(text.ar || question.key)}</div>
             </div>
+            <div class="score">${renderSelectedScore(answers?.[question.key])}</div>
           </div>
-          <div class="score">${renderScoreScale(answers?.[question.key])}</div>
         </div>
       `;
     })
@@ -245,9 +239,9 @@ const MonthlyReviewPrint = ({
       font-style: normal;
       font-display: swap;
     }
-    @page { size: A4; margin: 0; }
+    @page { size: A4; margin: 0 6mm; }
     @media print {
-      @page { margin: 0; }
+      @page { margin: 0 6mm; }
       body { margin: 0; padding: 0; }
       .page-container { page-break-after: auto; }
     }
@@ -262,11 +256,12 @@ const MonthlyReviewPrint = ({
       print-color-adjust: exact;
     }
     .page-container {
-      width: 210mm;
+      width: 198mm;
       height: 297mm;
       position: relative;
       overflow: hidden;
       background: white;
+      margin: 0 auto;
     }
     .company-header img,
     .company-footer img {
@@ -281,7 +276,7 @@ const MonthlyReviewPrint = ({
       width: 100%;
     }
     .content-area {
-      padding: 4px 14px 50px;
+      padding: 4px 18px 50px;
     }
     .main-title {
       text-align: center;
@@ -313,15 +308,12 @@ const MonthlyReviewPrint = ({
       gap: 4px;
     }
     .question-card {
-      min-height: 44px;
+      min-height: 34px;
       border: 1px solid #d4dbe6;
       border-radius: 8px;
       background: #fff;
       padding: 3px 5px;
       break-inside: avoid;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
     }
     .question-card:nth-child(4n + 1),
     .question-card:nth-child(4n + 2) {
@@ -329,7 +321,7 @@ const MonthlyReviewPrint = ({
     }
     .question-row {
       display: flex;
-      align-items: flex-start;
+      align-items: center;
       gap: 4px;
     }
     .question-number {
@@ -349,6 +341,7 @@ const MonthlyReviewPrint = ({
     }
     .question-copy {
       flex: 1;
+      min-width: 0;
       border-right: 2px solid #b9975b;
       padding: 0 5px 0 0;
     }
@@ -359,40 +352,28 @@ const MonthlyReviewPrint = ({
       line-height: 1.13;
     }
     .score {
-      text-align: center;
-      font-family: Arial, Tahoma, sans-serif;
-      font-weight: 700;
-      margin-top: 2px;
-    }
-    .score-scale {
-      direction: ltr;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 3px;
-      white-space: nowrap;
-    }
-    .score-option {
+      flex: 0 0 auto;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: 12px;
-      height: 12px;
-      border: 1px solid #c8d0db;
-      border-radius: 50%;
-      background: #fff;
-      color: #132945;
-      font-size: 7px;
-      line-height: 1;
+      font-family: Arial, Tahoma, sans-serif;
+      font-weight: 700;
+      margin: 0 4px 0 0;
     }
-    .score-option-selected {
-      width: 16px;
-      height: 16px;
-      border: 2px solid #132945;
+    .selected-score {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 18px;
+      height: 18px;
+      border: 1.5px solid #132945;
+      border-radius: 50%;
       background: #b9975b;
       color: #fff;
-      font-size: 8.8px;
-      box-shadow: 0 0 0 1px rgba(185, 151, 91, 0.2);
+      font-size: 10px;
+      font-weight: 800;
+      line-height: 1;
+      box-shadow: 0 0 0 1px rgba(185, 151, 91, 0.18);
     }
     .summary-row {
       width: 94%;

@@ -13,6 +13,7 @@ import MonthlyReviewPrint from "./MonthlyReviewPrint";
 import { normalizeRoles, ROLE_GROUPS } from "../../config/roles";
 
 const currentMonth = () => new Date().toISOString().slice(0, 7);
+const annualReviewYearOption = "2025";
 
 const buildMonthOptions = (language) => {
   const year = new Date().getFullYear();
@@ -22,7 +23,7 @@ const buildMonthOptions = (language) => {
     year: "numeric",
   });
 
-  return Array.from({ length: 12 }, (_, index) => {
+  const currentYearMonths = Array.from({ length: 12 }, (_, index) => {
     const month = String(index + 1).padStart(2, "0");
     const date = new Date(year, index, 1);
     return {
@@ -30,6 +31,14 @@ const buildMonthOptions = (language) => {
       label: formatter.format(date),
     };
   });
+
+  return [
+    {
+      value: annualReviewYearOption,
+      label: annualReviewYearOption,
+    },
+    ...currentYearMonths,
+  ];
 };
 
 const fallbackQuestions = Array.from({ length: 20 }, (_, index) => ({
